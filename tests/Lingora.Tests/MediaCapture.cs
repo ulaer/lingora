@@ -4,6 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Lingora.Core;
 using Lingora.Core.Gemini;
+using Lingora.Core.Journal;
 using Lingora.Core.Models;
 using Lingora.Core.Storage;
 using Lingora.Desktop;
@@ -76,7 +77,7 @@ public class MediaCapture
         // Geçmiş: son 6 gün, çoğunda günlük hedef (20) tutturulmuş; sözlük dolu.
         var perDay = new[] { 21, 24, 13, 20, 22, 20 };
         var counter = 0;
-        evaluator.Handler = (_, _) =>
+        evaluator.Handler = (item, text) =>
         {
             counter++;
             var word = Words[counter % Words.Length];
@@ -84,8 +85,10 @@ public class MediaCapture
             {
                 Score = 70 + (counter * 7 % 30),
                 IsCorrect = true,
-                CorrectedTranslation = "-",
-                NaturalTranslation = "-",
+                CorrectedTranslation = text,
+                NaturalTranslation = item.References.FirstOrDefault() ?? text,
+                Mistakes = counter % 4 == 0 ? [$"{word.Term} kalıbı eksik: {word.Meaning}"] : [],
+                Tip = counter % 2 == 0 ? $"\"{word.Term}\" = {word.Meaning}" : string.Empty,
                 Vocabulary = counter % 3 == 0 ? [word] : [],
             };
         };
@@ -94,7 +97,7 @@ public class MediaCapture
             for (var i = 0; i < perDay[day]; i++)
             {
                 clock.Now = FixedTimeProvider.Local(2026, 11, 1 + day, 9 + (i % 12), i % 60);
-                await session.SubmitAsync("practice");
+                await session.SubmitAsync(session.Current!.References.FirstOrDefault() ?? "practice");
                 session.NextSentence();
             }
         }
@@ -103,7 +106,7 @@ public class MediaCapture
         for (var i = 0; i < 12; i++)
         {
             clock.Now = FixedTimeProvider.Local(2026, 11, 7, 9 + i % 10, i * 4);
-            await session.SubmitAsync("practice");
+            await session.SubmitAsync(session.Current!.References.FirstOrDefault() ?? "practice");
             session.NextSentence();
         }
 
@@ -126,6 +129,14 @@ public class MediaCapture
                 new("first thing in the morning", "sabah ilk iş olarak", "I'll call you first thing in the morning. (Sabah ilk iş seni ararım.)", "tamlama"),
             ],
         };
+
+        evaluator.ExplainHandler = _ =>
+            "\"Go out\" evden ya da bir yerden dışarı çıkmak demektir (ör. akşam yemeğe çıkmak). Bir yolculuğa başlamayı "
+            + "anlatırken İngilizcede \"set off\" ya da \"set out\" kalıbı kullanılır; günlük konuşmada \"leave\" de olur.\n"
+            + "• We set off at dawn. (Şafakta yola çıktık.)\n"
+            + "• What time should we set off tomorrow? (Yarın saat kaçta yola çıkalım?)\n"
+            + "• They went out for dinner. (Akşam yemeğine çıktılar.)";
+        evaluator.LessonHandler = (_, _) => PdfSample.SampleNote();
 
         await WpfHost.RunAsync(async () =>
         {
@@ -181,8 +192,16 @@ public class MediaCapture
                 }
             }
 
-            Shot(repeat: 40);
+            Shot(repeat: 30);
             Save(window.Frame, Path.Combine(output, "02-sonuc.png"), 1000, 960);
+
+            // 5) Hata satırı için "Ayrıntılı açıkla"
+            var slot = practice.ExplainSlots[0];
+            slot.Button.Content = "Açıklanıyor…";
+            Shot(repeat: 6);
+            await practice.ToggleExplanationAsync(slot);
+            Shot(repeat: 45);
+            Save(window.Frame, Path.Combine(output, "06-aciklama.png"), 1000, 1060);
 
             // Ek pencereler (sabit görüntüler)
             window.OpenVocabulary();
@@ -192,6 +211,13 @@ public class MediaCapture
             window.OpenSettings(SettingsSection.DataFile);
             window.Settings.ToggleHelp(SettingsSection.DataFile, show: true);
             SavePage(window.Settings, "Ayarlar", Path.Combine(output, "05-yardim.png"), 900, 760);
+
+            window.OpenJournal();
+            await window.Journal.CreateLessonAsync();
+            SavePage(window.Journal, "Günlük", Path.Combine(output, "07-ders-notu.png"), 1040, 900);
+            window.Journal.TabRecords.IsChecked = true;
+            SavePage(window.Journal, "Günlük", Path.Combine(output, "08-gunluk.png"), 1040, 720);
+            LessonPdfExporter.Export(window.Journal.ShownLesson!, Path.Combine(output, "ornek-ders-notu.pdf"));
         });
     }
 

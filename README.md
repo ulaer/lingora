@@ -7,7 +7,7 @@
 ![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)
 ![WPF](https://img.shields.io/badge/WPF-Windows-0078D4?logo=windows&logoColor=white)
 ![Gemini](https://img.shields.io/badge/Google-Gemini%20API-4285F4?logo=googlegemini&logoColor=white)
-![Tests](https://img.shields.io/badge/testler-170%20ba%C5%9Far%C4%B1l%C4%B1-2EA043)
+![Tests](https://img.shields.io/badge/testler-189%20ba%C5%9Far%C4%B1l%C4%B1-2EA043)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0B1120)
 
 <img src="docs/media/demo.gif" alt="Lingora demo: çeviri yazılıyor, Gemini değerlendiriyor, cevap harf harf ekrana geliyor" width="820" />
@@ -24,6 +24,11 @@ sen çevirini yazarsın; Google Gemini çevirini bir öğretmen gibi değerlendi
 - **Puan ve geri bildirim:** düzeltilmiş çeviri, daha doğal bir çeviri, hataların Türkçe açıklaması ve bir ipucu.
 - **Adil puanlama:** yazım hatası ("gitmak" → "gitmek"), küçük harfle başlama, noktalama gibi
   **küçük hatalar puanı düşürmez**; ayrıca "küçük hatalar" olarak listelenir. Puanı anlam, dil bilgisi ve kelime seçimi belirler.
+- **Ayrıntılı açıklama:** her hata ve ipucu satırının altındaki **"Ayrıntılı açıkla"** ile kuralı,
+  nedenini ve örnek cümleleri AI'dan ayrıca iste. Açıklama kaydedilir; bir daha istediğinde AI çağrılmaz.
+- **Günlük ve ders notu:** her günün hataları, ipuçları ve açıklamaları günlüğe yazılır. İstediğin gün için
+  AI o günden sana özel bir **ders notu** hazırlar (konular, günün hataları, alıştırmalar). Not bir kez üretilir,
+  sonra kayıttan açılır; **PDF olarak kaydedebilirsin** ([örnek PDF](docs/media/ornek-ders-notu.pdf)).
 - **Kişisel sözlük:** eksik kaldığın kelime, kalıp ve tamlamalar anlamı ve örnek cümlesiyle otomatik
   kaydedilir. Aynı terimde tekrar hata yaparsan yeni kayıt açılmaz, "N kez" sayacı artar.
 - **İki yön:** TR → EN yazmayı, EN → TR okumayı çalıştırır.
@@ -33,9 +38,11 @@ sen çevirini yazarsın; Google Gemini çevirini bir öğretmen gibi değerlendi
 
 ## Ekranlar
 
-| Değerlendirme | Sözlük |
+| Ayrıntılı açıklama | AI ders notu (PDF) |
 |:---:|:---:|
-| <img src="docs/media/02-sonuc.png" alt="Değerlendirme ekranı" width="420" /> | <img src="docs/media/03-sozluk.png" alt="Sözlük" width="420" /> |
+| <img src="docs/media/06-aciklama.png" alt="Hata satırının ayrıntılı açıklaması" width="420" /> | <img src="docs/media/07-ders-notu.png" alt="Günlük ders notu" width="420" /> |
+| **Günlük: hatalar ve ipuçları** | **Sözlük** |
+| <img src="docs/media/08-gunluk.png" alt="Günlük kayıtları" width="420" /> | <img src="docs/media/03-sozluk.png" alt="Sözlük" width="420" /> |
 | **Günlük hedef** | **Adım adım yardım** |
 | <img src="docs/media/04-hedef.png" alt="Hedef penceresi" width="420" /> | <img src="docs/media/05-yardim.png" alt="Ayarlar ve yardım" width="420" /> |
 
@@ -76,6 +83,7 @@ dotnet publish src/Lingora.Desktop -c Release -r win-x64 --self-contained false 
 |-----|-------|
 | **TR → EN / EN → TR** | Çeviri yönü |
 | **◎ 13/20** | Hedef penceresi: bugün, seri, toplam, ortalama puan, son 7 gün |
+| **📅** | Günlük: günlere göre hatalar, ipuçları, açıklamalar; **Ders notunu oluştur** ve **PDF olarak kaydet** |
 | **📖 11** | Sözlük: arama, sıralama (son eklenen / en çok hata / A–Z), silme |
 | **⚙** | Ayarlar: API anahtarı, veri dosyası, günlük hedef, zorluk, sıra, başlangıç satırı, model, sistem kontrolü |
 
@@ -92,8 +100,10 @@ Ayarlar → Genel'de `gemini-3.5-flash-lite` yazabilirsin. Hesabında açık ola
 ## Gizlilik
 
 - Veriler yalnızca bu bilgisayarda, `%APPDATA%\Lingora` klasöründe tutulur
-  (`settings.json`, `corpus.tsv`, `attempts.jsonl`, `vocabulary.json`). Başka bir klasör için `LINGORA_HOME`.
-- Gemini'ye yalnızca kaynak cümle, referans çeviri(ler) ve senin çevirin gönderilir.
+  (`settings.json`, `corpus.tsv`, `attempts.jsonl`, `vocabulary.json`, günlük için `journal\yyyy-AA-GG.json`,
+  ders notları için `lessons\yyyy-AA-GG.json`). Başka bir klasör için `LINGORA_HOME`.
+- Gemini'ye yalnızca kaynak cümle, referans çeviri(ler) ve senin çevirin gönderilir; ayrıntılı açıklama ve
+  ders notu için ayrıca o satır / o günün kayıtları gönderilir.
   Anahtar URL'de değil `x-goog-api-key` başlığında gider; loglara yazılmaz.
 
 ## Mimari
@@ -101,7 +111,8 @@ Ayarlar → Genel'de `gemini-3.5-flash-lite` yazabilirsin. Hesabında açık ola
 ```
 src/Lingora.Core/       İş mantığı (arayüzden bağımsız, test edilen kısım)
   Corpus/               TXT içe aktarma (UTF-8 / Windows-1254), sıralı ve rastgele cümle seçimi
-  Gemini/               İstem (prompt), yapılandırılmış JSON şeması, REST istemcisi, Türkçe hata mesajları
+  Gemini/               İstemler (değerlendirme, ayrıntılı açıklama, ders notu), JSON şemaları, REST istemcisi
+  Journal/              Günlük (gün başına dosya), bir kez üretilen ders notları, PDF dışa aktarma (MigraDoc)
   Lexicon/              Kişisel sözlük ve benzer terim birleştirme
   Progress/             İlerleme kaydı (JSON Lines), seri ve günlük hedef hesapları
   Storage/              Ayarlar, DPAPI ile şifreli anahtar, veri klasörü
@@ -109,7 +120,7 @@ src/Lingora.Desktop/    WPF arayüzü: özel başlık çubuğu, tema, daktilo an
 tests/Lingora.Tests/    xUnit: çekirdek + WPF arayüz testleri (pencere açmadan, ekran görüntüsüyle)
 ```
 
-- **.NET 8 · WPF · xUnit**, harici arayüz kütüphanesi yok.
+- **.NET 8 · WPF · xUnit**, harici arayüz kütüphanesi yok; PDF için [PDFsharp-MigraDoc](https://github.com/empira/PDFsharp) (MIT).
 - Zaman `TimeProvider` ile enjekte edilir; testler sabit saatle çalışır.
 - Arayüz testleri WPF'i tek bir STA iş parçacığında, ekrana pencere açmadan çalıştırır.
 

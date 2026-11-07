@@ -26,6 +26,12 @@ public sealed class AppPaths
 
     public string VocabularyFile => Path.Combine(DataDirectory, "vocabulary.json");
 
+    /// <summary>Günlük: her gün için hatalar, ipuçları ve açıklamalar (journal/yyyy-MM-dd.json).</summary>
+    public string JournalDirectory => Path.Combine(DataDirectory, "journal");
+
+    /// <summary>AI ile üretilmiş ders notları (lessons/yyyy-MM-dd.json).</summary>
+    public string LessonsDirectory => Path.Combine(DataDirectory, "lessons");
+
     /// <summary>Uygulamanın eski adı; bu adla oluşmuş veri klasörü ilk açılışta taşınır.</summary>
     public const string LegacyFolderName = "CeviriPratik";
 

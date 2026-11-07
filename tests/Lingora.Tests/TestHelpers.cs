@@ -92,9 +92,41 @@ internal sealed class FakeHttpHandler : HttpMessageHandler
     }
 }
 
-/// <summary>Sahte değerlendirici: Gemini çağırmadan sonuç döndürür.</summary>
-internal sealed class FakeEvaluator : ITranslationEvaluator
+/// <summary>Sahte değerlendirici: Gemini çağırmadan sonuç, açıklama ve ders notu döndürür.</summary>
+internal sealed class FakeEvaluator : ITranslationEvaluator, IStudyAssistant
 {
+    public Func<ExplainRequest, string> ExplainHandler { get; set; } =
+        r => $"Ayrıntılı açıklama: {r.Item}\n• Example sentence. (Örnek cümle.)";
+
+    public Func<DateOnly, IReadOnlyList<Lingora.Core.Journal.JournalEntry>, Lingora.Core.Journal.LessonNote> LessonHandler { get; set; } =
+        (date, entries) => new Lingora.Core.Journal.LessonNote
+        {
+            Title = "Dolaylı anlatım ve zaman uyumu",
+            Summary = "Anlamı genelde doğru aktardın; dolaylı anlatımda zamanı geri kaydırmayı çalışmalısın.",
+            Topics =
+            [
+                new() { Title = "Reported speech", Explanation = "Dolaylı anlatımda fiil bir zaman geri gider.", Examples = ["He said he was tired. (Yorgun olduğunu söyledi.)"] },
+            ],
+            Mistakes = [new() { Wrong = "must", Right = "was supposed to", Why = "Geçmişte beklenen bir görev." }],
+            Practice = ["Yorgun olduğunu söyledi."],
+        };
+
+    public List<ExplainRequest> ExplainCalls { get; } = new();
+
+    public List<(DateOnly Date, int Entries)> LessonCalls { get; } = new();
+
+    public Task<string> ExplainAsync(ExplainRequest request, string apiKey, string model, CancellationToken cancellationToken = default)
+    {
+        ExplainCalls.Add(request);
+        return Task.FromResult(ExplainHandler(request));
+    }
+
+    public Task<Lingora.Core.Journal.LessonNote> CreateLessonAsync(DateOnly date, IReadOnlyList<Lingora.Core.Journal.JournalEntry> entries, string apiKey, string model, CancellationToken cancellationToken = default)
+    {
+        LessonCalls.Add((date, entries.Count));
+        return Task.FromResult(LessonHandler(date, entries));
+    }
+
     public Func<PracticeItem, string, Evaluation> Handler { get; set; } =
         (_, _) => new Evaluation { Score = 90, IsCorrect = true, CorrectedTranslation = "Hello.", NaturalTranslation = "Hello." };
 

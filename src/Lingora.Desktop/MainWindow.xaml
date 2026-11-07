@@ -57,6 +57,13 @@
                     </StackPanel>
                 </Button>
 
+                <!-- Günlük: günün hataları, ipuçları ve AI ders notları -->
+                <Button x:Name="JournalButton" Style="{StaticResource IconButton}" ToolTip="Günlük ve ders notları"
+                        Margin="4,0,0,0" Click="OnJournalClick">
+                    <TextBlock Text="&#xE787;" FontFamily="{StaticResource IconFont}" FontSize="17"
+                               VerticalAlignment="Center" />
+                </Button>
+
                 <!-- Sözlük -->
                 <Button x:Name="VocabularyButton" Style="{StaticResource IconButton}" ToolTip="Sözlük"
                         Margin="4,0,0,0" Click="OnVocabularyClick">

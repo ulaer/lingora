@@ -32,6 +32,7 @@ geri gelir. İlerleme günlük olarak kaydedilir.
 | R16 | Kaldığı yer ve sözlük uygulama içinde kalıcı; kapat-aç sonrası sıfırlanmaz | `AppSettings.Position` (settings.json), `VocabularyBook` (vocabulary.json) | `SequentialOrderTests.PositionSurvivesRestart`, `OrderAndMinorIssueUiTests.SettingsStartLine...`, `VocabularyBookTests.SurvivesRestart` |
 | R17 | Zemin daha şık/modern (gece mavisi + yumuşak mavi/mor ışık); Windows'un göze batan başlık çubuğu yok, küçült/büyüt/kapat üst çubukta sade ikonlar; masaüstü kısayolu | `Theme.xaml` (`BgGradient` DrawingBrush, `CaptionButton`), `PageWindow.cs` (`WindowFrame`), `MainWindow.xaml` | `DesktopUiTests.MainWindowShows...`, `DesktopUiTests.PageWindowHasOwnSubtleCaption...` |
 | R18 | GitHub'a hazır: kurumsal ad **Lingora** (exe, pencere, ad alanları, ürün bilgileri), depoda API anahtarı ve TXT yok; API ve Veri Dosyası sayfalarında "Nasıl yapılır?" yardımı (ilk kurulumda açık gelir); eski veri klasörü taşınır; README, demo GIF/MP4, LinkedIn metni | `Directory.Build.props`, `.gitignore`, `Core/HelpTopics.cs`, `SettingsPage`, `AppPaths.MigrateFrom`, `README.md`, `docs/media/`, `docs/LINKEDIN.md` | `HelpTopicsTests`, `LegacyDataMigrationTests`, `DesktopUiTests.FirstRunSettingsShowHelp...`, `MediaCapture` |
+| R19 | AI destek: (a) sonuçtaki her hata ve ipucu satırı için istenirse ayrıntılı açıklama; (b) her günün hataları, ipuçları ve açıklamaları günlüğe kaydedilir; (c) her gün için AI ders notu bir kez üretilir, sonra kayıttan açılır, PDF olarak kaydedilebilir; (d) Günlük, üst çubukta Hedef ile Sözlük arasında ikon butonla açılır | `Core/Journal/*` (JournalStore, LessonStore, LessonPdfExporter), `PromptBuilder` (Explain/Lesson), `GeminiClient : IStudyAssistant`, `PracticeSession.ExplainAsync/GetOrCreateLessonAsync`, `PracticePage`, `Pages/JournalPage`, `MainWindow` | `JournalStoreTests`, `StudyAssistantSessionTests`, `StudyAssistantGeminiTests`, `LessonPdfTests`, `JournalUiTests` |
 | R12 | Model: istek Gemini 1.5 Flash idi; bu model Google tarafından kaldırıldı. Model adı ayarlanabilir, varsayılan `gemini-flash-latest` | `Core/Models/AppSettings.cs`, `SettingsPage` (Genel) | `SettingsStoreTests`, `GeminiClientTests` |
 
 ## 3. Tasarım kararları
@@ -123,9 +124,18 @@ doldurup doldurmadığı gerçek anahtarla denenmedi.
 `dotnet test`: 161/161 başarılı, 0 uyarı. Ekran görüntüleri (1-calisma, 2-sonuc, 13-hedef-pencere) kontrol
 edildi. `uygulama\` yayınlandı; `Masaüstü\Lingora.lnk` ile açıldı, başlık "Lingora", yanıt veriyor.
 
-**Doğrulanamayanlar:** Gerçek API anahtarıyla değerlendirme; fareyle/klavyeyle elle gezinme
-(akışlar testte sayfa metodlarıyla çalıştırıldı); gerçek ekranda büyütülmüş pencerenin kenar payı
-(gerçek pencerenin ekran görüntüsü alınamadı, başka bir pencere öndeydi).
+**07.11.2026 – AI destek: ayrıntılı açıklama, günlük, ders notu ve PDF (R19)**
+
+`dotnet test`: 189/189 başarılı, 0 uyarı. Ekran görüntüleri (16-ayrintili-aciklama, 17/18/19 günlük, docs/media
+06–08) ve örnek PDF (Windows.Data.Pdf ile görüntüye çevrilerek; Türkçe karakterler doğru) gözle kontrol edildi.
+Ders notunun bir kez üretilip sonra dosyadan geldiği, açıklamaların ikinci kez AI çağırmadığı testlerle doğrulandı.
+
+**Doğrulanamayanlar:** Gerçek API anahtarıyla değerlendirme, açıklama ve ders notu üretimi (istek gövdeleri ve
+yanıt ayrıştırma sahte HTTP ile test edildi); fareyle/klavyeyle elle gezinme (akışlar testte sayfa
+metodlarıyla çalıştırıldı); gerçek ekranda büyütülmüş pencerenin kenar payı.
+
+Gelecek çalışmalar (kullanıcı notu): ders notu üretiminde iyileştirmeler ve düzeltmeler eklenecek
+(ör. yeniden üretme, gün aralığı için not).
 
 ## 5. Kapsam dışı (şimdilik)
 

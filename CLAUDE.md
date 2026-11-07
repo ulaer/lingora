@@ -44,6 +44,9 @@ src/Lingora.Core/      İş mantığı (arayüzden bağımsız, test edilen kıs
   Progress/                 ProgressStore (attempts.jsonl), ProgressCalculator, ProgressFormatter
   Storage/                  AppPaths, SettingsStore, ApiKeyStore (+ DPAPI)
   Lexicon/                  VocabularyBook (vocabulary.json): sözlük, benzer terim birleştirme (NormalizeKey)
+  Journal/                  JournalStore (journal/yyyy-MM-dd.json), LessonStore (lessons/…, bir kez üretilir),
+                            LessonPdfExporter (MigraDoc, Windows yazı tipleri)
+  Gemini/StudyPrompts.cs    IStudyAssistant: hata/ipucu ayrıntılı açıklama (düz metin) ve ders notu (JSON şema)
   PracticeSession.cs        Çalışma akışı (cümle seç → gönder → değerlendir → kaydet)
   EvaluationFormatter.cs    Sonucu düz metne çevirir
   Diagnostics.cs            Ayarlar > Sistem Kontrolü çıktısı
@@ -55,7 +58,8 @@ src/Lingora.Desktop/   WPF arayüzü (exe adı: Lingora.exe)
   PageWindow.cs             Hedef/Ayarlar/Sözlük ek penceresi + WindowFrame (Windows başlık çubuğu yerine
                             WindowChrome; küçült/büyüt/kapat uygulamanın üst çubuğunda)
   Typewriter.cs             Cevabın harf harf yazılma animasyonu (testlerde AnimateResults=false)
-  Pages/                    PracticePage, ProgressPage (Hedef), SettingsPage, VocabularyPage (Sözlük)
+  Pages/                    PracticePage (+ ExplainSlot), ProgressPage (Hedef), SettingsPage, VocabularyPage (Sözlük),
+                            JournalPage (Günlük: ders notu, PDF, günün kayıtları; üst çubukta Hedef ile Sözlük arası)
   Ui.cs                     Kodla oluşturulan yazı öğeleri için yardımcılar
 tests/Lingora.Tests/   xUnit; DesktopUiTests WPF'i tek STA iş parçacığında çalıştırır
 uygulama/                   Yayınlanmış exe (git dışı)
@@ -74,6 +78,9 @@ uygulama/                   Yayınlanmış exe (git dışı)
 - WPF projelerinde `System.IO` örtük değil; gerekiyorsa `using System.IO;` ekle.
 - Zaman için `TimeProvider` enjekte edilir (testlerde sabit saat).
 - Yeni gereksinim → önce `docs/GEREKSINIMLER.md` tablosuna satır, sonra kod + test.
+- Commit'lere Claude ortak yazar / "Generated with" satırı eklenmez; GitHub'da yazar yalnızca `ulaer`.
+- Windows PowerShell 5.1'de `Get-Content`/`Set-Content` UTF-8'i bozar; dosya düzenlemesini Edit aracıyla
+  ya da `[IO.File]::ReadAllText/WriteAllText` + UTF-8 ile yap.
 
 ## Bitti tanımı
 

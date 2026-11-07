@@ -1,5 +1,6 @@
 using Lingora.Core.Corpus;
 using Lingora.Core.Gemini;
+using Lingora.Core.Journal;
 using Lingora.Core.Lexicon;
 using Lingora.Core.Models;
 using Lingora.Core.Progress;
@@ -24,7 +25,19 @@ public enum SessionState
 
 /// <summary>Gönder butonunun sonucu.</summary>
 /// <param name="Words">Bu değerlendirmeden sözlüğe eklenen/tekrar eden terimler.</param>
-public sealed record SubmitOutcome(bool Success, string Text, Evaluation? Evaluation = null, VocabularyMergeResult? Words = null);
+/// <param name="Entry">Günlüğe yazılan kayıt (ayrıntılı açıklama istemek için).</param>
+public sealed record SubmitOutcome(
+    bool Success,
+    string Text,
+    Evaluation? Evaluation = null,
+    VocabularyMergeResult? Words = null,
+    JournalEntry? Entry = null);
+
+/// <summary>Ayrıntılı açıklama sonucu. <paramref name="FromCache"/>: daha önce üretilmişti, AI çağrılmadı.</summary>
+public sealed record ExplainOutcome(bool Success, string Text, bool FromCache = false);
+
+/// <summary>Ders notu sonucu. <paramref name="FromCache"/>: daha önce üretilmişti, AI çağrılmadı.</summary>
+public sealed record LessonOutcome(bool Success, LessonNote? Note, string? Error = null, bool FromCache = false);
 
 /// <summary>
 /// Ana ekranın tüm akışı: cümle seç → çeviriyi gönder → Gemini ile değerlendir → kaydet
@@ -37,6 +50,7 @@ public sealed class PracticeSession
     private readonly ApiKeyStore _apiKeyStore;
     private readonly ProgressStore _progressStore;
     private readonly ITranslationEvaluator _evaluator;
+    private readonly IStudyAssistant? _assistant;
     private readonly TimeProvider _time;
     private readonly Random? _random;
     private readonly List<AttemptRecord> _attempts;
@@ -47,10 +61,12 @@ public sealed class PracticeSession
         ITranslationEvaluator evaluator,
         TimeProvider? time = null,
         ApiKeyStore? apiKeyStore = null,
-        Random? random = null)
+        Random? random = null,
+        IStudyAssistant? assistant = null)
     {
         _paths = paths ?? throw new ArgumentNullException(nameof(paths));
         _evaluator = evaluator ?? throw new ArgumentNullException(nameof(evaluator));
+        _assistant = assistant ?? evaluator as IStudyAssistant;
         _time = time ?? TimeProvider.System;
         _apiKeyStore = apiKeyStore ?? new ApiKeyStore();
         _random = random;
@@ -76,10 +92,129 @@ public sealed class PracticeSession
             Warnings.Add($"Sözlük dosyası bozuktu; boş sözlükle başlandı. Yedek: {vocabularyBackup}");
         }
 
+        Journal = new JournalStore(paths.JournalDirectory, paths.LessonsDirectory, _time.LocalTimeZone);
+        Lessons = new LessonStore(paths.LessonsDirectory);
+
         Corpus = SentenceCorpus.Empty;
         _picker = new SentencePicker(Corpus, _random);
         LoadCorpus();
         ShowCurrentPosition();
+    }
+
+    /// <summary>Günlük: her günün hataları, ipuçları ve istenen açıklamaları.</summary>
+    public JournalStore Journal { get; }
+
+    /// <summary>AI ile bir kez üretilip saklanan günlük ders notları.</summary>
+    public LessonStore Lessons { get; }
+
+    /// <summary>Hata veya ipucu satırını ayrıntılı açıklatır; daha önce açıklandıysa kayıttan döner.</summary>
+    public async Task<ExplainOutcome> ExplainAsync(JournalEntry entry, FeedbackKind kind, int index, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        if (entry.FindExplanation(kind, index) is { } cached)
+        {
+            return new ExplainOutcome(true, cached.Text, FromCache: true);
+        }
+
+        if (entry.GetItem(kind, index) is not { } item)
+        {
+            return new ExplainOutcome(false, "Açıklanacak satır bulunamadı.");
+        }
+
+        if (_assistant is null)
+        {
+            return new ExplainOutcome(false, "Ayrıntılı açıklama bu yapılandırmada kullanılamıyor.");
+        }
+
+        var key = GetApiKey();
+        if (!key.HasKey)
+        {
+            return new ExplainOutcome(false, key.Error ?? "API anahtarı girilmemiş. Ayarlar > API Anahtarı menüsünden ekleyin.");
+        }
+
+        string text;
+        try
+        {
+            var request = new ExplainRequest(entry.Direction, entry.Source, entry.UserTranslation, entry.CorrectedTranslation, kind, item);
+            text = (await _assistant.ExplainAsync(request, key.Key!, Settings.Model, cancellationToken).ConfigureAwait(false)).Trim();
+        }
+        catch (GeminiException ex)
+        {
+            return new ExplainOutcome(false, ex.Message);
+        }
+        catch (OperationCanceledException)
+        {
+            return new ExplainOutcome(false, "İşlem iptal edildi.");
+        }
+
+        entry.Explanations.Add(new ItemExplanation { Kind = kind, Index = index, Item = item, Text = text, CreatedAt = _time.GetLocalNow() });
+        try
+        {
+            Journal.Update(entry);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return new ExplainOutcome(true, text + $"\n\n(Uyarı: günlüğe kaydedilemedi: {ex.Message})");
+        }
+
+        return new ExplainOutcome(true, text);
+    }
+
+    /// <summary>
+    /// Günün ders notu: daha önce üretildiyse dosyadan okunur (AI çağrılmaz);
+    /// yoksa o günün günlük kayıtlarından AI ile bir kez üretilip saklanır.
+    /// </summary>
+    public async Task<LessonOutcome> GetOrCreateLessonAsync(DateOnly date, CancellationToken cancellationToken = default)
+    {
+        if (Lessons.Load(date) is { } saved)
+        {
+            return new LessonOutcome(true, saved, FromCache: true);
+        }
+
+        var entries = Journal.LoadDay(date);
+        if (entries.Count == 0)
+        {
+            return new LessonOutcome(false, null, "Bu gün için günlük kaydı yok; ders notu üretilemez.");
+        }
+
+        if (_assistant is null)
+        {
+            return new LessonOutcome(false, null, "Ders notu bu yapılandırmada kullanılamıyor.");
+        }
+
+        var key = GetApiKey();
+        if (!key.HasKey)
+        {
+            return new LessonOutcome(false, null, key.Error ?? "API anahtarı girilmemiş. Ayarlar > API Anahtarı menüsünden ekleyin.");
+        }
+
+        LessonNote note;
+        try
+        {
+            note = await _assistant.CreateLessonAsync(date, entries, key.Key!, Settings.Model, cancellationToken).ConfigureAwait(false);
+        }
+        catch (GeminiException ex)
+        {
+            return new LessonOutcome(false, null, ex.Message);
+        }
+        catch (OperationCanceledException)
+        {
+            return new LessonOutcome(false, null, "İşlem iptal edildi.");
+        }
+
+        note.Date = date;
+        note.EntryCount = entries.Count;
+        note.CreatedAt = _time.GetLocalNow();
+        try
+        {
+            Lessons.Save(note);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return new LessonOutcome(true, note, $"Ders notu kaydedilemedi: {ex.Message}");
+        }
+
+        return new LessonOutcome(true, note);
     }
 
     public AppSettings Settings { get; }
@@ -339,10 +474,25 @@ public sealed class PracticeSession
             saveWarning += $"\n\n(Uyarı: sözlük kaydedilemedi: {ex.Message})";
         }
 
+        // Günlük: yalnızca yapılandırılmış değerlendirmeler (ham metin yanıtında hata/ipucu yok).
+        JournalEntry? entry = null;
+        if (evaluation.RawText is null)
+        {
+            entry = JournalEntry.From(item, text, evaluation, record.Timestamp);
+            try
+            {
+                Journal.Append(entry);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                saveWarning += $"\n\n(Uyarı: günlüğe kaydedilemedi: {ex.Message})";
+            }
+        }
+
         _attempts.Add(record);
         _picker.MarkSeen(item.Direction, item.Source);
         State = SessionState.ShowingResult;
-        return new SubmitOutcome(true, EvaluationFormatter.Format(item, text, evaluation) + saveWarning, evaluation, words);
+        return new SubmitOutcome(true, EvaluationFormatter.Format(item, text, evaluation) + saveWarning, evaluation, words, entry);
     }
 
     public DateOnly Today => DateOnly.FromDateTime(_time.GetLocalNow().DateTime);

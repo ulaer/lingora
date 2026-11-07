@@ -4,10 +4,32 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Lingora.Core;
+using Lingora.Core.Journal;
 using Lingora.Core.Lexicon;
 using Lingora.Core.Models;
 
 namespace Lingora.Desktop.Pages;
+
+/// <summary>Sonuçtaki bir hata/ipucu satırının "Ayrıntılı açıkla" bağlantısı ve açıklama paneli.</summary>
+internal sealed class ExplainSlot(FeedbackKind kind, int index, Button button, Border panel, TextBox text)
+{
+    public const string ShowLabel = "Ayrıntılı açıkla  ›";
+    public const string HideLabel = "Açıklamayı gizle  ˄";
+
+    public FeedbackKind Kind { get; } = kind;
+
+    public int Index { get; } = index;
+
+    public Button Button { get; } = button;
+
+    public Border Panel { get; } = panel;
+
+    public TextBox Text { get; } = text;
+
+    public bool Loaded { get; set; }
+
+    public bool Busy { get; set; }
+}
 
 /// <summary>
 /// Çalışma ekranı: çevrilecek cümle, çerçevesiz çeviri alanı, Gönder butonu ve Gemini'nin
@@ -20,7 +42,9 @@ public partial class PracticePage : UserControl
     private readonly PracticeSession _session;
     private readonly DispatcherTimer _thinkingTimer;
     private readonly Typewriter _typing = new(TimeSpan.FromMilliseconds(15), charsPerTick: 3);
+    private readonly List<ExplainSlot> _explainSlots = new();
     private PracticeItem? _shownItem;
+    private JournalEntry? _entry;
     private int _thinkingFrame;
 
     public PracticePage(PracticeSession session)
@@ -58,6 +82,9 @@ public partial class PracticePage : UserControl
 
     /// <summary>Bir çeviri başarıyla değerlendirildi (günlük sayaç güncellenir).</summary>
     public event EventHandler? Evaluated;
+
+    /// <summary>Günlüğe yeni bir açıklama eklendi.</summary>
+    public event EventHandler? JournalChanged;
 
     public bool IsBusy { get; private set; }
 
@@ -201,6 +228,7 @@ public partial class PracticePage : UserControl
 
         if (outcome.Success && outcome.Evaluation is not null)
         {
+            _entry = outcome.Entry;
             ShowEvaluation(item, text.Trim(), outcome.Evaluation, outcome.Words);
             Evaluated?.Invoke(this, EventArgs.Empty);
         }
@@ -218,6 +246,7 @@ public partial class PracticePage : UserControl
         _typing.Cancel();
         ResultPanel.Visibility = Visibility.Visible;
         ResultBody.Children.Clear();
+        _explainSlots.Clear();
 
         string headline;
         if (evaluation.RawText is not null)
@@ -257,9 +286,14 @@ public partial class PracticePage : UserControl
                 AddField("Doğal çeviri", evaluation.NaturalTranslation);
             }
 
-            AddField("Hatalar", evaluation.Mistakes.Count == 0
-                ? "Hata bulunmadı."
-                : string.Join("\n", evaluation.Mistakes.Select(m => "• " + m)));
+            if (evaluation.Mistakes.Count == 0)
+            {
+                AddField("Hatalar", "Hata bulunmadı.");
+            }
+            else
+            {
+                AddFeedbackField("Hatalar", evaluation.Mistakes, FeedbackKind.Mistake, bullet: true);
+            }
 
             if (evaluation.MinorIssues.Count > 0)
             {
@@ -271,7 +305,7 @@ public partial class PracticePage : UserControl
 
             if (evaluation.Tip.Length > 0)
             {
-                AddField("İpucu", evaluation.Tip);
+                AddFeedbackField("İpucu", [evaluation.Tip], FeedbackKind.Tip, bullet: false);
             }
 
             if (evaluation.Vocabulary.Count > 0)
@@ -322,6 +356,115 @@ public partial class PracticePage : UserControl
         field.Children.Add(box);
         ResultBody.Children.Add(field);
         _typing.Add(field, t => box.Text = t, value);
+    }
+
+    /// <summary>
+    /// Hata/ipucu satırları: her satırın altında "Ayrıntılı açıkla" bağlantısı ve
+    /// açılınca AI açıklamasının göründüğü panel (günlüğe kaydedilir, ikinci kez AI çağrılmaz).
+    /// </summary>
+    private void AddFeedbackField(string label, IReadOnlyList<string> items, FeedbackKind kind, bool bullet)
+    {
+        var field = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
+        field.Children.Add(new TextBlock { Text = Ui.Upper(label), Style = (Style)FindResource("FieldLabel") });
+        ResultBody.Children.Add(field);
+
+        for (var i = 0; i < items.Count; i++)
+        {
+            var row = new StackPanel { Margin = new Thickness(0, i == 0 ? 0 : 6, 0, 0) };
+            var box = new TextBox
+            {
+                Style = (Style)FindResource("ReadOnlyText"),
+                FontSize = 16,
+                Foreground = Ui.Brush("TextBrush"),
+            };
+            row.Children.Add(box);
+
+            if (_entry is not null)
+            {
+                var slot = CreateExplainSlot(kind, i);
+                row.Children.Add(slot.Button);
+                row.Children.Add(slot.Panel);
+                _explainSlots.Add(slot);
+            }
+
+            field.Children.Add(row);
+            var text = bullet ? "• " + items[i] : items[i];
+            _typing.Add(i == 0 ? field : row, t => box.Text = t, text);
+        }
+    }
+
+    private ExplainSlot CreateExplainSlot(FeedbackKind kind, int index)
+    {
+        var button = new Button
+        {
+            Style = (Style)FindResource("ExplainButton"),
+            Content = ExplainSlot.ShowLabel,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+        var text = new TextBox
+        {
+            Style = (Style)FindResource("ReadOnlyText"),
+            FontSize = 14.5,
+            Foreground = Ui.Brush("TextBrush"),
+        };
+        var panel = new Border { Style = (Style)FindResource("HelpPanel"), Child = text, Margin = new Thickness(0, 4, 0, 6) };
+        var slot = new ExplainSlot(kind, index, button, panel, text);
+        button.Click += async (_, _) => await ToggleExplanationAsync(slot);
+        return slot;
+    }
+
+    /// <summary>Sonuçtaki açıklama yuvaları (testler için).</summary>
+    internal IReadOnlyList<ExplainSlot> ExplainSlots => _explainSlots;
+
+    /// <summary>Açıklamayı ister ya da açıkken gizler/gösterir.</summary>
+    internal async Task ToggleExplanationAsync(ExplainSlot slot)
+    {
+        if (slot.Loaded)
+        {
+            var show = slot.Panel.Visibility != Visibility.Visible;
+            slot.Panel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            slot.Button.Content = show ? ExplainSlot.HideLabel : ExplainSlot.ShowLabel;
+            return;
+        }
+
+        if (_entry is not { } entry || slot.Busy)
+        {
+            return;
+        }
+
+        slot.Busy = true;
+        slot.Button.IsEnabled = false;
+        slot.Button.Content = "Açıklanıyor…";
+        slot.Panel.Visibility = Visibility.Visible;
+        slot.Text.Foreground = Ui.Brush("TextMutedBrush");
+        slot.Text.Text = ". . .";
+
+        ExplainOutcome outcome;
+        try
+        {
+            outcome = await _session.ExplainAsync(entry, slot.Kind, slot.Index);
+        }
+        catch (Exception ex)
+        {
+            outcome = new ExplainOutcome(false, $"Beklenmeyen hata: {ex.Message}");
+        }
+
+        slot.Busy = false;
+        slot.Button.IsEnabled = true;
+        if (outcome.Success)
+        {
+            slot.Loaded = true;
+            slot.Text.Foreground = Ui.Brush("TextBrush");
+            slot.Text.Text = outcome.Text;
+            slot.Button.Content = ExplainSlot.HideLabel;
+            JournalChanged?.Invoke(this, EventArgs.Empty);
+        }
+        else
+        {
+            slot.Text.Foreground = Ui.Brush("WarnBrush");
+            slot.Text.Text = outcome.Text;
+            slot.Button.Content = "Tekrar dene";
+        }
     }
 
     internal static string VocabularyNote(VocabularyMergeResult words)

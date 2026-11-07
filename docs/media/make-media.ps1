@@ -17,11 +17,11 @@ $tmp = Join-Path $env:TEMP 'lingora-media'
 New-Item -ItemType Directory -Force $tmp | Out-Null
 ffmpeg -y -loglevel error -framerate 15 -i "$frames\f%04d.png" -vf $fit -c:v libx264 -crf 18 "$tmp\0.mp4"
 $i = 1
-foreach ($still in '03-sozluk.png', '04-hedef.png', '05-yardim.png') {
+foreach ($still in '07-ders-notu.png', '03-sozluk.png', '04-hedef.png', '05-yardim.png') {
     ffmpeg -y -loglevel error -loop 1 -t 3 -i "$media\$still" -vf "$fit,fade=in:0:8" -c:v libx264 -crf 18 "$tmp\$i.mp4"
     $i++
 }
-$list = (0..3 | ForEach-Object { "file '$tmp\$_.mp4'" }) -join "`n"
+$list = (0..4 | ForEach-Object { "file '$tmp\$_.mp4'" }) -join "`n"
 [IO.File]::WriteAllText("$tmp\list.txt", $list)
 ffmpeg -y -loglevel error -f concat -safe 0 -i "$tmp\list.txt" -c copy -movflags +faststart "$media\lingora-demo.mp4"
 Remove-Item $tmp -Recurse -Force

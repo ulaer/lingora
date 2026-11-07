@@ -6,6 +6,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Lingora.Core;
 using Lingora.Core.Gemini;
+using Lingora.Core.Journal;
 using Lingora.Core.Models;
 using Lingora.Core.Storage;
 using Lingora.Desktop;
@@ -384,6 +385,157 @@ public class DesktopUiTests
         });
     }
 
+    private static void UseMistakesAndTip(Setup s) =>
+        s.Evaluator.Handler = (_, _) => new Evaluation
+        {
+            Score = 72,
+            IsCorrect = false,
+            CorrectedTranslation = "Tom said he didn't know what Mary was supposed to do.",
+            NaturalTranslation = "Tom said he had no idea what Mary was supposed to do.",
+            Mistakes = ["must → was supposed to: dolaylı anlatımda zaman geçmişe kayar", "know → knew: zaman uyumu"],
+            MinorIssues = ["tom → Tom"],
+            Tip = "Dolaylı anlatımda (reported speech) fiil bir zaman geriye gider.",
+        };
+
+    [Fact]
+    public void JournalIconSitsBetweenGoalAndDictionary()
+    {
+        using var s = Create();
+        WpfHost.Run(() =>
+        {
+            var (window, opened) = CreateWindow(s);
+            var bar = (StackPanel)window.JournalButton.Parent;
+            var goal = bar.Children.IndexOf(window.ProgressButton);
+            var journal = bar.Children.IndexOf(window.JournalButton);
+            var dictionary = bar.Children.IndexOf(window.VocabularyButton);
+            Assert.Equal(goal + 1, journal);
+            Assert.Equal(journal + 1, dictionary);
+            Assert.Contains("Günlük", (string)window.JournalButton.ToolTip);
+
+            window.JournalButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            Assert.Equal(["Günlük"], opened);
+            Assert.Same(window.Practice, window.PageHost.Content);
+        });
+    }
+
+    [Fact]
+    public async Task EachMistakeAndTipCanBeExplainedInDetailOnce()
+    {
+        using var s = Create();
+        UseMistakesAndTip(s);
+        await WpfHost.RunAsync(async () =>
+        {
+            var (window, _) = CreateWindow(s);
+            var practice = window.Practice;
+            practice.InputBox.Text = "tom said he didn't know what Mary must do";
+            await practice.SendAsync();
+
+            // 2 hata + 1 ipucu; küçük hatalarda açıklama düğmesi yok.
+            Assert.Equal(3, practice.ExplainSlots.Count);
+            Assert.All(practice.ExplainSlots, slot =>
+            {
+                Assert.Equal(ExplainSlot.ShowLabel, slot.Button.Content);
+                Assert.Equal(Visibility.Collapsed, slot.Panel.Visibility);
+            });
+
+            var second = practice.ExplainSlots[1];
+            await practice.ToggleExplanationAsync(second);
+            Assert.Equal(Visibility.Visible, second.Panel.Visibility);
+            Assert.Contains("know → knew", second.Text.Text);
+            Assert.Equal(ExplainSlot.HideLabel, second.Button.Content);
+            Assert.Equal(FeedbackKind.Mistake, Assert.Single(s.Evaluator.ExplainCalls).Kind);
+
+            var tip = practice.ExplainSlots[2];
+            Assert.Equal(FeedbackKind.Tip, tip.Kind);
+            await practice.ToggleExplanationAsync(tip);
+            WpfHost.Screenshot(window.Root, "16-ayrintili-aciklama", height: 1200);
+
+            // Gizle / tekrar göster: AI yeniden çağrılmaz.
+            await practice.ToggleExplanationAsync(second);
+            Assert.Equal(Visibility.Collapsed, second.Panel.Visibility);
+            await practice.ToggleExplanationAsync(second);
+            Assert.Equal(Visibility.Visible, second.Panel.Visibility);
+            Assert.Equal(2, s.Evaluator.ExplainCalls.Count);
+
+            var saved = Assert.Single(s.Session.Journal.LoadDay(s.Session.Today));
+            Assert.Equal(2, saved.Explanations.Count);
+        });
+    }
+
+    [Fact]
+    public async Task JournalShowsTodayCreatesLessonOnceAndSavesPdf()
+    {
+        using var s = Create();
+        UseMistakesAndTip(s);
+        var pdfPath = s.Dir.File(Path.Combine("disari", "not.pdf"));
+        await WpfHost.RunAsync(async () =>
+        {
+            var (window, _) = CreateWindow(s);
+            var practice = window.Practice;
+            practice.InputBox.Text = "tom said he didn't know what Mary must do";
+            await practice.SendAsync();
+            await practice.ToggleExplanationAsync(practice.ExplainSlots[0]);
+
+            window.OpenJournal();
+            var journal = window.Journal;
+            Assert.Equal(s.Session.Today, journal.SelectedDay);
+            var today = journal.Days[0];
+            Assert.Equal(1, today.Entries);
+            Assert.Equal(2, today.Mistakes);
+            Assert.False(today.HasLesson);
+            Assert.Equal(Visibility.Visible, journal.LessonEmpty.Visibility);
+            Assert.True(journal.CreateLessonButton.IsEnabled);
+            WpfHost.ScreenshotPage(journal, "17-gunluk-bos", 1040, 720);
+
+            await journal.CreateLessonAsync();
+            Assert.NotNull(journal.ShownLesson);
+            Assert.Equal(Visibility.Collapsed, journal.LessonEmpty.Visibility);
+            Assert.Equal(Visibility.Visible, journal.LessonContent.Visibility);
+            Assert.True(journal.Days[0].HasLesson);
+            Assert.Single(s.Evaluator.LessonCalls);
+            WpfHost.ScreenshotPage(journal, "18-ders-notu", 1040, 900);
+
+            // Tekrar açınca kayıttan gelir; AI yeniden çağrılmaz.
+            window.OpenJournal();
+            Assert.NotNull(journal.ShownLesson);
+            await journal.CreateLessonAsync();
+            Assert.Single(s.Evaluator.LessonCalls);
+
+            journal.SavePathPicker = suggested =>
+            {
+                Assert.Equal("Lingora-ders-notu-2026-11-06.pdf", suggested);
+                return pdfPath;
+            };
+            Assert.NotNull(journal.SavePdfButton);
+            journal.SavePdfButton!.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            Assert.True(File.Exists(pdfPath));
+            Assert.Contains("PDF kaydedildi", journal.LessonStatus.Text);
+
+            // Vazgeçilirse bir şey yapılmaz.
+            journal.SavePathPicker = _ => null;
+            Assert.Null(journal.SavePdf());
+
+            journal.TabRecords.IsChecked = true;
+            Assert.Equal(Visibility.Visible, journal.RecordsPanel.Visibility);
+            var records = AllText(journal.RecordsPanel);
+            Assert.Contains("tom said he didn't know", records);
+            WpfHost.ScreenshotPage(journal, "19-gunluk-kayitlar", 1040, 720);
+        });
+    }
+
+    [Fact]
+    public void JournalWithoutEntriesCannotCreateLesson()
+    {
+        using var s = Create();
+        WpfHost.Run(() =>
+        {
+            var (window, _) = CreateWindow(s);
+            window.OpenJournal();
+            Assert.False(window.Journal.CreateLessonButton.IsEnabled);
+            Assert.Contains("kayıt yok", window.Journal.DayStats.Text);
+        });
+    }
+
     private static string AllText(DependencyObject root)
     {
         var parts = new List<string>();
@@ -393,6 +545,9 @@ public class DesktopUiTests
             {
                 case TextBlock block:
                     parts.Add(new System.Windows.Documents.TextRange(block.ContentStart, block.ContentEnd).Text);
+                    return;
+                case TextBox box:
+                    parts.Add(box.Text);
                     return;
                 case DependencyObject d:
                     foreach (var child in LogicalTreeHelper.GetChildren(d))

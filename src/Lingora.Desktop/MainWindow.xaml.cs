@@ -26,6 +26,7 @@ public partial class MainWindow : Window
         Progress = new ProgressPage(session);
         Settings = new SettingsPage(session, gemini);
         Vocabulary = new VocabularyPage(session);
+        Journal = new JournalPage(session);
         PageHost.Content = Practice;
 
         Practice.OpenDataSettingsRequested += (_, _) => OpenSettings(SettingsSection.DataFile);
@@ -56,6 +57,8 @@ public partial class MainWindow : Window
 
     internal VocabularyPage Vocabulary { get; }
 
+    internal JournalPage Journal { get; }
+
     /// <summary>Ek pencereyi gösterir. Testler bunu değiştirip pencereyi ekranda açmadan inceler.</summary>
     internal Func<PageWindow, bool?> ShowDialogHandler { get; set; } = window => window.ShowDialog();
 
@@ -79,6 +82,12 @@ public partial class MainWindow : Window
     {
         Vocabulary.Refresh();
         ShowPage("Sözlük", Vocabulary, 720, 640);
+    }
+
+    internal void OpenJournal()
+    {
+        Journal.Refresh();
+        ShowPage("Günlük", Journal, 1040, 720);
     }
 
     private void ShowPage(string title, UserControl page, double width, double height)
@@ -109,6 +118,8 @@ public partial class MainWindow : Window
     private void OnSettingsClick(object sender, RoutedEventArgs e) => OpenSettings(SettingsSection.ApiKey);
 
     private void OnVocabularyClick(object sender, RoutedEventArgs e) => OpenVocabulary();
+
+    private void OnJournalClick(object sender, RoutedEventArgs e) => OpenJournal();
 
     private void OnMinimizeClick(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 

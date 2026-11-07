@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Lingora.Core.Journal;
 using Lingora.Core.Models;
 
 namespace Lingora.Core.Gemini;
@@ -17,7 +18,7 @@ public interface ITranslationEvaluator
 }
 
 /// <summary>Google AI Studio (Generative Language API) istemcisi.</summary>
-public sealed class GeminiClient : ITranslationEvaluator
+public sealed class GeminiClient : ITranslationEvaluator, IStudyAssistant
 {
     public const string DefaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta";
     private const string ApiKeyHeader = "x-goog-api-key";
@@ -52,18 +53,149 @@ public sealed class GeminiClient : ITranslationEvaluator
             throw new GeminiException("API anahtarı girilmemiş. Ayarlar > API Anahtarı bölümünden ekleyin.");
         }
 
+        var responseBody = await GenerateAsync(PromptBuilder.BuildRequestBody(item, userTranslation), apiKey, model, cancellationToken)
+            .ConfigureAwait(false);
+        return ParseEvaluation(responseBody);
+    }
+
+    /// <summary>Hata veya ipucu satırının ayrıntılı açıklaması (düz metin).</summary>
+    public async Task<string> ExplainAsync(ExplainRequest request, string apiKey, string model, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var responseBody = await GenerateAsync(StudyPrompts.BuildExplainBody(request), apiKey, model, cancellationToken)
+            .ConfigureAwait(false);
+        return ParseExplanation(responseBody);
+    }
+
+    /// <summary>Bir günün kayıtlarından ders notu.</summary>
+    public async Task<LessonNote> CreateLessonAsync(
+        DateOnly date,
+        IReadOnlyList<JournalEntry> entries,
+        string apiKey,
+        string model,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entries);
+        var responseBody = await GenerateAsync(StudyPrompts.BuildLessonBody(date, entries), apiKey, model, cancellationToken)
+            .ConfigureAwait(false);
+        var note = ParseLesson(responseBody);
+        note.Date = date;
+        note.EntryCount = entries.Count;
+        note.Model = AppSettings.NormalizeModelName(model);
+        return note;
+    }
+
+    private async Task<string> GenerateAsync(System.Text.Json.Nodes.JsonObject requestBody, string apiKey, string model, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            throw new GeminiException("API anahtarı girilmemiş. Ayarlar > API Anahtarı bölümünden ekleyin.");
+        }
+
         var modelName = AppSettings.NormalizeModelName(model);
         var url = $"{_baseUrl}/models/{Uri.EscapeDataString(modelName)}:generateContent";
-        var body = PromptBuilder.BuildRequestBody(item, userTranslation).ToJsonString(BodyOptions);
-
         using var request = new HttpRequestMessage(HttpMethod.Post, url)
         {
-            Content = new StringContent(body, Encoding.UTF8, "application/json"),
+            Content = new StringContent(requestBody.ToJsonString(BodyOptions), Encoding.UTF8, "application/json"),
         };
         request.Headers.Add(ApiKeyHeader, apiKey.Trim());
+        return await SendAsync(request, modelName, cancellationToken).ConfigureAwait(false);
+    }
 
-        var responseBody = await SendAsync(request, modelName, cancellationToken).ConfigureAwait(false);
-        return ParseEvaluation(responseBody);
+    internal static string ParseExplanation(string responseBody) => StripCodeFence(ExtractResponseText(responseBody));
+
+    internal static LessonNote ParseLesson(string responseBody)
+    {
+        var json = StripCodeFence(ExtractResponseText(responseBody));
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                throw new GeminiException("Gemini ders notunu beklenen biçimde döndürmedi. Tekrar deneyin.");
+            }
+
+            var note = new LessonNote
+            {
+                Title = ReadString(root, "title"),
+                Summary = ReadString(root, "summary"),
+                Practice = ReadStringArray(root, "practice").ToList(),
+            };
+
+            foreach (var topic in ReadObjects(root, "topics"))
+            {
+                var title = ReadString(topic, "title");
+                var explanation = ReadString(topic, "explanation");
+                if (title.Length > 0 || explanation.Length > 0)
+                {
+                    note.Topics.Add(new LessonTopic { Title = title, Explanation = explanation, Examples = ReadStringArray(topic, "examples").ToList() });
+                }
+            }
+
+            foreach (var mistake in ReadObjects(root, "mistakes"))
+            {
+                var wrong = ReadString(mistake, "wrong");
+                var right = ReadString(mistake, "right");
+                if (wrong.Length > 0 || right.Length > 0)
+                {
+                    note.Mistakes.Add(new LessonMistake { Wrong = wrong, Right = right, Why = ReadString(mistake, "why") });
+                }
+            }
+
+            if (note.Title.Length == 0 && note.Topics.Count == 0)
+            {
+                throw new GeminiException("Gemini boş bir ders notu döndürdü. Tekrar deneyin.");
+            }
+
+            return note;
+        }
+        catch (JsonException ex)
+        {
+            throw new GeminiException("Gemini ders notu okunamadı (geçersiz JSON). Tekrar deneyin.", inner: ex);
+        }
+    }
+
+    private static IEnumerable<JsonElement> ReadObjects(JsonElement root, string name) =>
+        root.TryGetProperty(name, out var list) && list.ValueKind == JsonValueKind.Array
+            ? list.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.Object).ToArray()
+            : Array.Empty<JsonElement>();
+
+    /// <summary>generateContent yanıtından modelin metnini çıkarır; boş/engelli yanıtta anlaşılır hata verir.</summary>
+    internal static string ExtractResponseText(string responseBody)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(responseBody);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("promptFeedback", out var feedback)
+                && feedback.TryGetProperty("blockReason", out var blockReason))
+            {
+                throw new GeminiException($"Gemini isteği engelledi ({blockReason.GetString()}).");
+            }
+
+            if (!root.TryGetProperty("candidates", out var candidates)
+                || candidates.ValueKind != JsonValueKind.Array
+                || candidates.GetArrayLength() == 0)
+            {
+                throw new GeminiException("Gemini boş yanıt döndürdü. Tekrar deneyin.");
+            }
+
+            var candidate = candidates[0];
+            var finishReason = candidate.TryGetProperty("finishReason", out var fr) ? fr.GetString() : null;
+            var text = ExtractText(candidate);
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                throw new GeminiException($"Gemini metin döndürmedi (bitiş nedeni: {finishReason ?? "bilinmiyor"}). Tekrar deneyin.");
+            }
+
+            return text;
+        }
+        catch (JsonException ex)
+        {
+            throw new GeminiException("Gemini yanıtı okunamadı (geçersiz JSON).", inner: ex);
+        }
     }
 
     /// <summary>Anahtarı doğrular ve generateContent destekleyen modelleri listeler.</summary>
@@ -115,43 +247,7 @@ public sealed class GeminiClient : ITranslationEvaluator
     }
 
     /// <summary>generateContent yanıtından değerlendirmeyi çıkarır.</summary>
-    internal static Evaluation ParseEvaluation(string responseBody)
-    {
-        string text;
-        try
-        {
-            using var doc = JsonDocument.Parse(responseBody);
-            var root = doc.RootElement;
-
-            if (root.TryGetProperty("promptFeedback", out var feedback)
-                && feedback.TryGetProperty("blockReason", out var blockReason))
-            {
-                throw new GeminiException($"Gemini isteği engelledi ({blockReason.GetString()}).");
-            }
-
-            if (!root.TryGetProperty("candidates", out var candidates)
-                || candidates.ValueKind != JsonValueKind.Array
-                || candidates.GetArrayLength() == 0)
-            {
-                throw new GeminiException("Gemini boş yanıt döndürdü. Tekrar deneyin.");
-            }
-
-            var candidate = candidates[0];
-            var finishReason = candidate.TryGetProperty("finishReason", out var fr) ? fr.GetString() : null;
-            text = ExtractText(candidate);
-
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                throw new GeminiException($"Gemini metin döndürmedi (bitiş nedeni: {finishReason ?? "bilinmiyor"}). Tekrar deneyin.");
-            }
-        }
-        catch (JsonException ex)
-        {
-            throw new GeminiException("Gemini yanıtı okunamadı (geçersiz JSON).", inner: ex);
-        }
-
-        return ParseEvaluationJson(text);
-    }
+    internal static Evaluation ParseEvaluation(string responseBody) => ParseEvaluationJson(ExtractResponseText(responseBody));
 
     /// <summary>Modelin döndürdüğü JSON metnini değerlendirmeye çevirir; olmazsa ham metni taşır.</summary>
     internal static Evaluation ParseEvaluationJson(string text)

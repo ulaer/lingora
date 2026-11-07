@@ -188,6 +188,35 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <!-- Sonuçtaki hata/ipucu satırlarının altındaki küçük "Ayrıntılı açıkla" bağlantısı -->
+    <Style x:Key="ExplainButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Margin" Value="0,2,0,0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root" Background="Transparent" CornerRadius="6" Padding="0,3,8,3">
+                        <ContentPresenter VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="White" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter Property="Foreground" Value="White" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.6" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="HelpPanel" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource GlassBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
