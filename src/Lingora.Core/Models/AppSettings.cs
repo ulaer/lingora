@@ -9,6 +9,23 @@ public sealed class AppSettings
     /// </summary>
     public const string DefaultModel = "gemini-flash-latest";
 
+    /// <summary>Sesli ders için Gemini metin okuma (TTS) modeli.</summary>
+    public const string DefaultTtsModel = "gemini-3.1-flash-tts-preview";
+
+    /// <summary>Varsayılan ses: sıcak tonlu "Sulafat".</summary>
+    public const string DefaultVoice = "Sulafat";
+
+    /// <summary>Ayarlar'da sunulan Gemini hazır sesleri (ad, Türkçe tanım).</summary>
+    public static readonly IReadOnlyList<(string Name, string Description)> Voices =
+    [
+        ("Sulafat", "Sıcak, sakin öğretmen"),
+        ("Achird", "Samimi, arkadaşça"),
+        ("Charon", "Bilgilendirici, net"),
+        ("Vindemiatrix", "Yumuşak, nazik"),
+        ("Kore", "Kararlı, güçlü"),
+        ("Puck", "Enerjik, neşeli"),
+    ];
+
     public const int DefaultDailyGoal = 20;
     public const int MinDailyGoal = 1;
     public const int MaxDailyGoal = 1000;
@@ -20,6 +37,12 @@ public sealed class AppSettings
     public Difficulty Difficulty { get; set; } = Difficulty.All;
 
     public string Model { get; set; } = DefaultModel;
+
+    /// <summary>Sesli ders seslendirme modeli.</summary>
+    public string TtsModel { get; set; } = DefaultTtsModel;
+
+    /// <summary>Sesli ders sesi (Gemini hazır ses adı).</summary>
+    public string Voice { get; set; } = DefaultVoice;
 
     /// <summary>Cümle sırası. Varsayılan: dosyadaki sırayla (kolaydan zora).</summary>
     public SentenceOrder Order { get; set; } = SentenceOrder.Sequential;
@@ -46,6 +69,8 @@ public sealed class AppSettings
         }
 
         Model = NormalizeModelName(Model);
+        TtsModel = string.IsNullOrWhiteSpace(TtsModel) ? DefaultTtsModel : NormalizeModelName(TtsModel);
+        Voice = string.IsNullOrWhiteSpace(Voice) ? DefaultVoice : Voice.Trim();
 
         if (!Enum.IsDefined(Order))
         {

@@ -92,9 +92,59 @@ internal sealed class FakeHttpHandler : HttpMessageHandler
     }
 }
 
-/// <summary>Sahte değerlendirici: Gemini çağırmadan sonuç, açıklama ve ders notu döndürür.</summary>
-internal sealed class FakeEvaluator : ITranslationEvaluator, IStudyAssistant
+/// <summary>MP3 kodlamadan PCM'i dosyaya yazan sahte kodlayıcı (çekirdek testleri için).</summary>
+internal sealed class FakeAudioEncoder : Lingora.Core.Journal.IAudioEncoder
 {
+    public List<Lingora.Core.Journal.SpeechAudio> Encoded { get; } = new();
+
+    public void EncodeMp3(Lingora.Core.Journal.SpeechAudio audio, string path)
+    {
+        Encoded.Add(audio);
+        File.WriteAllBytes(path, [0xFF, 0xFB, .. audio.Pcm.Take(64)]);
+    }
+}
+
+/// <summary>Sahte değerlendirici: Gemini çağırmadan sonuç, açıklama, ders notu ve ses döndürür.</summary>
+internal sealed class FakeEvaluator : ITranslationEvaluator, IStudyAssistant, ISpeechSynthesizer
+{
+    public Func<DateOnly, IReadOnlyList<Lingora.Core.Journal.JournalEntry>, string> AudioScriptHandler { get; set; } =
+        (_, entries) => "Merhaba! Bugün birlikte günün çevirilerine bakalım.\n\n"
+                        + $"Bugün {entries.Count} cümle çevirdin. \"We set off at dawn.\" yani şafakta yola çıktık.\n\n"
+                        + "Şimdi kısa bir tekrar yapalım. Biraz düşün. Harika, yarın görüşmek üzere!";
+
+    public List<(DateOnly Date, int Entries)> AudioScriptCalls { get; } = new();
+
+    public List<(string Text, string Voice, string Model)> SpeechCalls { get; } = new();
+
+    /// <summary>Her seslendirme çağrısında 0,25 sn'lik 440 Hz ton (24 kHz, 16 bit, tek kanal).</summary>
+    public Func<string, Lingora.Core.Journal.SpeechAudio> SpeechHandler { get; set; } = _ => Tone(0.25);
+
+    public static Lingora.Core.Journal.SpeechAudio Tone(double seconds, int rate = 24000)
+    {
+        var samples = (int)(seconds * rate);
+        var pcm = new byte[samples * 2];
+        for (var i = 0; i < samples; i++)
+        {
+            var value = (short)(Math.Sin(2 * Math.PI * 440 * i / rate) * 8000);
+            pcm[2 * i] = (byte)(value & 0xFF);
+            pcm[(2 * i) + 1] = (byte)((value >> 8) & 0xFF);
+        }
+
+        return new Lingora.Core.Journal.SpeechAudio(pcm, rate);
+    }
+
+    public Task<string> CreateAudioScriptAsync(DateOnly date, IReadOnlyList<Lingora.Core.Journal.JournalEntry> entries, string apiKey, string model, CancellationToken cancellationToken = default)
+    {
+        AudioScriptCalls.Add((date, entries.Count));
+        return Task.FromResult(AudioScriptHandler(date, entries));
+    }
+
+    public Task<Lingora.Core.Journal.SpeechAudio> SynthesizeAsync(string text, string voice, string ttsModel, string apiKey, CancellationToken cancellationToken = default)
+    {
+        SpeechCalls.Add((text, voice, ttsModel));
+        return Task.FromResult(SpeechHandler(text));
+    }
+
     public Func<ExplainRequest, string> ExplainHandler { get; set; } =
         r => $"Ayrıntılı açıklama: {r.Item}\n• Example sentence. (Örnek cümle.)";
 

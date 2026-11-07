@@ -58,6 +58,8 @@
                         <StackPanel Orientation="Horizontal">
                             <RadioButton x:Name="TabLesson" GroupName="JournalTab" Style="{StaticResource SegmentButton}"
                                          Content="Ders notu" IsChecked="True" Checked="OnTabChecked" />
+                            <RadioButton x:Name="TabAudio" GroupName="JournalTab" Style="{StaticResource SegmentButton}"
+                                         Content="Sesli ders" Checked="OnTabChecked" />
                             <RadioButton x:Name="TabRecords" GroupName="JournalTab" Style="{StaticResource SegmentButton}"
                                          Content="Hatalar ve ipuçları" Checked="OnTabChecked" />
                         </StackPanel>
@@ -81,6 +83,54 @@
                         </StackPanel>
                         <TextBlock x:Name="LessonStatus" Style="{StaticResource Body}" Margin="0,14,0,0" Visibility="Collapsed" />
                         <StackPanel x:Name="LessonContent" Visibility="Collapsed" />
+                    </StackPanel>
+
+                    <!-- Sesli ders: yalnızca metin anlatım + MP3 -->
+                    <StackPanel x:Name="AudioPanel" Visibility="Collapsed">
+                        <StackPanel x:Name="AudioEmpty">
+                            <TextBlock x:Name="AudioIntro" Style="{StaticResource Body}" FontSize="15"
+                                       Foreground="{StaticResource TextMutedBrush}" />
+                            <WrapPanel Margin="0,16,0,0">
+                                <Button x:Name="CreateAudioButton" Style="{StaticResource PrimaryButton}"
+                                        Content="Sesli dersi oluştur" Click="OnCreateAudioClick" />
+                            </WrapPanel>
+                        </StackPanel>
+                        <TextBlock x:Name="AudioStatus" Style="{StaticResource Body}" Margin="0,14,0,0" Visibility="Collapsed" />
+
+                        <StackPanel x:Name="AudioContent" Visibility="Collapsed">
+                            <!-- Oynatıcı -->
+                            <Border Background="{StaticResource GlassBrush}" CornerRadius="14" Padding="14,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="PlayButton" Style="{StaticResource PlayButton}" Click="OnPlayClick"
+                                            ToolTip="Dinle">
+                                        <TextBlock x:Name="PlayGlyph" Text="&#xE768;" FontFamily="{StaticResource IconFont}"
+                                                   FontSize="16" Foreground="White" />
+                                    </Button>
+                                    <StackPanel Grid.Column="1" Margin="16,0,16,0" VerticalAlignment="Center">
+                                        <TextBlock x:Name="AudioTitle" FontSize="15" Foreground="White" TextTrimming="CharacterEllipsis" />
+                                        <Grid Margin="0,8,0,0" Height="4">
+                                            <Border Background="#22FFFFFF" CornerRadius="2" />
+                                            <Border x:Name="AudioProgressFill" Background="{StaticResource LogoGradient}" CornerRadius="2"
+                                                    HorizontalAlignment="Left" Width="0" />
+                                        </Grid>
+                                        <TextBlock x:Name="AudioTime" Style="{StaticResource Muted}" FontSize="12" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                    <Button x:Name="SaveMp3Button" Grid.Column="2" Style="{StaticResource SecondaryButton}"
+                                            Content="MP3 olarak kaydet" VerticalAlignment="Center" Click="OnSaveMp3Click" />
+                                </Grid>
+                            </Border>
+
+                            <TextBlock Text="ANLATIM METNİ" Style="{StaticResource SectionLabel}" />
+                            <TextBox x:Name="AudioScriptText" Style="{StaticResource ReadOnlyText}" FontSize="15" />
+                            <TextBlock x:Name="AudioMeta" Style="{StaticResource Muted}" FontSize="12" Margin="0,18,0,6" />
+                            <Button x:Name="RegenerateAudioButton" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Left"
+                                    Margin="0,6,0,6" Visibility="Collapsed" Click="OnRegenerateAudioClick" />
+                        </StackPanel>
                     </StackPanel>
 
                     <!-- Günün kayıtları -->

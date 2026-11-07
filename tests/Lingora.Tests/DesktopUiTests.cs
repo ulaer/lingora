@@ -524,6 +524,115 @@ public class DesktopUiTests
     }
 
     [Fact]
+    public async Task ExplanationIsPlainTextLikeTheAnswerAndTypesOut()
+    {
+        using var s = Create();
+        UseMistakesAndTip(s);
+        await WpfHost.RunAsync(async () =>
+        {
+            var (window, _) = CreateWindow(s);
+            var practice = window.Practice;
+            practice.InputBox.Text = "tom said he didn't know what Mary must do";
+            await practice.SendAsync();
+
+            var slot = practice.ExplainSlots[0];
+
+            // Kutu/zemin yok: yalnızca şeffaf bir yazı alanı.
+            Assert.IsType<StackPanel>(slot.Panel);
+            Assert.Null(((StackPanel)slot.Panel).Background);
+            Assert.Equal(Colors.Transparent, ((SolidColorBrush)slot.Text.Background).Color);
+
+            // Animasyon açıkken metin harf harf gelir.
+            practice.AnimateResults = true;
+            await practice.ToggleExplanationAsync(slot);
+            Assert.True(slot.Typing.IsRunning);
+            Assert.True(slot.Text.Text.Length < s.Evaluator.ExplainHandler(s.Evaluator.ExplainCalls[0]).Length);
+            while (slot.Typing.StepOnce())
+            {
+            }
+
+            Assert.StartsWith("Ayrıntılı açıklama: must", slot.Text.Text);
+            Assert.Equal(Visibility.Visible, slot.Panel.Visibility);
+            WpfHost.Screenshot(window.Root, "20-aciklama-seffaf", height: 1000);
+        });
+    }
+
+    [Fact]
+    public async Task JournalOffersRegenerationAfterNewSentencesAndBuildsAudioLesson()
+    {
+        using var s = Create();
+        UseMistakesAndTip(s);
+        var mp3Copy = s.Dir.File(Path.Combine("disari", "ders.mp3"));
+        await WpfHost.RunAsync(async () =>
+        {
+            var (window, _) = CreateWindow(s);
+            var practice = window.Practice;
+            practice.InputBox.Text = "tom said he didn't know what Mary must do";
+            await practice.SendAsync();
+
+            window.OpenJournal();
+            var journal = window.Journal;
+            await journal.CreateLessonAsync();
+            Assert.Null(journal.RegenerateLessonButton);
+
+            // Sesli ders: metin + gerçek MP3 (Media Foundation).
+            journal.TabAudio.IsChecked = true;
+            Assert.Equal(Visibility.Visible, journal.AudioPanel.Visibility);
+            Assert.Equal(Visibility.Collapsed, journal.LessonPanel.Visibility);
+            Assert.True(journal.CreateAudioButton.IsEnabled);
+            await journal.CreateAudioAsync();
+            Assert.NotNull(journal.ShownAudio);
+            Assert.Equal(Visibility.Visible, journal.AudioContent.Visibility);
+            Assert.Contains("Bugün 1 cümle", journal.AudioScriptText.Text);
+            Assert.Equal(Visibility.Collapsed, journal.RegenerateAudioButton.Visibility);
+            Assert.True(new FileInfo(journal.ShownAudioPath!).Length > 1000);
+            Assert.True(journal.Days[0].HasAudio);
+            WpfHost.ScreenshotPage(journal, "21-sesli-ders", 1040, 760);
+
+            journal.SaveMp3PathPicker = name =>
+            {
+                Assert.Equal("Lingora-sesli-ders-2026-11-06.mp3", name);
+                return mp3Copy;
+            };
+            journal.SaveMp3Button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            Assert.True(File.Exists(mp3Copy));
+            Assert.Contains("MP3 kaydedildi", journal.AudioStatus.Text);
+
+            // Aynı gün yeni çeviri → ders notu ve sesli ders yenilenebilir.
+            await practice.SendAsync();
+            practice.InputBox.Text = "Tom said he knew";
+            await practice.SendAsync();
+            window.OpenJournal();
+            Assert.NotNull(journal.RegenerateLessonButton);
+            Assert.Contains("1 yeni çeviri", (string)journal.RegenerateLessonButton!.Content);
+            Assert.Equal(Visibility.Visible, journal.RegenerateAudioButton.Visibility);
+
+            await journal.CreateLessonAsync(regenerate: true);
+            await journal.CreateAudioAsync(regenerate: true);
+            Assert.Equal(2, s.Evaluator.LessonCalls.Count);
+            Assert.Equal(2, s.Evaluator.AudioScriptCalls.Count);
+            Assert.Null(journal.RegenerateLessonButton);
+            Assert.Equal(Visibility.Collapsed, journal.RegenerateAudioButton.Visibility);
+            Assert.Equal(2, journal.ShownAudio!.EntryCount);
+        });
+    }
+
+    [Fact]
+    public void Mp3EncoderWritesPlayableMp3From24kHzSpeech()
+    {
+        using var dir = new TempDir();
+        var path = dir.File("ses.mp3");
+
+        new Mp3Encoder().EncodeMp3(FakeEvaluator.Tone(1.5), path);
+
+        var bytes = File.ReadAllBytes(path);
+        Assert.True(bytes.Length > 4000);
+        var isId3 = bytes[0] == 'I' && bytes[1] == 'D' && bytes[2] == '3';
+        var isFrame = bytes[0] == 0xFF && (bytes[1] & 0xE0) == 0xE0;
+        Assert.True(isId3 || isFrame, "MP3 başlığı bekleniyordu.");
+    }
+
+    [Fact]
     public void JournalWithoutEntriesCannotCreateLesson()
     {
         using var s = Create();

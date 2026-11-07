@@ -82,7 +82,7 @@ public sealed class JournalEntry
 }
 
 /// <summary>Günlük listesindeki bir günün özeti.</summary>
-public sealed record JournalDay(DateOnly Date, int Entries, int Mistakes, int Tips, int Explanations, bool HasLesson);
+public sealed record JournalDay(DateOnly Date, int Entries, int Mistakes, int Tips, int Explanations, bool HasLesson, bool HasAudio = false);
 
 public sealed class LessonTopic
 {

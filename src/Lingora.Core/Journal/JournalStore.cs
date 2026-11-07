@@ -108,7 +108,8 @@ public sealed class JournalStore
             entries.Sum(e => e.Mistakes.Count),
             entries.Count(e => e.Tip.Length > 0),
             entries.Sum(e => e.Explanations.Count),
-            File.Exists(LessonStore.FileFor(_lessonDirectory, date)));
+            File.Exists(LessonStore.FileFor(_lessonDirectory, date)),
+            new AudioLessonStore(_lessonDirectory).Load(date) is not null);
     }
 
     internal static string FileName(DateOnly day) => day.ToString(DateFormat, CultureInfo.InvariantCulture) + ".json";

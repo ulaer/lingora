@@ -11,8 +11,11 @@ using Lingora.Core.Models;
 namespace Lingora.Desktop.Pages;
 
 /// <summary>Sonuçtaki bir hata/ipucu satırının "Ayrıntılı açıkla" bağlantısı ve açıklama paneli.</summary>
-internal sealed class ExplainSlot(FeedbackKind kind, int index, Button button, Border panel, TextBox text)
+internal sealed class ExplainSlot(FeedbackKind kind, int index, Button button, Panel panel, TextBox text)
 {
+    /// <summary>Açıklamanın harf harf yazılması (ilk cevaptaki gibi).</summary>
+    public Typewriter Typing { get; } = new(TimeSpan.FromMilliseconds(15), charsPerTick: 3);
+
     public const string ShowLabel = "Ayrıntılı açıkla  ›";
     public const string HideLabel = "Açıklamayı gizle  ˄";
 
@@ -22,7 +25,7 @@ internal sealed class ExplainSlot(FeedbackKind kind, int index, Button button, B
 
     public Button Button { get; } = button;
 
-    public Border Panel { get; } = panel;
+    public Panel Panel { get; } = panel;
 
     public TextBox Text { get; } = text;
 
@@ -401,13 +404,15 @@ public partial class PracticePage : UserControl
             Content = ExplainSlot.ShowLabel,
             HorizontalAlignment = HorizontalAlignment.Left,
         };
+        // İlk cevap gibi: zemin ve çerçeve yok, yalnızca yazı.
         var text = new TextBox
         {
             Style = (Style)FindResource("ReadOnlyText"),
-            FontSize = 14.5,
+            FontSize = 15.5,
             Foreground = Ui.Brush("TextBrush"),
         };
-        var panel = new Border { Style = (Style)FindResource("HelpPanel"), Child = text, Margin = new Thickness(0, 4, 0, 6) };
+        var panel = new StackPanel { Margin = new Thickness(0, 4, 0, 10), Visibility = Visibility.Collapsed };
+        panel.Children.Add(text);
         var slot = new ExplainSlot(kind, index, button, panel, text);
         button.Click += async (_, _) => await ToggleExplanationAsync(slot);
         return slot;
@@ -421,6 +426,7 @@ public partial class PracticePage : UserControl
     {
         if (slot.Loaded)
         {
+            slot.Typing.Complete();
             var show = slot.Panel.Visibility != Visibility.Visible;
             slot.Panel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
             slot.Button.Content = show ? ExplainSlot.HideLabel : ExplainSlot.ShowLabel;
@@ -437,7 +443,14 @@ public partial class PracticePage : UserControl
         slot.Button.Content = "Açıklanıyor…";
         slot.Panel.Visibility = Visibility.Visible;
         slot.Text.Foreground = Ui.Brush("TextMutedBrush");
-        slot.Text.Text = ". . .";
+        slot.Text.FontSize = 22;
+
+        // Beklerken ana ekrandaki gibi yalnızca dönen noktalar.
+        var frame = 0;
+        slot.Text.Text = ThinkingFrames[0];
+        var dots = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
+        dots.Tick += (_, _) => slot.Text.Text = ThinkingFrames[++frame % ThinkingFrames.Length];
+        dots.Start();
 
         ExplainOutcome outcome;
         try
@@ -448,15 +461,29 @@ public partial class PracticePage : UserControl
         {
             outcome = new ExplainOutcome(false, $"Beklenmeyen hata: {ex.Message}");
         }
+        finally
+        {
+            dots.Stop();
+        }
 
         slot.Busy = false;
         slot.Button.IsEnabled = true;
+        slot.Text.FontSize = 15.5;
         if (outcome.Success)
         {
             slot.Loaded = true;
             slot.Text.Foreground = Ui.Brush("TextBrush");
-            slot.Text.Text = outcome.Text;
             slot.Button.Content = ExplainSlot.HideLabel;
+            slot.Typing.Add(slot.Panel, t => slot.Text.Text = t, outcome.Text);
+            if (AnimateResults)
+            {
+                slot.Typing.Start();
+            }
+            else
+            {
+                slot.Typing.Complete();
+            }
+
             JournalChanged?.Invoke(this, EventArgs.Empty);
         }
         else

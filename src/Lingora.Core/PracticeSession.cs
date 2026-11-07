@@ -39,6 +39,9 @@ public sealed record ExplainOutcome(bool Success, string Text, bool FromCache = 
 /// <summary>Ders notu sonucu. <paramref name="FromCache"/>: daha önce üretilmişti, AI çağrılmadı.</summary>
 public sealed record LessonOutcome(bool Success, LessonNote? Note, string? Error = null, bool FromCache = false);
 
+/// <summary>Sesli ders sonucu. <paramref name="AudioPath"/>: MP3 dosyası.</summary>
+public sealed record AudioLessonOutcome(bool Success, AudioLesson? Lesson, string? AudioPath, string? Error = null, bool FromCache = false);
+
 /// <summary>
 /// Ana ekranın tüm akışı: cümle seç → çeviriyi gönder → Gemini ile değerlendir → kaydet
 /// (ilerleme + sözlük). Arayüzden bağımsızdır; WPF katmanı yalnızca bunu çağırır.
@@ -51,6 +54,7 @@ public sealed class PracticeSession
     private readonly ProgressStore _progressStore;
     private readonly ITranslationEvaluator _evaluator;
     private readonly IStudyAssistant? _assistant;
+    private readonly ISpeechSynthesizer? _speech;
     private readonly TimeProvider _time;
     private readonly Random? _random;
     private readonly List<AttemptRecord> _attempts;
@@ -62,11 +66,13 @@ public sealed class PracticeSession
         TimeProvider? time = null,
         ApiKeyStore? apiKeyStore = null,
         Random? random = null,
-        IStudyAssistant? assistant = null)
+        IStudyAssistant? assistant = null,
+        ISpeechSynthesizer? speech = null)
     {
         _paths = paths ?? throw new ArgumentNullException(nameof(paths));
         _evaluator = evaluator ?? throw new ArgumentNullException(nameof(evaluator));
         _assistant = assistant ?? evaluator as IStudyAssistant;
+        _speech = speech ?? evaluator as ISpeechSynthesizer;
         _time = time ?? TimeProvider.System;
         _apiKeyStore = apiKeyStore ?? new ApiKeyStore();
         _random = random;
@@ -94,6 +100,7 @@ public sealed class PracticeSession
 
         Journal = new JournalStore(paths.JournalDirectory, paths.LessonsDirectory, _time.LocalTimeZone);
         Lessons = new LessonStore(paths.LessonsDirectory);
+        AudioLessons = new AudioLessonStore(paths.LessonsDirectory);
 
         Corpus = SentenceCorpus.Empty;
         _picker = new SentencePicker(Corpus, _random);
@@ -106,6 +113,119 @@ public sealed class PracticeSession
 
     /// <summary>AI ile bir kez üretilip saklanan günlük ders notları.</summary>
     public LessonStore Lessons { get; }
+
+    /// <summary>Günün kayıtlarından üretilen sesli dersler (metin + MP3).</summary>
+    public AudioLessonStore AudioLessons { get; }
+
+    /// <summary>
+    /// Günün sesli dersi: kayıttan açılır; yoksa (ya da <paramref name="regenerate"/> ve o gün yeni çeviri varsa)
+    /// AI önce yalnızca metin bir anlatım yazar, sonra metin parça parça seslendirilip MP3'e kaydedilir.
+    /// </summary>
+    public async Task<AudioLessonOutcome> GetOrCreateAudioLessonAsync(
+        DateOnly date,
+        IAudioEncoder encoder,
+        bool regenerate = false,
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(encoder);
+        var saved = AudioLessons.Load(date);
+        if (saved is not null && !regenerate)
+        {
+            return new AudioLessonOutcome(true, saved, AudioLessons.AudioFile(date), FromCache: true);
+        }
+
+        var entries = Journal.LoadDay(date);
+        if (saved is not null && entries.Count <= saved.EntryCount)
+        {
+            return new AudioLessonOutcome(true, saved, AudioLessons.AudioFile(date), FromCache: true);
+        }
+
+        if (entries.Count == 0)
+        {
+            return new AudioLessonOutcome(false, null, null, "Bu gün için günlük kaydı yok; sesli ders üretilemez.");
+        }
+
+        if (_assistant is null || _speech is null)
+        {
+            return new AudioLessonOutcome(false, null, null, "Sesli ders bu yapılandırmada kullanılamıyor.");
+        }
+
+        var key = GetApiKey();
+        if (!key.HasKey)
+        {
+            return new AudioLessonOutcome(false, null, null, key.Error ?? "API anahtarı girilmemiş. Ayarlar > API Anahtarı menüsünden ekleyin.");
+        }
+
+        string? temp = null;
+        try
+        {
+            progress?.Report("Ders anlatımı yazılıyor");
+            var script = (await _assistant.CreateAudioScriptAsync(date, entries, key.Key!, Settings.Model, cancellationToken).ConfigureAwait(false)).Trim();
+            if (script.Length == 0)
+            {
+                return new AudioLessonOutcome(false, null, null, "Gemini boş bir anlatım döndürdü. Tekrar deneyin.");
+            }
+
+            var chunks = SpeechChunker.Split(script);
+            var pcm = new MemoryStream();
+            var sampleRate = 0;
+            for (var i = 0; i < chunks.Count; i++)
+            {
+                progress?.Report(chunks.Count == 1 ? "Seslendiriliyor" : $"Seslendiriliyor ({i + 1}/{chunks.Count})");
+                var audio = await _speech.SynthesizeAsync(chunks[i], Settings.Voice, Settings.TtsModel, key.Key!, cancellationToken).ConfigureAwait(false);
+                if (sampleRate != 0 && audio.SampleRate != sampleRate)
+                {
+                    throw new GeminiException("Seslendirme parçaları farklı biçimde geldi. Tekrar deneyin.");
+                }
+
+                sampleRate = audio.SampleRate;
+                pcm.Write(audio.Pcm);
+
+                // Parçalar arasında yarım saniyelik sessizlik.
+                pcm.Write(new byte[sampleRate]);
+            }
+
+            progress?.Report("MP3 kaydediliyor");
+            var speech = new SpeechAudio(pcm.ToArray(), sampleRate);
+            temp = AudioLessons.NewTempMp3Path(date);
+            encoder.EncodeMp3(speech, temp);
+
+            var lesson = new AudioLesson
+            {
+                Date = date,
+                Script = script,
+                EntryCount = entries.Count,
+                Voice = Settings.Voice,
+                TtsModel = Settings.TtsModel,
+                Model = Settings.Model,
+                DurationSeconds = Math.Round(speech.DurationSeconds, 1),
+                CreatedAt = _time.GetLocalNow(),
+            };
+            AudioLessons.Save(lesson, temp);
+            temp = null;
+            return new AudioLessonOutcome(true, lesson, AudioLessons.AudioFile(date));
+        }
+        catch (GeminiException ex)
+        {
+            return new AudioLessonOutcome(false, null, null, ex.Message);
+        }
+        catch (OperationCanceledException)
+        {
+            return new AudioLessonOutcome(false, null, null, "İşlem iptal edildi.");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or NotSupportedException)
+        {
+            return new AudioLessonOutcome(false, null, null, "MP3 kaydedilemedi: " + ex.Message);
+        }
+        finally
+        {
+            if (temp is not null && File.Exists(temp))
+            {
+                File.Delete(temp);
+            }
+        }
+    }
 
     /// <summary>Hata veya ipucu satırını ayrıntılı açıklatır; daha önce açıklandıysa kayıttan döner.</summary>
     public async Task<ExplainOutcome> ExplainAsync(JournalEntry entry, FeedbackKind kind, int index, CancellationToken cancellationToken = default)
@@ -162,16 +282,24 @@ public sealed class PracticeSession
 
     /// <summary>
     /// Günün ders notu: daha önce üretildiyse dosyadan okunur (AI çağrılmaz);
-    /// yoksa o günün günlük kayıtlarından AI ile bir kez üretilip saklanır.
+    /// yoksa o günün günlük kayıtlarından AI ile üretilip saklanır.
+    /// <paramref name="regenerate"/>: not üretildikten sonra o gün yeni çeviri yapıldıysa notu yeniden üretir
+    /// (yeni kayıt yoksa mevcut not döner, AI çağrılmaz).
     /// </summary>
-    public async Task<LessonOutcome> GetOrCreateLessonAsync(DateOnly date, CancellationToken cancellationToken = default)
+    public async Task<LessonOutcome> GetOrCreateLessonAsync(DateOnly date, bool regenerate = false, CancellationToken cancellationToken = default)
     {
-        if (Lessons.Load(date) is { } saved)
+        var saved = Lessons.Load(date);
+        if (saved is not null && !regenerate)
         {
             return new LessonOutcome(true, saved, FromCache: true);
         }
 
         var entries = Journal.LoadDay(date);
+        if (saved is not null && entries.Count <= saved.EntryCount)
+        {
+            return new LessonOutcome(true, saved, FromCache: true);
+        }
+
         if (entries.Count == 0)
         {
             return new LessonOutcome(false, null, "Bu gün için günlük kaydı yok; ders notu üretilemez.");
@@ -333,6 +461,15 @@ public sealed class PracticeSession
         {
             ShowCurrentPosition();
         }
+    }
+
+    /// <summary>Sesli ders sesi ve seslendirme modeli.</summary>
+    public void UpdateSpeechSettings(string voice, string ttsModel)
+    {
+        Settings.Voice = voice;
+        Settings.TtsModel = ttsModel;
+        Settings.Normalize();
+        SaveSettings();
     }
 
     private PracticeItem? ShowInOrder(int start)

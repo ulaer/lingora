@@ -140,6 +140,13 @@
                     <TextBox x:Name="ModelBox" />
                     <TextBlock x:Name="ModelHint" Style="{StaticResource Muted}" Margin="0,8,0,0" />
 
+                    <TextBlock Style="{StaticResource FieldCaption}" Text="SESLİ DERS SESİ" />
+                    <StackPanel x:Name="VoiceOptions" />
+
+                    <TextBlock Style="{StaticResource FieldCaption}" Text="SESLENDİRME MODELİ" />
+                    <TextBox x:Name="TtsModelBox" />
+                    <TextBlock x:Name="TtsModelHint" Style="{StaticResource Muted}" Margin="0,8,0,0" />
+
                     <WrapPanel Margin="0,18,0,0">
                         <Button x:Name="SaveGeneralButton" Style="{StaticResource PrimaryButton}" Content="Kaydet" Click="OnSaveGeneral" />
                     </WrapPanel>

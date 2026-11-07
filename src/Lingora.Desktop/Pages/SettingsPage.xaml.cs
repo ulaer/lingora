@@ -27,6 +27,7 @@ public partial class SettingsPage : UserControl
     private readonly PracticeSession _session;
     private readonly GeminiClient _gemini;
     private readonly Dictionary<Difficulty, RadioButton> _difficultyButtons = new();
+    private readonly Dictionary<string, RadioButton> _voiceButtons = new();
 
     public SettingsPage(PracticeSession session, GeminiClient gemini)
     {
@@ -46,7 +47,24 @@ public partial class SettingsPage : UserControl
             DifficultyOptions.Children.Add(option);
         }
 
-        GoalHint.Text = $"cümle / gün  ({AppSettings.MinDailyGoal}–{AppSettings.MaxDailyGoal})";
+        foreach (var (name, description) in AppSettings.Voices)
+        {
+            var option = new RadioButton
+            {
+                GroupName = "Voice",
+                Content = $"{name}  ·  {description}",
+                Tag = name,
+                Style = (Style)FindResource("Option"),
+            };
+            _voiceButtons[name] = option;
+            VoiceOptions.Children.Add(option);
+        }
+
+        TtsModelHint.Text =
+            $"Varsayılan: {AppSettings.DefaultTtsModel}. Sesli ders önce metin olarak yazılır, sonra bu modelle seslendirilip MP3'e kaydedilir. "
+            + "Seslendirmenin ücretsiz kotası sınırlıdır; hata alırsan Bağlantıyı test et listesindeki bir 'tts' modelini yaz.";
+
+        GoalHint.Text =$"cümle / gün  ({AppSettings.MinDailyGoal}–{AppSettings.MaxDailyGoal})";
         ModelHint.Text =
             $"Varsayılan: {AppSettings.DefaultModel} (her zaman güncel Flash modeli). "
             + "Not: 'gemini-1.5-flash' Google tarafından kullanımdan kaldırıldı. "
@@ -167,6 +185,12 @@ public partial class SettingsPage : UserControl
             button.IsChecked = difficulty == settings.Difficulty;
         }
 
+        foreach (var (name, button) in _voiceButtons)
+        {
+            button.IsChecked = name == settings.Voice;
+        }
+
+        TtsModelBox.Text = settings.TtsModel;
         OrderSequential.IsChecked = settings.Order == SentenceOrder.Sequential;
         OrderRandom.IsChecked = settings.Order == SentenceOrder.Random;
         UpdatePositionInfo();
@@ -391,7 +415,7 @@ public partial class SettingsPage : UserControl
 
     // ---------- Genel ----------
 
-    internal void SaveGeneral(string goalText, Difficulty difficulty, string model, SentenceOrder? order = null)
+    internal void SaveGeneral(string goalText, Difficulty difficulty, string model, SentenceOrder? order = null, string? voice = null, string? ttsModel = null)
     {
         if (!int.TryParse(goalText?.Trim(), out var goal)
             || goal < AppSettings.MinDailyGoal
@@ -407,6 +431,11 @@ public partial class SettingsPage : UserControl
         }
 
         _session.UpdateGeneralSettings(goal, difficulty, model);
+        if (voice is not null || ttsModel is not null)
+        {
+            _session.UpdateSpeechSettings(voice ?? _session.Settings.Voice, ttsModel ?? _session.Settings.TtsModel);
+        }
+
         Refresh();
         SetStatus(GeneralStatus, _session.Notice ?? "Ayarlar kaydedildi.", isWarning: false);
         SessionChanged?.Invoke(this, EventArgs.Empty);
@@ -416,7 +445,8 @@ public partial class SettingsPage : UserControl
     {
         var difficulty = _difficultyButtons.FirstOrDefault(p => p.Value.IsChecked == true).Key;
         var order = OrderRandom.IsChecked == true ? SentenceOrder.Random : SentenceOrder.Sequential;
-        SaveGeneral(GoalBox.Text, difficulty, ModelBox.Text, order);
+        var voice = _voiceButtons.FirstOrDefault(p => p.Value.IsChecked == true).Key;
+        SaveGeneral(GoalBox.Text, difficulty, ModelBox.Text, order, voice, TtsModelBox.Text);
     }
 
     // ---------- Sistem kontrolü ----------

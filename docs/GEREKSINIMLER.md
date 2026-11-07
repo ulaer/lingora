@@ -33,6 +33,7 @@ geri gelir. İlerleme günlük olarak kaydedilir.
 | R17 | Zemin daha şık/modern (gece mavisi + yumuşak mavi/mor ışık); Windows'un göze batan başlık çubuğu yok, küçült/büyüt/kapat üst çubukta sade ikonlar; masaüstü kısayolu | `Theme.xaml` (`BgGradient` DrawingBrush, `CaptionButton`), `PageWindow.cs` (`WindowFrame`), `MainWindow.xaml` | `DesktopUiTests.MainWindowShows...`, `DesktopUiTests.PageWindowHasOwnSubtleCaption...` |
 | R18 | GitHub'a hazır: kurumsal ad **Lingora** (exe, pencere, ad alanları, ürün bilgileri), depoda API anahtarı ve TXT yok; API ve Veri Dosyası sayfalarında "Nasıl yapılır?" yardımı (ilk kurulumda açık gelir); eski veri klasörü taşınır; README, demo GIF/MP4, LinkedIn metni | `Directory.Build.props`, `.gitignore`, `Core/HelpTopics.cs`, `SettingsPage`, `AppPaths.MigrateFrom`, `README.md`, `docs/media/`, `docs/LINKEDIN.md` | `HelpTopicsTests`, `LegacyDataMigrationTests`, `DesktopUiTests.FirstRunSettingsShowHelp...`, `MediaCapture` |
 | R19 | AI destek: (a) sonuçtaki her hata ve ipucu satırı için istenirse ayrıntılı açıklama; (b) her günün hataları, ipuçları ve açıklamaları günlüğe kaydedilir; (c) her gün için AI ders notu bir kez üretilir, sonra kayıttan açılır, PDF olarak kaydedilebilir; (d) Günlük, üst çubukta Hedef ile Sözlük arasında ikon butonla açılır | `Core/Journal/*` (JournalStore, LessonStore, LessonPdfExporter), `PromptBuilder` (Explain/Lesson), `GeminiClient : IStudyAssistant`, `PracticeSession.ExplainAsync/GetOrCreateLessonAsync`, `PracticePage`, `Pages/JournalPage`, `MainWindow` | `JournalStoreTests`, `StudyAssistantSessionTests`, `StudyAssistantGeminiTests`, `LessonPdfTests`, `JournalUiTests` |
+| R20 | (a) Ayrıntılı açıklama ilk cevap gibi kutusuz/şeffaf ve harf harf yazılarak gelir; (b) ders notu oluşturulduktan sonra o gün yeni çeviri yapıldıysa yeniden oluşturulabilir; (c) aynı günlük kayıtlardan yalnızca metin bir sesli ders anlatımı üretilir, uygun öğretmen üslubuyla seslendirilir ve MP3 olarak kaydedilir | `PracticePage` (ExplainSlot + Typewriter), `PracticeSession.GetOrCreateLessonAsync(regenerate)`, `GetOrCreateAudioLessonAsync`, `StudyPrompts` (AudioScript, SpeechStyle, TTS gövdesi), `GeminiClient.SynthesizeAsync`, `AudioLessonStore`, `SpeechChunker`, `Desktop/Mp3Encoder`, `JournalPage` (Sesli ders sekmesi), `SettingsPage` (ses, TTS modeli) | `AudioLessonSessionTests`, `SpeechChunkerTests`, `SpeechGeminiTests`, `DesktopUiTests.Explanation...`, `...BuildsAudioLesson`, `Mp3EncoderWritesPlayableMp3...` |
 | R12 | Model: istek Gemini 1.5 Flash idi; bu model Google tarafından kaldırıldı. Model adı ayarlanabilir, varsayılan `gemini-flash-latest` | `Core/Models/AppSettings.cs`, `SettingsPage` (Genel) | `SettingsStoreTests`, `GeminiClientTests` |
 
 ## 3. Tasarım kararları
@@ -133,6 +134,13 @@ Ders notunun bir kez üretilip sonra dosyadan geldiği, açıklamaların ikinci 
 **Doğrulanamayanlar:** Gerçek API anahtarıyla değerlendirme, açıklama ve ders notu üretimi (istek gövdeleri ve
 yanıt ayrıştırma sahte HTTP ile test edildi); fareyle/klavyeyle elle gezinme (akışlar testte sayfa
 metodlarıyla çalıştırıldı); gerçek ekranda büyütülmüş pencerenin kenar payı.
+
+**07.11.2026 – Şeffaf açıklama, notu yenileme, sesli ders (R20)**
+
+`dotnet test`: 203/203 başarılı, 0 uyarı. Gerçek Media Foundation ile 24 kHz PCM'den MP3 üretildi (test). Ekran
+görüntüleri (20-aciklama-seffaf, 21-sesli-ders, docs/media/09) kontrol edildi. TTS modeli adı Google belgelerinden
+(`gemini-3.1-flash-tts-preview`, ham 24 kHz PCM). **Doğrulanamayan:** gerçek anahtarla anlatım/seslendirme ve
+uygulama içinde sesin gerçekten çalınması (testte oynatıcı açılmadı).
 
 Gelecek çalışmalar (kullanıcı notu): ders notu üretiminde iyileştirmeler ve düzeltmeler eklenecek
 (ör. yeniden üretme, gün aralığı için not).

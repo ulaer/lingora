@@ -217,6 +217,32 @@
         </Setter>
     </Style>
 
+    <!-- Sesli dersteki yuvarlak oynat/duraklat düğmesi -->
+    <Style x:Key="PlayButton" TargetType="Button">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Width" Value="46" />
+        <Setter Property="Height" Value="46" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Ellipse x:Name="Disc" Fill="{StaticResource LogoGradient}" />
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0,0,0" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Disc" Property="Opacity" Value="0.85" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Disc" Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="HelpPanel" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource GlassBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />

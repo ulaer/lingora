@@ -46,7 +46,11 @@ src/Lingora.Core/      İş mantığı (arayüzden bağımsız, test edilen kıs
   Lexicon/                  VocabularyBook (vocabulary.json): sözlük, benzer terim birleştirme (NormalizeKey)
   Journal/                  JournalStore (journal/yyyy-MM-dd.json), LessonStore (lessons/…, bir kez üretilir),
                             LessonPdfExporter (MigraDoc, Windows yazı tipleri)
-  Gemini/StudyPrompts.cs    IStudyAssistant: hata/ipucu ayrıntılı açıklama (düz metin) ve ders notu (JSON şema)
+                            AudioLesson/AudioLessonStore (lessons/yyyy-MM-dd.audio.json + .mp3), SpeechChunker,
+                            IAudioEncoder (gerçeği Desktop/Mp3Encoder.cs: NAudio + Media Foundation, 24→44,1 kHz)
+  Gemini/StudyPrompts.cs    IStudyAssistant: ayrıntılı açıklama, ders notu (JSON şema), sesli ders metni;
+                            ISpeechSynthesizer: Gemini TTS (AppSettings.TtsModel/Voice). Not ve sesli ders yalnızca
+                            o gün yeni çeviri yapıldıysa yeniden üretilir (regenerate).
   PracticeSession.cs        Çalışma akışı (cümle seç → gönder → değerlendir → kaydet)
   EvaluationFormatter.cs    Sonucu düz metne çevirir
   Diagnostics.cs            Ayarlar > Sistem Kontrolü çıktısı

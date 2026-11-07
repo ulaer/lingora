@@ -8,7 +8,7 @@ $bg = '0x0B1120'
 
 # 1) README için demo GIF (820 px genişlik, 10 kare/sn; boyut küçük kalsın diye renk az ve titreşimsiz)
 ffmpeg -y -loglevel error -framerate 15 -i "$frames\f%04d.png" `
-    -vf "fps=10,scale=820:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle" `
+    -vf "fps=8,scale=780:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle" `
     -loop 0 "$media\demo.gif"
 
 # 2) LinkedIn için MP4 (1920x1080): demo + sözlük, hedef ve yardım ekranları

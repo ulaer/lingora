@@ -90,13 +90,15 @@ public partial class JournalPage : UserControl
         content.Children.Add(new TextBlock { Text = title, FontSize = 14.5, Foreground = Brushes.White });
         var details = day.Entries == 0
             ? "kayıt yok"
-            : $"{day.Entries} çeviri · {day.Mistakes} hata" + (day.HasLesson ? "  ·  ✓ not" : string.Empty);
+            : $"{day.Entries} çeviri · {day.Mistakes} hata"
+              + (day.HasLesson ? "  ·  ✓ not" : string.Empty)
+              + (day.HasAudio ? "  ·  ♪ ses" : string.Empty);
         content.Children.Add(new TextBlock
         {
             Text = details,
             FontSize = 12,
             Margin = new Thickness(0, 2, 0, 0),
-            Foreground = day.HasLesson ? Ui.Brush("AccentBrush") : Ui.Brush("TextMutedBrush"),
+            Foreground = day.HasLesson || day.HasAudio ? Ui.Brush("AccentBrush") : Ui.Brush("TextMutedBrush"),
         });
 
         var button = new RadioButton
@@ -127,6 +129,7 @@ public partial class JournalPage : UserControl
             : $"{summary.Entries} çeviri  ·  {summary.Mistakes} hata  ·  {summary.Tips} ipucu  ·  {summary.Explanations} ayrıntılı açıklama";
 
         ShowLesson(_session.Lessons.Load(date), summary);
+        ShowAudio(date, summary);
         ShowRecords(_session.Journal.LoadDay(date));
         ContentScroll.ScrollToTop();
     }
@@ -250,7 +253,27 @@ public partial class JournalPage : UserControl
         metaText.FontSize = 12;
         metaText.Margin = new Thickness(0, 18, 0, 6);
         LessonContent.Children.Add(metaText);
+
+        // Not üretildikten sonra o gün yeni çeviri yapıldıysa yeniden üretilebilir.
+        RegenerateLessonButton = null;
+        if (currentEntries > note.EntryCount)
+        {
+            var regenerate = new Button
+            {
+                Style = (Style)FindResource("PrimaryButton"),
+                Content = $"Ders notunu yenile  ({currentEntries - note.EntryCount} yeni çeviriyle)",
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 6, 0, 6),
+                IsEnabled = !IsBusy,
+            };
+            regenerate.Click += async (_, _) => await CreateLessonAsync(regenerate: true);
+            LessonContent.Children.Add(regenerate);
+            RegenerateLessonButton = regenerate;
+        }
     }
+
+    /// <summary>Gösterilen notun "Ders notunu yenile" düğmesi (yeni çeviri yoksa null).</summary>
+    internal Button? RegenerateLessonButton { get; private set; }
 
     /// <summary>Gösterilen notun "PDF olarak kaydet" düğmesi (not yoksa null).</summary>
     internal Button? SavePdfButton { get; private set; }
@@ -266,8 +289,11 @@ public partial class JournalPage : UserControl
         Foreground = brush ?? Ui.Brush("TextBrush"),
     };
 
-    /// <summary>Seçili günün ders notunu üretir; daha önce üretildiyse kayıttan açar.</summary>
-    internal async Task CreateLessonAsync()
+    /// <summary>
+    /// Seçili günün ders notunu üretir; daha önce üretildiyse kayıttan açar.
+    /// <paramref name="regenerate"/>: o gün yeni çeviri yapıldıysa notu yeniden üretir.
+    /// </summary>
+    internal async Task CreateLessonAsync(bool regenerate = false)
     {
         if (IsBusy)
         {
@@ -277,6 +303,11 @@ public partial class JournalPage : UserControl
         var date = SelectedDay;
         IsBusy = true;
         CreateLessonButton.IsEnabled = false;
+        if (RegenerateLessonButton is { } button)
+        {
+            button.IsEnabled = false;
+        }
+
         LessonStatus.Visibility = Visibility.Visible;
         LessonStatus.Foreground = Ui.Brush("TextMutedBrush");
         LessonStatus.Text = "Ders notu hazırlanıyor .";
@@ -285,7 +316,7 @@ public partial class JournalPage : UserControl
         LessonOutcome outcome;
         try
         {
-            outcome = await _session.GetOrCreateLessonAsync(date);
+            outcome = await _session.GetOrCreateLessonAsync(date, regenerate);
         }
         catch (Exception ex)
         {
@@ -316,6 +347,11 @@ public partial class JournalPage : UserControl
         else
         {
             CreateLessonButton.IsEnabled = true;
+            if (RegenerateLessonButton is { } retry)
+            {
+                retry.IsEnabled = true;
+            }
+
             LessonStatus.Foreground = Ui.Brush("WarnBrush");
             LessonStatus.Text = outcome.Error ?? "Ders notu oluşturulamadı.";
         }
@@ -435,15 +471,10 @@ public partial class JournalPage : UserControl
         body.Children.Add(line);
         if (explanation is not null)
         {
+            // Çalışma ekranındaki gibi: kutusuz, soluk ve hafif içeriden yazı.
             var detail = Selectable(explanation.Text, 13.5, Ui.Brush("TextMutedBrush"));
-            body.Children.Add(new Border
-            {
-                Style = (Style)FindResource("HelpPanel"),
-                Visibility = Visibility.Visible,
-                Padding = new Thickness(14, 8, 14, 10),
-                Margin = new Thickness(12, 4, 0, 2),
-                Child = detail,
-            });
+            detail.Margin = new Thickness(14, 4, 0, 4);
+            body.Children.Add(detail);
         }
     }
 
@@ -454,8 +485,265 @@ public partial class JournalPage : UserControl
             return; // InitializeComponent sırasında
         }
 
-        var lesson = TabLesson.IsChecked == true;
-        LessonPanel.Visibility = lesson ? Visibility.Visible : Visibility.Collapsed;
-        RecordsPanel.Visibility = lesson ? Visibility.Collapsed : Visibility.Visible;
+        LessonPanel.Visibility = TabLesson.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        AudioPanel.Visibility = TabAudio.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        RecordsPanel.Visibility = TabRecords.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
     }
+
+    // ---------- Sesli ders ----------
+
+    /// <summary>PCM → MP3 kodlayıcısı (testlerde değiştirilebilir).</summary>
+    internal IAudioEncoder AudioEncoder { get; set; } = new Mp3Encoder();
+
+    /// <summary>MP3 kayıt yolu seçici. Testler bunu değiştirip iletişim kutusu açmadan kaydeder.</summary>
+    internal Func<string, string?> SaveMp3PathPicker { get; set; } = DefaultMp3PathPicker;
+
+    /// <summary>Gösterilen sesli ders (yoksa null).</summary>
+    internal AudioLesson? ShownAudio { get; private set; }
+
+    internal string? ShownAudioPath { get; private set; }
+
+    internal bool IsPlaying { get; private set; }
+
+    private MediaPlayer? _player;
+    private DispatcherTimer? _playTimer;
+
+    private void ShowAudio(DateOnly date, JournalDay summary)
+    {
+        StopPlayback();
+        var lesson = _session.AudioLessons.Load(date);
+        ShownAudio = lesson;
+        ShownAudioPath = lesson is null ? null : _session.AudioLessons.AudioFile(date);
+        AudioStatus.Visibility = Visibility.Collapsed;
+
+        if (lesson is null)
+        {
+            AudioEmpty.Visibility = Visibility.Visible;
+            AudioContent.Visibility = Visibility.Collapsed;
+            CreateAudioButton.IsEnabled = summary.Entries > 0 && !IsBusy;
+            AudioIntro.Text = summary.Entries == 0
+                ? "Bu gün için kayıt yok. Çeviri yaptıkça o günün hatalarından ve ipuçlarından dinleyebileceğin bir sesli ders hazırlanabilir."
+                : $"Bu günün {summary.Entries} çevirisinden, öğretmen anlatımıyla 3-4 dakikalık bir sesli ders hazırlanır: "
+                  + "önce yalnızca metin olarak yazılır, sonra Gemini sesiyle seslendirilip MP3 olarak kaydedilir. "
+                  + "Bir kez oluşturulur; sonra her açışında hemen dinleyebilirsin.";
+            return;
+        }
+
+        AudioEmpty.Visibility = Visibility.Collapsed;
+        AudioContent.Visibility = Visibility.Visible;
+        AudioTitle.Text = "Sesli ders · " + date.ToString("d MMMM yyyy", Ui.Turkish);
+        AudioScriptText.Text = lesson.Script;
+        AudioProgressFill.Width = 0;
+        AudioTime.Text = $"0:00 / {Clock(lesson.DurationSeconds)}";
+        PlayGlyph.Text = "";
+
+        var voice = AppSettingsVoiceLabel(lesson.Voice);
+        AudioMeta.Text = $"{lesson.EntryCount} çeviriden {lesson.CreatedAt.ToLocalTime().ToString("d MMMM HH:mm", Ui.Turkish)} tarihinde oluşturuldu · ses: {voice}"
+                         + (summary.Entries > lesson.EntryCount ? $" · bu dersten sonra {summary.Entries - lesson.EntryCount} yeni çeviri eklendi." : ".");
+        RegenerateAudioButton.Visibility = summary.Entries > lesson.EntryCount ? Visibility.Visible : Visibility.Collapsed;
+        RegenerateAudioButton.Content = $"Sesli dersi yenile  ({summary.Entries - lesson.EntryCount} yeni çeviriyle)";
+        RegenerateAudioButton.IsEnabled = !IsBusy;
+    }
+
+    private static string AppSettingsVoiceLabel(string voice)
+    {
+        var match = Lingora.Core.Models.AppSettings.Voices.FirstOrDefault(v => v.Name == voice);
+        return match.Name is null ? voice : $"{match.Name} ({match.Description.ToLower(Ui.Turkish)})";
+    }
+
+    internal static string Clock(double seconds)
+    {
+        var span = TimeSpan.FromSeconds(Math.Max(0, Math.Round(seconds)));
+        return span.TotalHours >= 1 ? span.ToString(@"h\:mm\:ss") : $"{(int)span.TotalMinutes}:{span.Seconds:00}";
+    }
+
+    /// <summary>Seçili günün sesli dersini üretir; varsa kayıttan açar.</summary>
+    internal async Task CreateAudioAsync(bool regenerate = false)
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        var date = SelectedDay;
+        IsBusy = true;
+        StopPlayback();
+        CreateAudioButton.IsEnabled = false;
+        RegenerateAudioButton.IsEnabled = false;
+        AudioStatus.Visibility = Visibility.Visible;
+        AudioStatus.Foreground = Ui.Brush("TextMutedBrush");
+
+        var step = "Hazırlanıyor";
+        var frame = 0;
+        void Render() => AudioStatus.Text = step + " " + new string('.', frame % 3 + 1);
+        Render();
+        var dots = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
+        dots.Tick += (_, _) =>
+        {
+            frame++;
+            Render();
+        };
+        dots.Start();
+        var progress = new Progress<string>(text =>
+        {
+            step = text;
+            Render();
+        });
+
+        AudioLessonOutcome outcome;
+        try
+        {
+            outcome = await _session.GetOrCreateAudioLessonAsync(date, AudioEncoder, regenerate, progress);
+        }
+        catch (Exception ex)
+        {
+            outcome = new AudioLessonOutcome(false, null, null, $"Beklenmeyen hata: {ex.Message}");
+        }
+        finally
+        {
+            dots.Stop();
+            IsBusy = false;
+        }
+
+        if (outcome.Success)
+        {
+            Refresh();
+            TabAudio.IsChecked = true;
+        }
+        else
+        {
+            CreateAudioButton.IsEnabled = true;
+            RegenerateAudioButton.IsEnabled = true;
+            AudioStatus.Foreground = Ui.Brush("WarnBrush");
+            AudioStatus.Text = outcome.Error ?? "Sesli ders oluşturulamadı.";
+        }
+    }
+
+    private async void OnCreateAudioClick(object sender, RoutedEventArgs e) => await CreateAudioAsync();
+
+    private async void OnRegenerateAudioClick(object sender, RoutedEventArgs e) => await CreateAudioAsync(regenerate: true);
+
+    /// <summary>Oynat / duraklat.</summary>
+    internal void TogglePlayback()
+    {
+        if (ShownAudioPath is null || !File.Exists(ShownAudioPath))
+        {
+            return;
+        }
+
+        if (_player is null)
+        {
+            _player = new MediaPlayer();
+            _player.MediaEnded += (_, _) =>
+            {
+                StopPlayback();
+                UpdatePlaybackUi();
+            };
+            _player.Open(new Uri(ShownAudioPath));
+            _playTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            _playTimer.Tick += (_, _) => UpdatePlaybackUi();
+        }
+
+        if (IsPlaying)
+        {
+            _player.Pause();
+            IsPlaying = false;
+            _playTimer?.Stop();
+        }
+        else
+        {
+            _player.Play();
+            IsPlaying = true;
+            _playTimer?.Start();
+        }
+
+        UpdatePlaybackUi();
+    }
+
+    private void UpdatePlaybackUi()
+    {
+        PlayGlyph.Text = IsPlaying ? "" : "";
+        PlayButton.ToolTip = IsPlaying ? "Duraklat" : "Dinle";
+        if (_player is null || ShownAudio is null)
+        {
+            AudioProgressFill.Width = 0;
+            return;
+        }
+
+        var total = _player.NaturalDuration.HasTimeSpan ? _player.NaturalDuration.TimeSpan.TotalSeconds : ShownAudio.DurationSeconds;
+        var position = _player.Position.TotalSeconds;
+        AudioTime.Text = $"{Clock(position)} / {Clock(total)}";
+        var track = (AudioProgressFill.Parent as FrameworkElement)?.ActualWidth ?? 0;
+        AudioProgressFill.Width = total > 0 ? Math.Clamp(position / total, 0, 1) * track : 0;
+    }
+
+    private void StopPlayback()
+    {
+        _playTimer?.Stop();
+        _playTimer = null;
+        if (_player is not null)
+        {
+            _player.Stop();
+            _player.Close();
+            _player = null;
+        }
+
+        IsPlaying = false;
+    }
+
+    private void OnPlayClick(object sender, RoutedEventArgs e) => TogglePlayback();
+
+    /// <summary>Sesli dersin MP3'ünü seçilen yere kopyalar; yol seçilmezse bir şey yapmaz.</summary>
+    internal string? SaveMp3()
+    {
+        if (ShownAudioPath is null || !File.Exists(ShownAudioPath))
+        {
+            return null;
+        }
+
+        var name = $"Lingora-sesli-ders-{SelectedDay:yyyy-MM-dd}.mp3";
+        var path = SaveMp3PathPicker(name);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        AudioStatus.Visibility = Visibility.Visible;
+        try
+        {
+            if (Path.GetDirectoryName(Path.GetFullPath(path)) is { Length: > 0 } folder)
+            {
+                Directory.CreateDirectory(folder);
+            }
+
+            File.Copy(ShownAudioPath, path, overwrite: true);
+            AudioStatus.Foreground = Ui.Brush("AccentBrush");
+            AudioStatus.Text = "MP3 kaydedildi: " + path;
+            return path;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            AudioStatus.Foreground = Ui.Brush("WarnBrush");
+            AudioStatus.Text = "MP3 kaydedilemedi: " + ex.Message;
+            return null;
+        }
+    }
+
+    private void OnSaveMp3Click(object sender, RoutedEventArgs e) => SaveMp3();
+
+    private static string? DefaultMp3PathPicker(string suggestedName)
+    {
+        var dialog = new SaveFileDialog
+        {
+            Title = "Sesli dersi MP3 olarak kaydet",
+            FileName = suggestedName,
+            DefaultExt = ".mp3",
+            Filter = "MP3 ses dosyası (*.mp3)|*.mp3",
+            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+        };
+        return dialog.ShowDialog(Application.Current?.MainWindow) == true ? dialog.FileName : null;
+    }
+
+    /// <summary>Pencere kapanırken çalan sesi durdurur.</summary>
+    internal void StopAudio() => StopPlayback();
 }

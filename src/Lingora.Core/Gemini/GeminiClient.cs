@@ -18,7 +18,7 @@ public interface ITranslationEvaluator
 }
 
 /// <summary>Google AI Studio (Generative Language API) istemcisi.</summary>
-public sealed class GeminiClient : ITranslationEvaluator, IStudyAssistant
+public sealed class GeminiClient : ITranslationEvaluator, IStudyAssistant, ISpeechSynthesizer
 {
     public const string DefaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta";
     private const string ApiKeyHeader = "x-goog-api-key";
@@ -83,6 +83,101 @@ public sealed class GeminiClient : ITranslationEvaluator, IStudyAssistant
         note.EntryCount = entries.Count;
         note.Model = AppSettings.NormalizeModelName(model);
         return note;
+    }
+
+    /// <summary>Günün kayıtlarından seslendirilecek ders anlatımı (düz metin).</summary>
+    public async Task<string> CreateAudioScriptAsync(
+        DateOnly date,
+        IReadOnlyList<JournalEntry> entries,
+        string apiKey,
+        string model,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entries);
+        var responseBody = await GenerateAsync(StudyPrompts.BuildAudioScriptBody(date, entries), apiKey, model, cancellationToken)
+            .ConfigureAwait(false);
+        return CleanSpokenText(ParseExplanation(responseBody));
+    }
+
+    /// <summary>Metni Gemini TTS ile seslendirir; 16 bit tek kanal PCM döner.</summary>
+    public async Task<SpeechAudio> SynthesizeAsync(string text, string voice, string ttsModel, string apiKey, CancellationToken cancellationToken = default)
+    {
+        var responseBody = await GenerateAsync(StudyPrompts.BuildSpeechBody(text, voice), apiKey, ttsModel, cancellationToken)
+            .ConfigureAwait(false);
+        return ParseSpeech(responseBody);
+    }
+
+    /// <summary>Seslendirmede okunmaması gereken Markdown işaretlerini temizler.</summary>
+    internal static string CleanSpokenText(string text)
+    {
+        var lines = text.Replace("\r\n", "\n").Split('\n')
+            .Select(l => l.TrimStart('#', '*', '-', '•', ' ').Replace("**", string.Empty).Replace("__", string.Empty).TrimEnd());
+        return string.Join("\n", lines).Trim();
+    }
+
+    internal static SpeechAudio ParseSpeech(string responseBody)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(responseBody);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("promptFeedback", out var feedback) && feedback.TryGetProperty("blockReason", out var reason))
+            {
+                throw new GeminiException($"Gemini seslendirme isteğini engelledi ({reason.GetString()}).");
+            }
+
+            if (root.TryGetProperty("candidates", out var candidates)
+                && candidates.ValueKind == JsonValueKind.Array
+                && candidates.GetArrayLength() > 0
+                && candidates[0].TryGetProperty("content", out var content)
+                && content.TryGetProperty("parts", out var parts)
+                && parts.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var part in parts.EnumerateArray())
+                {
+                    if (!part.TryGetProperty("inlineData", out var inline)
+                        || !inline.TryGetProperty("data", out var data)
+                        || data.GetString() is not { Length: > 0 } base64)
+                    {
+                        continue;
+                    }
+
+                    var mime = inline.TryGetProperty("mimeType", out var m) ? m.GetString() ?? string.Empty : string.Empty;
+                    var bytes = Convert.FromBase64String(base64);
+                    return ToPcm(bytes, mime);
+                }
+            }
+
+            throw new GeminiException("Gemini ses döndürmedi. Ayarlar > Genel'deki seslendirme modelini kontrol edip tekrar deneyin.");
+        }
+        catch (JsonException ex)
+        {
+            throw new GeminiException("Gemini ses yanıtı okunamadı (geçersiz JSON).", inner: ex);
+        }
+        catch (FormatException ex)
+        {
+            throw new GeminiException("Gemini ses verisi çözülemedi.", inner: ex);
+        }
+    }
+
+    /// <summary>"audio/L16;codec=pcm;rate=24000" → ham PCM; WAV gelirse başlığı atılır.</summary>
+    private static SpeechAudio ToPcm(byte[] bytes, string mime)
+    {
+        var rate = 24000;
+        var match = System.Text.RegularExpressions.Regex.Match(mime, @"rate=(\d+)");
+        if (match.Success && int.TryParse(match.Groups[1].Value, out var parsed) && parsed > 0)
+        {
+            rate = parsed;
+        }
+
+        var isWav = bytes.Length > 44 && bytes[0] == 'R' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == 'F';
+        if (isWav)
+        {
+            rate = BitConverter.ToInt32(bytes, 24);
+            return new SpeechAudio(bytes[44..], rate);
+        }
+
+        return new SpeechAudio(bytes, rate);
     }
 
     private async Task<string> GenerateAsync(System.Text.Json.Nodes.JsonObject requestBody, string apiKey, string model, CancellationToken cancellationToken)

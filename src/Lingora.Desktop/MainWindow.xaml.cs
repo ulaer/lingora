@@ -88,6 +88,7 @@ public partial class MainWindow : Window
     {
         Journal.Refresh();
         ShowPage("Günlük", Journal, 1040, 720);
+        Journal.StopAudio();
     }
 
     private void ShowPage(string title, UserControl page, double width, double height)

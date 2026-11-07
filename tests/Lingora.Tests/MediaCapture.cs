@@ -137,6 +137,16 @@ public class MediaCapture
             + "• What time should we set off tomorrow? (Yarın saat kaçta yola çıkalım?)\n"
             + "• They went out for dinner. (Akşam yemeğine çıktılar.)";
         evaluator.LessonHandler = (_, _) => PdfSample.SampleNote();
+        evaluator.SpeechHandler = _ => FakeEvaluator.Tone(214.5); // ekranda gerçekçi ders süresi (3:35)
+        evaluator.AudioScriptHandler = (_, entries) =>
+            "Merhaba! Bugün harika bir gün geçirdin, tam " + entries.Count + " cümle çevirdin. Gel, birlikte kısa bir tekrar yapalım.\n\n"
+            + "İlk konumuz yola çıkmak. Sen \"go out\" yazdın; ama \"go out\" dışarı çıkmak demek, örneğin akşam yemeğe çıkmak. "
+            + "Bir yolculuğa başlarken İngilizler \"set off\" der. Dinle: \"We set off at dawn.\" yani şafakta yola çıktık.\n\n"
+            + "İkinci konu dolaylı anlatım. Biri geçmişte bir şey söylediyse, aktardığın cümlenin fiili de bir adım geriye gider. "
+            + "\"He said he knew the answer.\" yani cevabı bildiğini söyledi.\n\n"
+            + "Şimdi sıra sende. \"Sabah erkenden yola çıktılar\" cümlesini İngilizce nasıl söylersin? Biraz düşün. "
+            + "Cevap: \"They set off early in the morning.\"\n\n"
+            + "Bugün gerçekten iyi iş çıkardın. Yarın yeni cümlelerle görüşmek üzere!";
 
         await WpfHost.RunAsync(async () =>
         {
@@ -200,6 +210,15 @@ public class MediaCapture
             slot.Button.Content = "Açıklanıyor…";
             Shot(repeat: 6);
             await practice.ToggleExplanationAsync(slot);
+            var explainSteps = 0;
+            while (slot.Typing.StepOnce())
+            {
+                if (++explainSteps % 3 == 0)
+                {
+                    Shot();
+                }
+            }
+
             Shot(repeat: 45);
             Save(window.Frame, Path.Combine(output, "06-aciklama.png"), 1000, 1060);
 
@@ -217,6 +236,11 @@ public class MediaCapture
             SavePage(window.Journal, "Günlük", Path.Combine(output, "07-ders-notu.png"), 1040, 900);
             window.Journal.TabRecords.IsChecked = true;
             SavePage(window.Journal, "Günlük", Path.Combine(output, "08-gunluk.png"), 1040, 720);
+
+            // Sesli ders (ekran görüntüsü için; MP3 geçici veri klasöründe kalır, depoya girmez).
+            window.Journal.TabAudio.IsChecked = true;
+            await window.Journal.CreateAudioAsync();
+            SavePage(window.Journal, "Günlük", Path.Combine(output, "09-sesli-ders.png"), 1040, 820);
             LessonPdfExporter.Export(window.Journal.ShownLesson!, Path.Combine(output, "ornek-ders-notu.pdf"));
         });
     }

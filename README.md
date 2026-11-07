@@ -7,7 +7,7 @@
 ![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)
 ![WPF](https://img.shields.io/badge/WPF-Windows-0078D4?logo=windows&logoColor=white)
 ![Gemini](https://img.shields.io/badge/Google-Gemini%20API-4285F4?logo=googlegemini&logoColor=white)
-![Tests](https://img.shields.io/badge/testler-189%20ba%C5%9Far%C4%B1l%C4%B1-2EA043)
+![Tests](https://img.shields.io/badge/testler-203%20ba%C5%9Far%C4%B1l%C4%B1-2EA043)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0B1120)
 
 <img src="docs/media/demo.gif" alt="Lingora demo: çeviri yazılıyor, Gemini değerlendiriyor, cevap harf harf ekrana geliyor" width="820" />
@@ -29,6 +29,10 @@ sen çevirini yazarsın; Google Gemini çevirini bir öğretmen gibi değerlendi
 - **Günlük ve ders notu:** her günün hataları, ipuçları ve açıklamaları günlüğe yazılır. İstediğin gün için
   AI o günden sana özel bir **ders notu** hazırlar (konular, günün hataları, alıştırmalar). Not bir kez üretilir,
   sonra kayıttan açılır; **PDF olarak kaydedebilirsin** ([örnek PDF](docs/media/ornek-ders-notu.pdf)).
+  Not oluşturduktan sonra aynı gün yeni çeviri yaparsan **"Ders notunu yenile"** ile güncelleyebilirsin.
+- **Sesli ders (MP3):** aynı günlük kayıtlardan, öğretmen anlatımıyla 3-4 dakikalık yalnızca metin bir ders yazılır
+  ve Gemini'nin metin okuma (TTS) sesiyle seslendirilir. Uygulama içinde dinle ya da **MP3 olarak kaydet**;
+  yolda, yürürken tekrar et. Ses tonu Ayarlar → Genel'den seçilir (varsayılan: sıcak, sakin öğretmen).
 - **Kişisel sözlük:** eksik kaldığın kelime, kalıp ve tamlamalar anlamı ve örnek cümlesiyle otomatik
   kaydedilir. Aynı terimde tekrar hata yaparsan yeni kayıt açılmaz, "N kez" sayacı artar.
 - **İki yön:** TR → EN yazmayı, EN → TR okumayı çalıştırır.
@@ -41,8 +45,10 @@ sen çevirini yazarsın; Google Gemini çevirini bir öğretmen gibi değerlendi
 | Ayrıntılı açıklama | AI ders notu (PDF) |
 |:---:|:---:|
 | <img src="docs/media/06-aciklama.png" alt="Hata satırının ayrıntılı açıklaması" width="420" /> | <img src="docs/media/07-ders-notu.png" alt="Günlük ders notu" width="420" /> |
-| **Günlük: hatalar ve ipuçları** | **Sözlük** |
-| <img src="docs/media/08-gunluk.png" alt="Günlük kayıtları" width="420" /> | <img src="docs/media/03-sozluk.png" alt="Sözlük" width="420" /> |
+| **Sesli ders (MP3)** | **Günlük: hatalar ve ipuçları** |
+| <img src="docs/media/09-sesli-ders.png" alt="Sesli ders" width="420" /> | <img src="docs/media/08-gunluk.png" alt="Günlük kayıtları" width="420" /> |
+| **Sözlük** | |
+| <img src="docs/media/03-sozluk.png" alt="Sözlük" width="420" /> | |
 | **Günlük hedef** | **Adım adım yardım** |
 | <img src="docs/media/04-hedef.png" alt="Hedef penceresi" width="420" /> | <img src="docs/media/05-yardim.png" alt="Ayarlar ve yardım" width="420" /> |
 
@@ -83,7 +89,7 @@ dotnet publish src/Lingora.Desktop -c Release -r win-x64 --self-contained false 
 |-----|-------|
 | **TR → EN / EN → TR** | Çeviri yönü |
 | **◎ 13/20** | Hedef penceresi: bugün, seri, toplam, ortalama puan, son 7 gün |
-| **📅** | Günlük: günlere göre hatalar, ipuçları, açıklamalar; **Ders notunu oluştur** ve **PDF olarak kaydet** |
+| **📅** | Günlük: **Ders notu** (oluştur / yenile / PDF), **Sesli ders** (oluştur / dinle / MP3 olarak kaydet), **Hatalar ve ipuçları** |
 | **📖 11** | Sözlük: arama, sıralama (son eklenen / en çok hata / A–Z), silme |
 | **⚙** | Ayarlar: API anahtarı, veri dosyası, günlük hedef, zorluk, sıra, başlangıç satırı, model, sistem kontrolü |
 
@@ -95,13 +101,16 @@ dotnet publish src/Lingora.Desktop -c Release -r win-x64 --self-contained false 
 
 **Model:** varsayılan `gemini-flash-latest`. Hızlı ve ücretsiz kotası geniş bir seçenek için
 Ayarlar → Genel'de `gemini-3.5-flash-lite` yazabilirsin. Hesabında açık olan modelleri
-**Bağlantıyı test et** listeler.
+**Bağlantıyı test et** listeler. Sesli ders seslendirmesi varsayılan olarak `gemini-3.1-flash-tts-preview`
+modeliyle yapılır (Ayarlar → Genel → Seslendirme modeli); TTS'in ücretsiz kotası metin modellerinden düşüktür.
+MP3, Windows'un yerleşik Media Foundation kodlayıcısıyla üretilir (Windows N sürümlerinde "Media Feature Pack" gerekir).
 
 ## Gizlilik
 
 - Veriler yalnızca bu bilgisayarda, `%APPDATA%\Lingora` klasöründe tutulur
   (`settings.json`, `corpus.tsv`, `attempts.jsonl`, `vocabulary.json`, günlük için `journal\yyyy-AA-GG.json`,
-  ders notları için `lessons\yyyy-AA-GG.json`). Başka bir klasör için `LINGORA_HOME`.
+  ders notları için `lessons\yyyy-AA-GG.json`, sesli dersler için `lessons\yyyy-AA-GG.audio.json` + `.mp3`).
+  Başka bir klasör için `LINGORA_HOME`.
 - Gemini'ye yalnızca kaynak cümle, referans çeviri(ler) ve senin çevirin gönderilir; ayrıntılı açıklama ve
   ders notu için ayrıca o satır / o günün kayıtları gönderilir.
   Anahtar URL'de değil `x-goog-api-key` başlığında gider; loglara yazılmaz.
@@ -112,7 +121,7 @@ Ayarlar → Genel'de `gemini-3.5-flash-lite` yazabilirsin. Hesabında açık ola
 src/Lingora.Core/       İş mantığı (arayüzden bağımsız, test edilen kısım)
   Corpus/               TXT içe aktarma (UTF-8 / Windows-1254), sıralı ve rastgele cümle seçimi
   Gemini/               İstemler (değerlendirme, ayrıntılı açıklama, ders notu), JSON şemaları, REST istemcisi
-  Journal/              Günlük (gün başına dosya), bir kez üretilen ders notları, PDF dışa aktarma (MigraDoc)
+  Journal/              Günlük (gün başına dosya), ders notları, PDF (MigraDoc), sesli ders (metin + parça parça TTS)
   Lexicon/              Kişisel sözlük ve benzer terim birleştirme
   Progress/             İlerleme kaydı (JSON Lines), seri ve günlük hedef hesapları
   Storage/              Ayarlar, DPAPI ile şifreli anahtar, veri klasörü
@@ -120,7 +129,7 @@ src/Lingora.Desktop/    WPF arayüzü: özel başlık çubuğu, tema, daktilo an
 tests/Lingora.Tests/    xUnit: çekirdek + WPF arayüz testleri (pencere açmadan, ekran görüntüsüyle)
 ```
 
-- **.NET 8 · WPF · xUnit**, harici arayüz kütüphanesi yok; PDF için [PDFsharp-MigraDoc](https://github.com/empira/PDFsharp) (MIT).
+- **.NET 8 · WPF · xUnit**, harici arayüz kütüphanesi yok; PDF için [PDFsharp-MigraDoc](https://github.com/empira/PDFsharp) (MIT), MP3 için [NAudio](https://github.com/naudio/NAudio) (MIT).
 - Zaman `TimeProvider` ile enjekte edilir; testler sabit saatle çalışır.
 - Arayüz testleri WPF'i tek bir STA iş parçacığında, ekrana pencere açmadan çalıştırır.
 
