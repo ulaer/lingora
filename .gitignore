@@ -1,0 +1,29 @@
+# Derleme çıktıları
+bin/
+obj/
+publish/
+uygulama/
+TestResults/
+*.user
+.vs/
+.vscode/
+.idea/
+
+# Kişisel veriler: API anahtarı ve cümle dosyaları depoya girmez.
+# Kullanıcı bunları uygulamadaki Ayarlar > "Nasıl yapılır?" adımlarıyla kendisi ekler.
+*.txt
+*.tsv
+*.zip
+settings.json
+attempts.jsonl
+vocabulary.json
+.env
+*.env
+*.lnk
+
+# Ekran görüntüsü/kayıt taslakları (docs/media içindeki son görseller hariç)
+screenshots/
+docs/media/frames/
+
+# Paylaşım taslağı (depoya girmez)
+docs/LINKEDIN.md

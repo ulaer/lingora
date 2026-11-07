@@ -1,0 +1,55 @@
+<UserControl x:Class="Lingora.Desktop.Pages.VocabularyPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="36,30,36,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Başlık -->
+        <Grid>
+            <TextBlock Text="Sözlük" FontSize="26" FontWeight="Light" Foreground="White" />
+            <TextBlock x:Name="CountText" Style="{StaticResource Muted}" HorizontalAlignment="Right"
+                       VerticalAlignment="Bottom" Margin="0,0,0,4" />
+        </Grid>
+
+        <!-- Arama ve sıralama -->
+        <Grid Grid.Row="1" Margin="0,18,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Border Background="{StaticResource GlassBrush}" CornerRadius="8" Padding="12,8">
+                <Grid>
+                    <TextBox x:Name="SearchBox" Style="{StaticResource GhostInput}" FontSize="14"
+                             TextChanged="OnSearchChanged" />
+                    <TextBlock x:Name="SearchPlaceholder" Text="Kelime, kalıp veya anlam ara…" FontSize="14"
+                               Foreground="{StaticResource TextMutedBrush}" Opacity="0.6" IsHitTestVisible="False"
+                               Margin="2,0,0,0" />
+                </Grid>
+            </Border>
+            <Border Grid.Column="1" Background="{StaticResource GlassBrush}" CornerRadius="8" Padding="3" Margin="12,0,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton x:Name="SortRecent" GroupName="VocabSort" Style="{StaticResource SegmentButton}"
+                                 Content="Son eklenen" IsChecked="True" Checked="OnSortChecked" />
+                    <RadioButton x:Name="SortMistakes" GroupName="VocabSort" Style="{StaticResource SegmentButton}"
+                                 Content="En çok hata" Checked="OnSortChecked" />
+                    <RadioButton x:Name="SortAlpha" GroupName="VocabSort" Style="{StaticResource SegmentButton}"
+                                 Content="A–Z" Checked="OnSortChecked" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Liste -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      Focusable="False">
+            <StackPanel>
+                <StackPanel x:Name="List" />
+                <TextBlock x:Name="EmptyText" Style="{StaticResource Muted}" FontSize="15" Margin="0,24,0,0"
+                           TextAlignment="Center" Visibility="Collapsed" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

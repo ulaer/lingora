@@ -1,0 +1,91 @@
+<Window x:Class="Lingora.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lingora"
+        Width="1000" Height="720" MinWidth="720" MinHeight="520"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BgGradient}"
+        Foreground="{StaticResource TextBrush}"
+        FontFamily="{StaticResource UiFont}"
+        FontSize="14"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display">
+    <!-- Windows başlık çubuğu yok: içerik en üste kadar uzanır, pencere düğmeleri üst çubukta. -->
+    <Border x:Name="Frame" BorderThickness="1" BorderBrush="{StaticResource WindowEdgeBrush}"
+            Background="{StaticResource BgGradient}">
+    <DockPanel x:Name="Root" Background="{StaticResource BgGradient}">
+        <!-- Üst çubuk: ana ekranla aynı zemin, ayrı şerit yok -->
+        <Grid DockPanel.Dock="Top" Height="68" Margin="28,0,10,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Logo -->
+            <Grid x:Name="Logo" Width="32" Height="32" VerticalAlignment="Center" ToolTip="Lingora">
+                <Border CornerRadius="10" Background="{StaticResource LogoGradient}" />
+                <TextBlock Text="L" Foreground="White" FontSize="18" FontWeight="Bold"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0" />
+                <Ellipse Width="7" Height="7" Fill="#9FE3FF" Stroke="#0C1426" StrokeThickness="1.5"
+                         HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,-2,0" />
+            </Grid>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center"
+                        WindowChrome.IsHitTestVisibleInChrome="True">
+                <!-- Kısa mod seçici -->
+                <Border Background="{StaticResource GlassBrush}" CornerRadius="8" Padding="3" Margin="0,0,14,0">
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton x:Name="ModeTrEn" GroupName="Mode" Style="{StaticResource SegmentButton}"
+                                     Content="TR → EN" ToolTip="Türkçe → İngilizce (yazma)" Checked="OnModeChecked" />
+                        <RadioButton x:Name="ModeEnTr" GroupName="Mode" Style="{StaticResource SegmentButton}"
+                                     Content="EN → TR" ToolTip="İngilizce → Türkçe (okuma)" Checked="OnModeChecked" />
+                    </StackPanel>
+                </Border>
+
+                <!-- İlerleme / hedef -->
+                <Button x:Name="ProgressButton" Style="{StaticResource IconButton}" ToolTip="İlerleme ve günlük hedef"
+                        Click="OnProgressClick">
+                    <StackPanel Orientation="Horizontal">
+                        <Grid Width="18" Height="18">
+                            <Ellipse Stroke="{StaticResource TextBrush}" StrokeThickness="1.6" />
+                            <Ellipse Width="10" Height="10" Stroke="{StaticResource TextBrush}" StrokeThickness="1.6" />
+                            <Ellipse Width="4" Height="4" Fill="{StaticResource AccentBrush}" />
+                        </Grid>
+                        <TextBlock x:Name="TodayText" FontSize="13" Margin="8,0,0,0" VerticalAlignment="Center"
+                                   Foreground="{StaticResource TextMutedBrush}" />
+                    </StackPanel>
+                </Button>
+
+                <!-- Sözlük -->
+                <Button x:Name="VocabularyButton" Style="{StaticResource IconButton}" ToolTip="Sözlük"
+                        Margin="4,0,0,0" Click="OnVocabularyClick">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE82D;" FontFamily="{StaticResource IconFont}" FontSize="17"
+                                   VerticalAlignment="Center" />
+                        <TextBlock x:Name="VocabularyCount" FontSize="13" Margin="8,0,0,0" VerticalAlignment="Center"
+                                   Foreground="{StaticResource TextMutedBrush}" />
+                    </StackPanel>
+                </Button>
+
+                <!-- Ayarlar -->
+                <Button x:Name="SettingsButton" Style="{StaticResource IconButton}" ToolTip="Ayarlar"
+                        Margin="4,0,0,0" Click="OnSettingsClick">
+                    <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFont}" FontSize="17" />
+                </Button>
+
+                <!-- Pencere düğmeleri: ince ayraçtan sonra soluk ikonlar -->
+                <Border Width="1" Height="18" Margin="14,0,8,0" Background="{StaticResource WindowEdgeBrush}" />
+                <Button x:Name="MinimizeButton" Style="{StaticResource CaptionButton}" Content="&#xE921;"
+                        ToolTip="Küçült" Click="OnMinimizeClick" />
+                <Button x:Name="MaximizeButton" Style="{StaticResource CaptionButton}" Content="&#xE922;"
+                        ToolTip="Büyüt" Click="OnMaximizeClick" />
+                <Button x:Name="CloseButton" Style="{StaticResource CloseCaptionButton}" Content="&#xE8BB;"
+                        ToolTip="Kapat" Click="OnCloseClick" />
+            </StackPanel>
+        </Grid>
+
+        <ContentControl x:Name="PageHost" Focusable="False" />
+    </DockPanel>
+    </Border>
+</Window>

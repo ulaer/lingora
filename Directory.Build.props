@@ -1,0 +1,12 @@
+<Project>
+  <!-- Tüm projeler için ortak ürün bilgileri (exe'nin Özellikler > Ayrıntılar sekmesinde görünür). -->
+  <PropertyGroup>
+    <Product>Lingora</Product>
+    <Company>Lingora</Company>
+    <Authors>Lingora</Authors>
+    <Copyright>© 2026 Lingora. Tüm hakları saklıdır.</Copyright>
+    <Description>Türkçe ↔ İngilizce cümle çevirisi alıştırması; çeviriyi Gemini ile değerlendirir, ilerlemeyi ve sözlüğü kaydeder.</Description>
+    <Version>1.0.0</Version>
+    <NeutralLanguage>tr-TR</NeutralLanguage>
+  </PropertyGroup>
+</Project>
