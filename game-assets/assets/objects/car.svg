@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="car">
+<rect x="28" y="140" width="200" height="60" rx="14" fill="#E63946"/>
+<path d="M70 140L92 98Q96 92 106 92H168Q178 92 184 100L206 140Z" fill="#E63946"/>
+<path d="M84 140L100 104H128V140Z" fill="#A8DADC"/>
+<path d="M136 140V104H168Q174 104 178 110L192 140Z" fill="#A8DADC"/>
+<rect x="216" y="156" width="10" height="8" rx="2" fill="#E9C46A"/>
+<circle cx="72" cy="206" r="24" fill="#2B2D42"/>
+<circle cx="72" cy="206" r="10" fill="#F1FAEE"/>
+<circle cx="184" cy="206" r="24" fill="#2B2D42"/>
+<circle cx="184" cy="206" r="10" fill="#F1FAEE"/>
+</g>
+</svg>

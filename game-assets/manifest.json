@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "style_lock": "style-lock.md",
   "palette": {
     "ink": "#2B2D42",
@@ -61,7 +61,9 @@
       "tr": "Tom",
       "pronoun_en": "he",
       "kind": "boy",
-      "place_exclude": [],
+      "place_exclude": [
+        "bathroom"
+      ],
       "aliases": [
         {
           "en": "He",
@@ -71,7 +73,10 @@
           "en": "The boy",
           "tr": "Erkek çocuk"
         }
-      ]
+      ],
+      "tr_acc": "Tom'u",
+      "tr_dat": "Tom'a",
+      "proper": true
     },
     {
       "id": "mary",
@@ -79,7 +84,9 @@
       "tr": "Mary",
       "pronoun_en": "she",
       "kind": "girl",
-      "place_exclude": [],
+      "place_exclude": [
+        "bathroom"
+      ],
       "aliases": [
         {
           "en": "She",
@@ -89,7 +96,10 @@
           "en": "The girl",
           "tr": "Kız"
         }
-      ]
+      ],
+      "tr_acc": "Mary'yi",
+      "tr_dat": "Mary'ye",
+      "proper": true
     },
     {
       "id": "dog",
@@ -99,9 +109,21 @@
       "kind": "animal",
       "place_exclude": [
         "school",
-        "pool"
+        "pool",
+        "office",
+        "restaurant",
+        "hospital",
+        "station",
+        "shop",
+        "bathroom",
+        "kitchen",
+        "bedroom",
+        "street"
       ],
-      "aliases": []
+      "aliases": [],
+      "tr_acc": "köpeği",
+      "tr_dat": "köpeğe",
+      "proper": false
     },
     {
       "id": "cat",
@@ -111,9 +133,21 @@
       "kind": "animal",
       "place_exclude": [
         "school",
-        "pool"
+        "pool",
+        "office",
+        "restaurant",
+        "hospital",
+        "station",
+        "shop",
+        "bathroom",
+        "kitchen",
+        "bedroom",
+        "street"
       ],
-      "aliases": []
+      "aliases": [],
+      "tr_acc": "kediyi",
+      "tr_dat": "kediye",
+      "proper": false
     },
     {
       "id": "man",
@@ -121,7 +155,9 @@
       "tr": "Adam",
       "pronoun_en": "he",
       "kind": "adult",
-      "place_exclude": [],
+      "place_exclude": [
+        "bathroom"
+      ],
       "aliases": [
         {
           "en": "He",
@@ -131,7 +167,10 @@
           "en": "My father",
           "tr": "Babam"
         }
-      ]
+      ],
+      "tr_acc": "adamı",
+      "tr_dat": "adama",
+      "proper": false
     },
     {
       "id": "woman",
@@ -139,7 +178,9 @@
       "tr": "Kadın",
       "pronoun_en": "she",
       "kind": "adult",
-      "place_exclude": [],
+      "place_exclude": [
+        "bathroom"
+      ],
       "aliases": [
         {
           "en": "She",
@@ -156,7 +197,10 @@
             "school"
           ]
         }
-      ]
+      ],
+      "tr_acc": "kadını",
+      "tr_dat": "kadına",
+      "proper": false
     },
     {
       "id": "horse",
@@ -167,9 +211,21 @@
       "place_exclude": [
         "school",
         "pool",
+        "office",
+        "restaurant",
+        "hospital",
+        "station",
+        "shop",
+        "bathroom",
+        "kitchen",
+        "bedroom",
+        "street",
         "room"
       ],
-      "aliases": []
+      "aliases": [],
+      "tr_acc": "atı",
+      "tr_dat": "ata",
+      "proper": false
     },
     {
       "id": "bird",
@@ -180,9 +236,68 @@
       "place_exclude": [
         "school",
         "pool",
+        "office",
+        "restaurant",
+        "hospital",
+        "station",
+        "shop",
+        "bathroom",
+        "kitchen",
+        "bedroom",
+        "street",
         "room"
       ],
-      "aliases": []
+      "aliases": [],
+      "tr_acc": "kuşu",
+      "tr_dat": "kuşa",
+      "proper": false
+    },
+    {
+      "id": "doctor",
+      "en": "The doctor",
+      "tr": "Doktor",
+      "pronoun_en": "she",
+      "kind": "adult",
+      "proper": false,
+      "tr_acc": "doktoru",
+      "tr_dat": "doktora",
+      "aliases": [],
+      "place_exclude": [
+        "bathroom",
+        "pool",
+        "beach",
+        "school",
+        "kitchen",
+        "bedroom",
+        "restaurant",
+        "shop",
+        "park",
+        "room",
+        "station"
+      ]
+    },
+    {
+      "id": "police",
+      "en": "The police officer",
+      "tr": "Polis",
+      "pronoun_en": "he",
+      "kind": "adult",
+      "proper": false,
+      "tr_acc": "polisi",
+      "tr_dat": "polise",
+      "aliases": [],
+      "place_exclude": [
+        "bathroom",
+        "pool",
+        "beach",
+        "school",
+        "kitchen",
+        "bedroom",
+        "restaurant",
+        "office",
+        "hospital",
+        "room"
+      ]
     }
   ],
   "poses": [
@@ -201,8 +316,17 @@
         "park",
         "room",
         "school",
-        "beach"
-      ]
+        "beach",
+        "kitchen",
+        "bedroom",
+        "office",
+        "restaurant",
+        "hospital",
+        "station",
+        "street",
+        "shop"
+      ],
+      "verb": "hold"
     },
     {
       "id": "eat",
@@ -219,8 +343,12 @@
         "park",
         "room",
         "school",
-        "beach"
-      ]
+        "beach",
+        "kitchen",
+        "restaurant",
+        "office"
+      ],
+      "verb": "eat"
     },
     {
       "id": "drink",
@@ -237,8 +365,12 @@
         "park",
         "room",
         "school",
-        "beach"
-      ]
+        "beach",
+        "kitchen",
+        "restaurant",
+        "office"
+      ],
+      "verb": "drink"
     },
     {
       "id": "read",
@@ -255,8 +387,17 @@
         "park",
         "room",
         "school",
-        "beach"
-      ]
+        "beach",
+        "kitchen",
+        "bedroom",
+        "office",
+        "restaurant",
+        "hospital",
+        "station",
+        "street",
+        "shop"
+      ],
+      "verb": "read"
     },
     {
       "id": "run",
@@ -266,7 +407,8 @@
       "places": [
         "park",
         "school",
-        "beach"
+        "beach",
+        "street"
       ],
       "group_layout": {
         "scale": 0.6,
@@ -274,7 +416,8 @@
           72,
           184
         ]
-      }
+      },
+      "verb": "run"
     },
     {
       "id": "swim",
@@ -284,7 +427,8 @@
       "places": [
         "pool",
         "beach"
-      ]
+      ],
+      "verb": "swim"
     },
     {
       "id": "sit",
@@ -295,8 +439,15 @@
         "park",
         "room",
         "school",
-        "beach"
-      ]
+        "beach",
+        "kitchen",
+        "bedroom",
+        "office",
+        "restaurant",
+        "hospital",
+        "station"
+      ],
+      "verb": "sit"
     },
     {
       "id": "sleep",
@@ -313,7 +464,8 @@
           72,
           184
         ]
-      }
+      },
+      "verb": "sleep"
     },
     {
       "id": "play",
@@ -331,7 +483,8 @@
         "room",
         "park",
         "beach"
-      ]
+      ],
+      "verb": "play_with"
     },
     {
       "id": "drink_bowl",
@@ -347,7 +500,8 @@
       "places": [
         "room",
         "park"
-      ]
+      ],
+      "verb": "drink"
     },
     {
       "id": "fly",
@@ -357,7 +511,8 @@
       "places": [
         "park",
         "beach"
-      ]
+      ],
+      "verb": "fly"
     },
     {
       "id": "eat_ground",
@@ -372,6 +527,99 @@
       "allow_count": false,
       "places": [
         "park"
+      ],
+      "verb": "eat"
+    },
+    {
+      "id": "walk",
+      "verb": "walk",
+      "verb_en": "walking",
+      "verb_tr": "yürüyor",
+      "requires": "none",
+      "places": [
+        "park",
+        "school",
+        "beach",
+        "street",
+        "station",
+        "shop",
+        "hospital",
+        "office"
+      ]
+    },
+    {
+      "id": "talk",
+      "verb": "talk",
+      "verb_en": "talking",
+      "verb_tr": "konuşuyor",
+      "requires": "none",
+      "places": [
+        "park",
+        "room",
+        "school",
+        "kitchen",
+        "office",
+        "restaurant",
+        "hospital",
+        "station",
+        "street",
+        "shop"
+      ]
+    },
+    {
+      "id": "wave",
+      "verb": "wave",
+      "verb_en": "waving",
+      "verb_tr": "el sallıyor",
+      "requires": "none",
+      "places": [
+        "park",
+        "school",
+        "beach",
+        "street",
+        "station"
+      ]
+    },
+    {
+      "id": "call",
+      "verb": "talk_phone",
+      "verb_en": "talking on the phone",
+      "verb_tr": "telefonla konuşuyor",
+      "requires": "none",
+      "attach": "phone",
+      "scale": 0.18,
+      "places": [
+        "park",
+        "room",
+        "bedroom",
+        "office",
+        "street",
+        "station",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "think",
+      "verb": "think",
+      "verb_en": "thinking",
+      "verb_tr": "düşünüyor",
+      "requires": "none",
+      "places": [
+        "park",
+        "room",
+        "bedroom",
+        "office",
+        "school"
+      ]
+    },
+    {
+      "id": "lie",
+      "verb": "sleep",
+      "verb_en": "sleeping",
+      "verb_tr": "uyuyor",
+      "requires": "none",
+      "places": [
+        "bedroom"
       ]
     }
   ],
@@ -728,6 +976,216 @@
       "tr": "Kuş uçuyor."
     },
     {
+      "id": "tom_walk",
+      "file": "assets/characters/tom_walk.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "walk"
+    },
+    {
+      "id": "tom_talk",
+      "file": "assets/characters/tom_talk.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "talk"
+    },
+    {
+      "id": "tom_wave",
+      "file": "assets/characters/tom_wave.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "wave"
+    },
+    {
+      "id": "tom_call",
+      "file": "assets/characters/tom_call.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "call"
+    },
+    {
+      "id": "tom_think",
+      "file": "assets/characters/tom_think.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "think"
+    },
+    {
+      "id": "tom_sleep",
+      "file": "assets/characters/tom_sleep.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "lie"
+    },
+    {
+      "id": "mary_walk",
+      "file": "assets/characters/mary_walk.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "walk"
+    },
+    {
+      "id": "mary_talk",
+      "file": "assets/characters/mary_talk.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "talk"
+    },
+    {
+      "id": "mary_wave",
+      "file": "assets/characters/mary_wave.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "wave"
+    },
+    {
+      "id": "mary_call",
+      "file": "assets/characters/mary_call.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "call"
+    },
+    {
+      "id": "mary_think",
+      "file": "assets/characters/mary_think.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "think"
+    },
+    {
+      "id": "mary_sleep",
+      "file": "assets/characters/mary_sleep.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "lie"
+    },
+    {
+      "id": "man_walk",
+      "file": "assets/characters/man_walk.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "walk"
+    },
+    {
+      "id": "man_talk",
+      "file": "assets/characters/man_talk.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "talk"
+    },
+    {
+      "id": "man_wave",
+      "file": "assets/characters/man_wave.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "wave"
+    },
+    {
+      "id": "man_call",
+      "file": "assets/characters/man_call.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "call"
+    },
+    {
+      "id": "man_think",
+      "file": "assets/characters/man_think.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "think"
+    },
+    {
+      "id": "man_sleep",
+      "file": "assets/characters/man_sleep.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "lie"
+    },
+    {
+      "id": "woman_walk",
+      "file": "assets/characters/woman_walk.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "walk"
+    },
+    {
+      "id": "woman_talk",
+      "file": "assets/characters/woman_talk.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "talk"
+    },
+    {
+      "id": "woman_wave",
+      "file": "assets/characters/woman_wave.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "wave"
+    },
+    {
+      "id": "woman_call",
+      "file": "assets/characters/woman_call.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "call"
+    },
+    {
+      "id": "woman_think",
+      "file": "assets/characters/woman_think.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "think"
+    },
+    {
+      "id": "woman_sleep",
+      "file": "assets/characters/woman_sleep.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "lie"
+    },
+    {
+      "id": "doctor_stand",
+      "file": "assets/characters/doctor_stand.svg",
+      "category": "character",
+      "character": "doctor",
+      "pose": "stand"
+    },
+    {
+      "id": "doctor_talk",
+      "file": "assets/characters/doctor_talk.svg",
+      "category": "character",
+      "character": "doctor",
+      "pose": "talk"
+    },
+    {
+      "id": "doctor_walk",
+      "file": "assets/characters/doctor_walk.svg",
+      "category": "character",
+      "character": "doctor",
+      "pose": "walk"
+    },
+    {
+      "id": "police_stand",
+      "file": "assets/characters/police_stand.svg",
+      "category": "character",
+      "character": "police",
+      "pose": "stand"
+    },
+    {
+      "id": "police_talk",
+      "file": "assets/characters/police_talk.svg",
+      "category": "character",
+      "character": "police",
+      "pose": "talk"
+    },
+    {
+      "id": "police_walk",
+      "file": "assets/characters/police_walk.svg",
+      "category": "character",
+      "character": "police",
+      "pose": "walk"
+    },
+    {
       "id": "apple",
       "file": "assets/objects/apple.svg",
       "category": "object",
@@ -943,13 +1401,301 @@
       "tints": []
     },
     {
+      "id": "phone",
+      "file": "assets/objects/phone.svg",
+      "category": "object",
+      "classes": [
+        "gadget",
+        "want"
+      ],
+      "countable": true,
+      "en": "phone",
+      "en_plural": "phones",
+      "tr": "telefon",
+      "article_en": "a",
+      "tints": [],
+      "role": "handheld"
+    },
+    {
+      "id": "key",
+      "file": "assets/objects/key.svg",
+      "category": "object",
+      "classes": [
+        "small"
+      ],
+      "countable": true,
+      "en": "key",
+      "en_plural": "keys",
+      "tr": "anahtar",
+      "article_en": "a",
+      "tints": [],
+      "role": "handheld"
+    },
+    {
+      "id": "money",
+      "file": "assets/objects/money.svg",
+      "category": "object",
+      "classes": [
+        "want"
+      ],
+      "countable": false,
+      "en": "money",
+      "tr": "para",
+      "tints": [],
+      "role": "handheld"
+    },
+    {
+      "id": "pen",
+      "file": "assets/objects/pen.svg",
+      "category": "object",
+      "classes": [
+        "small"
+      ],
+      "countable": true,
+      "en": "pen",
+      "en_plural": "pens",
+      "tr": "kalem",
+      "article_en": "a",
+      "tints": [],
+      "role": "handheld"
+    },
+    {
+      "id": "bag",
+      "file": "assets/objects/bag.svg",
+      "category": "object",
+      "classes": [
+        "small"
+      ],
+      "countable": true,
+      "en": "bag",
+      "en_plural": "bags",
+      "tr": "çanta",
+      "article_en": "a",
+      "tints": [],
+      "role": "handheld"
+    },
+    {
+      "id": "umbrella",
+      "file": "assets/objects/umbrella.svg",
+      "category": "object",
+      "classes": [
+        "want"
+      ],
+      "countable": true,
+      "en": "umbrella",
+      "en_plural": "umbrellas",
+      "tr": "şemsiye",
+      "article_en": "an",
+      "tints": [],
+      "role": "handheld"
+    },
+    {
+      "id": "ring",
+      "file": "assets/objects/ring.svg",
+      "category": "object",
+      "classes": [
+        "want"
+      ],
+      "countable": true,
+      "en": "ring",
+      "en_plural": "rings",
+      "tr": "yüzük",
+      "article_en": "a",
+      "tints": [],
+      "role": "handheld"
+    },
+    {
+      "id": "medicine",
+      "file": "assets/objects/medicine.svg",
+      "category": "object",
+      "classes": [
+        "small"
+      ],
+      "countable": true,
+      "en": "medicine bottle",
+      "en_plural": "medicine bottles",
+      "tr": "ilaç şişesi",
+      "article_en": "a",
+      "tints": [],
+      "role": "handheld"
+    },
+    {
+      "id": "laptop",
+      "file": "assets/objects/laptop.svg",
+      "category": "object",
+      "classes": [
+        "gadget",
+        "want"
+      ],
+      "countable": true,
+      "en": "laptop",
+      "en_plural": "laptops",
+      "tr": "dizüstü bilgisayar",
+      "article_en": "a",
+      "tints": [],
+      "role": "handheld"
+    },
+    {
+      "id": "guitar",
+      "file": "assets/objects/guitar.svg",
+      "category": "object",
+      "classes": [
+        "instrument",
+        "want"
+      ],
+      "countable": true,
+      "en": "guitar",
+      "en_plural": "guitars",
+      "tr": "gitar",
+      "article_en": "a",
+      "tints": [],
+      "role": "handheld",
+      "en_def": "the guitar"
+    },
+    {
+      "id": "tv",
+      "file": "assets/objects/tv.svg",
+      "category": "object",
+      "classes": [
+        "screen"
+      ],
+      "countable": true,
+      "en": "TV",
+      "en_plural": "TVs",
+      "tr": "televizyon",
+      "article_en": "a",
+      "tints": [],
+      "role": "prop",
+      "holdable": false,
+      "states": [
+        "on",
+        "off"
+      ],
+      "en_def": "the TV",
+      "tr_acc": "televizyonu"
+    },
+    {
+      "id": "lamp",
+      "file": "assets/objects/lamp.svg",
+      "category": "object",
+      "classes": [
+        "light"
+      ],
+      "countable": true,
+      "en": "lamp",
+      "en_plural": "lamps",
+      "tr": "lamba",
+      "article_en": "a",
+      "tints": [],
+      "role": "prop",
+      "holdable": false,
+      "states": [
+        "on",
+        "off"
+      ],
+      "en_def": "the light",
+      "tr_acc": "ışığı"
+    },
+    {
+      "id": "door",
+      "file": "assets/objects/door.svg",
+      "category": "object",
+      "classes": [
+        "door"
+      ],
+      "countable": true,
+      "en": "door",
+      "en_plural": "doors",
+      "tr": "kapı",
+      "article_en": "a",
+      "tints": [],
+      "role": "prop",
+      "holdable": false,
+      "states": [
+        "closed",
+        "open"
+      ],
+      "en_def": "the door",
+      "tr_acc": "kapıyı"
+    },
+    {
+      "id": "car",
+      "file": "assets/objects/car.svg",
+      "category": "object",
+      "classes": [
+        "vehicle",
+        "want"
+      ],
+      "countable": true,
+      "en": "car",
+      "en_plural": "cars",
+      "tr": "araba",
+      "article_en": "a",
+      "tints": [],
+      "role": "prop",
+      "holdable": false
+    },
+    {
+      "id": "train",
+      "file": "assets/objects/train.svg",
+      "category": "object",
+      "classes": [
+        "vehicle"
+      ],
+      "countable": true,
+      "en": "train",
+      "en_plural": "trains",
+      "tr": "tren",
+      "article_en": "a",
+      "tints": [],
+      "role": "prop",
+      "holdable": false,
+      "en_def": "the train",
+      "tr_acc": "treni"
+    },
+    {
+      "id": "bicycle",
+      "file": "assets/objects/bicycle.svg",
+      "category": "object",
+      "classes": [
+        "vehicle",
+        "want"
+      ],
+      "countable": true,
+      "en": "bicycle",
+      "en_plural": "bicycles",
+      "tr": "bisiklet",
+      "article_en": "a",
+      "tints": [],
+      "role": "prop",
+      "holdable": false
+    },
+    {
+      "id": "piano",
+      "file": "assets/objects/piano.svg",
+      "category": "object",
+      "classes": [
+        "instrument"
+      ],
+      "countable": true,
+      "en": "piano",
+      "en_plural": "pianos",
+      "tr": "piyano",
+      "article_en": "a",
+      "tints": [],
+      "role": "prop",
+      "holdable": false,
+      "en_def": "the piano"
+    },
+    {
       "id": "park",
       "file": "assets/backgrounds/park.svg",
       "category": "background",
       "en": "in the park",
       "tr_loc": "parkta",
       "en_noun": "park",
-      "tr": "park"
+      "tr": "park",
+      "outdoor": true
     },
     {
       "id": "room",
@@ -958,7 +1704,8 @@
       "en": "at home",
       "tr_loc": "evde",
       "en_noun": "room",
-      "tr": "oda"
+      "tr": "oda",
+      "outdoor": false
     },
     {
       "id": "school",
@@ -967,7 +1714,8 @@
       "en": "at school",
       "tr_loc": "okulda",
       "en_noun": "school",
-      "tr": "okul"
+      "tr": "okul",
+      "outdoor": false
     },
     {
       "id": "pool",
@@ -976,7 +1724,8 @@
       "en": "in the pool",
       "tr_loc": "havuzda",
       "en_noun": "pool",
-      "tr": "havuz"
+      "tr": "havuz",
+      "outdoor": false
     },
     {
       "id": "beach",
@@ -991,7 +1740,253 @@
           "en": "in the sea",
           "tr_loc": "denizde"
         }
-      }
+      },
+      "outdoor": true
+    },
+    {
+      "id": "kitchen",
+      "file": "assets/backgrounds/kitchen.svg",
+      "category": "background",
+      "en": "in the kitchen",
+      "tr_loc": "mutfakta",
+      "en_noun": "kitchen",
+      "tr": "mutfak",
+      "outdoor": false
+    },
+    {
+      "id": "bathroom",
+      "file": "assets/backgrounds/bathroom.svg",
+      "category": "background",
+      "en": "in the bathroom",
+      "tr_loc": "banyoda",
+      "en_noun": "bathroom",
+      "tr": "banyo",
+      "outdoor": false
+    },
+    {
+      "id": "bedroom",
+      "file": "assets/backgrounds/bedroom.svg",
+      "category": "background",
+      "en": "in the bedroom",
+      "tr_loc": "yatak odasında",
+      "en_noun": "bedroom",
+      "tr": "yatak odası",
+      "outdoor": false
+    },
+    {
+      "id": "office",
+      "file": "assets/backgrounds/office.svg",
+      "category": "background",
+      "en": "at the office",
+      "tr_loc": "ofiste",
+      "en_noun": "office",
+      "tr": "ofis",
+      "outdoor": false
+    },
+    {
+      "id": "restaurant",
+      "file": "assets/backgrounds/restaurant.svg",
+      "category": "background",
+      "en": "at the restaurant",
+      "tr_loc": "restoranda",
+      "en_noun": "restaurant",
+      "tr": "restoran",
+      "outdoor": false
+    },
+    {
+      "id": "hospital",
+      "file": "assets/backgrounds/hospital.svg",
+      "category": "background",
+      "en": "at the hospital",
+      "tr_loc": "hastanede",
+      "en_noun": "hospital",
+      "tr": "hastane",
+      "outdoor": false
+    },
+    {
+      "id": "station",
+      "file": "assets/backgrounds/station.svg",
+      "category": "background",
+      "en": "at the station",
+      "tr_loc": "istasyonda",
+      "en_noun": "station",
+      "tr": "istasyon",
+      "outdoor": true
+    },
+    {
+      "id": "street",
+      "file": "assets/backgrounds/street.svg",
+      "category": "background",
+      "en": "on the street",
+      "tr_loc": "sokakta",
+      "en_noun": "street",
+      "tr": "sokak",
+      "outdoor": true
+    },
+    {
+      "id": "shop",
+      "file": "assets/backgrounds/shop.svg",
+      "category": "background",
+      "en": "at the shop",
+      "tr_loc": "mağazada",
+      "en_noun": "shop",
+      "tr": "mağaza",
+      "outdoor": false
+    },
+    {
+      "id": "speech_bubble",
+      "file": "assets/overlays/speech_bubble.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "thought_bubble",
+      "file": "assets/overlays/thought_bubble.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "badge_not",
+      "file": "assets/overlays/badge_not.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "badge_question",
+      "file": "assets/overlays/badge_question.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "cal_yesterday",
+      "file": "assets/overlays/cal_yesterday.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "cal_tomorrow",
+      "file": "assets/overlays/cal_tomorrow.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "sun",
+      "file": "assets/overlays/sun.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "moon",
+      "file": "assets/overlays/moon.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "clock",
+      "file": "assets/overlays/clock.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "rain",
+      "file": "assets/overlays/rain.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "snow",
+      "file": "assets/overlays/snow.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "clouds",
+      "file": "assets/overlays/clouds.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "wind",
+      "file": "assets/overlays/wind.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "mark_sweat",
+      "file": "assets/overlays/mark_sweat.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "mark_tears",
+      "file": "assets/overlays/mark_tears.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "mark_anger",
+      "file": "assets/overlays/mark_anger.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "mark_sparkle",
+      "file": "assets/overlays/mark_sparkle.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "mark_zzz",
+      "file": "assets/overlays/mark_zzz.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "mark_heart",
+      "file": "assets/overlays/mark_heart.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "mark_music",
+      "file": "assets/overlays/mark_music.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "mark_exclaim",
+      "file": "assets/overlays/mark_exclaim.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "mouth_smile",
+      "file": "assets/overlays/face/mouth_smile.svg",
+      "category": "face"
+    },
+    {
+      "id": "mouth_sad",
+      "file": "assets/overlays/face/mouth_sad.svg",
+      "category": "face"
+    },
+    {
+      "id": "mouth_open",
+      "file": "assets/overlays/face/mouth_open.svg",
+      "category": "face"
+    },
+    {
+      "id": "mouth_flat",
+      "file": "assets/overlays/face/mouth_flat.svg",
+      "category": "face"
+    },
+    {
+      "id": "mouth_o",
+      "file": "assets/overlays/face/mouth_o.svg",
+      "category": "face"
+    },
+    {
+      "id": "eyes_open",
+      "file": "assets/overlays/face/eyes_open.svg",
+      "category": "face"
+    },
+    {
+      "id": "eyes_closed",
+      "file": "assets/overlays/face/eyes_closed.svg",
+      "category": "face"
+    },
+    {
+      "id": "eyes_half",
+      "file": "assets/overlays/face/eyes_half.svg",
+      "category": "face"
+    },
+    {
+      "id": "brows_angry",
+      "file": "assets/overlays/face/brows_angry.svg",
+      "category": "face"
+    },
+    {
+      "id": "brows_worried",
+      "file": "assets/overlays/face/brows_worried.svg",
+      "category": "face"
     }
   ],
   "groups": [
@@ -1097,5 +2092,887 @@
       80,
       176
     ]
+  },
+  "verbs": {
+    "hold": {
+      "en": {
+        "ing": "holding",
+        "past": "held",
+        "base": "hold"
+      },
+      "tr": {
+        "prog": "tutuyor",
+        "past": "tuttu",
+        "fut": "tutacak",
+        "prog_neg": "tutmuyor",
+        "past_neg": "tutmadı",
+        "fut_neg": "tutmayacak"
+      }
+    },
+    "eat": {
+      "en": {
+        "ing": "eating",
+        "past": "ate",
+        "base": "eat"
+      },
+      "tr": {
+        "prog": "yiyor",
+        "past": "yedi",
+        "fut": "yiyecek",
+        "prog_neg": "yemiyor",
+        "past_neg": "yemedi",
+        "fut_neg": "yemeyecek"
+      }
+    },
+    "drink": {
+      "en": {
+        "ing": "drinking",
+        "past": "drank",
+        "base": "drink"
+      },
+      "tr": {
+        "prog": "içiyor",
+        "past": "içti",
+        "fut": "içecek",
+        "prog_neg": "içmiyor",
+        "past_neg": "içmedi",
+        "fut_neg": "içmeyecek"
+      }
+    },
+    "read": {
+      "en": {
+        "ing": "reading",
+        "past": "read",
+        "base": "read"
+      },
+      "tr": {
+        "prog": "okuyor",
+        "past": "okudu",
+        "fut": "okuyacak",
+        "prog_neg": "okumuyor",
+        "past_neg": "okumadı",
+        "fut_neg": "okumayacak"
+      }
+    },
+    "run": {
+      "en": {
+        "ing": "running",
+        "past": "ran",
+        "base": "run"
+      },
+      "tr": {
+        "prog": "koşuyor",
+        "past": "koştu",
+        "fut": "koşacak",
+        "prog_neg": "koşmuyor",
+        "past_neg": "koşmadı",
+        "fut_neg": "koşmayacak"
+      }
+    },
+    "swim": {
+      "en": {
+        "ing": "swimming",
+        "past": "swam",
+        "base": "swim"
+      },
+      "tr": {
+        "prog": "yüzüyor",
+        "past": "yüzdü",
+        "fut": "yüzecek",
+        "prog_neg": "yüzmüyor",
+        "past_neg": "yüzmedi",
+        "fut_neg": "yüzmeyecek"
+      }
+    },
+    "sit": {
+      "en": {
+        "ing": "sitting",
+        "past": "sat",
+        "base": "sit"
+      },
+      "tr": {
+        "prog": "oturuyor",
+        "past": "oturdu",
+        "fut": "oturacak",
+        "prog_neg": "oturmuyor",
+        "past_neg": "oturmadı",
+        "fut_neg": "oturmayacak"
+      }
+    },
+    "sleep": {
+      "en": {
+        "ing": "sleeping",
+        "past": "slept",
+        "base": "sleep"
+      },
+      "tr": {
+        "prog": "uyuyor",
+        "past": "uyudu",
+        "fut": "uyuyacak",
+        "prog_neg": "uyumuyor",
+        "past_neg": "uyumadı",
+        "fut_neg": "uyumayacak"
+      }
+    },
+    "play_with": {
+      "en": {
+        "ing": "playing",
+        "past": "played",
+        "base": "play",
+        "prep": "with"
+      },
+      "tr": {
+        "prog": "oynuyor",
+        "past": "oynadı",
+        "fut": "oynayacak",
+        "prog_neg": "oynamıyor",
+        "past_neg": "oynamadı",
+        "fut_neg": "oynamayacak"
+      }
+    },
+    "fly": {
+      "en": {
+        "ing": "flying",
+        "past": "flew",
+        "base": "fly"
+      },
+      "tr": {
+        "prog": "uçuyor",
+        "past": "uçtu",
+        "fut": "uçacak",
+        "prog_neg": "uçmuyor",
+        "past_neg": "uçmadı",
+        "fut_neg": "uçmayacak"
+      }
+    },
+    "walk": {
+      "en": {
+        "ing": "walking",
+        "past": "walked",
+        "base": "walk"
+      },
+      "tr": {
+        "prog": "yürüyor",
+        "past": "yürüdü",
+        "fut": "yürüyecek",
+        "prog_neg": "yürümüyor",
+        "past_neg": "yürümedi",
+        "fut_neg": "yürümeyecek"
+      }
+    },
+    "talk": {
+      "en": {
+        "ing": "talking",
+        "past": "talked",
+        "base": "talk"
+      },
+      "tr": {
+        "prog": "konuşuyor",
+        "past": "konuştu",
+        "fut": "konuşacak",
+        "prog_neg": "konuşmuyor",
+        "past_neg": "konuşmadı",
+        "fut_neg": "konuşmayacak"
+      }
+    },
+    "talk_phone": {
+      "en": {
+        "ing": "talking",
+        "past": "talked",
+        "base": "talk",
+        "prep": "on the phone"
+      },
+      "tr": {
+        "prog": "telefonla konuşuyor",
+        "past": "telefonla konuştu",
+        "fut": "telefonla konuşacak",
+        "prog_neg": "telefonla konuşmuyor",
+        "past_neg": "telefonla konuşmadı",
+        "fut_neg": "telefonla konuşmayacak"
+      }
+    },
+    "wave": {
+      "en": {
+        "ing": "waving",
+        "past": "waved",
+        "base": "wave"
+      },
+      "tr": {
+        "prog": "el sallıyor",
+        "past": "el salladı",
+        "fut": "el sallayacak",
+        "prog_neg": "el sallamıyor",
+        "past_neg": "el sallamadı",
+        "fut_neg": "el sallamayacak"
+      }
+    },
+    "think": {
+      "en": {
+        "ing": "thinking",
+        "past": "thought",
+        "base": "think"
+      },
+      "tr": {
+        "prog": "düşünüyor",
+        "past": "düşündü",
+        "fut": "düşünecek",
+        "prog_neg": "düşünmüyor",
+        "past_neg": "düşünmedi",
+        "fut_neg": "düşünmeyecek"
+      }
+    },
+    "talk_to": {
+      "en": {
+        "ing": "talking",
+        "past": "talked",
+        "base": "talk",
+        "prep": "to"
+      },
+      "tr": {
+        "prog": "konuşuyor",
+        "past": "konuştu",
+        "fut": "konuşacak",
+        "prog_neg": "konuşmuyor",
+        "past_neg": "konuşmadı",
+        "fut_neg": "konuşmayacak"
+      }
+    },
+    "listen_to": {
+      "en": {
+        "ing": "listening",
+        "past": "listened",
+        "base": "listen",
+        "prep": "to"
+      },
+      "tr": {
+        "prog": "dinliyor",
+        "past": "dinledi",
+        "fut": "dinleyecek",
+        "prog_neg": "dinlemiyor",
+        "past_neg": "dinlemedi",
+        "fut_neg": "dinlemeyecek"
+      }
+    },
+    "wave_at": {
+      "en": {
+        "ing": "waving",
+        "past": "waved",
+        "base": "wave",
+        "prep": "at"
+      },
+      "tr": {
+        "prog": "el sallıyor",
+        "past": "el salladı",
+        "fut": "el sallayacak",
+        "prog_neg": "el sallamıyor",
+        "past_neg": "el sallamadı",
+        "fut_neg": "el sallamayacak"
+      }
+    },
+    "call": {
+      "en": {
+        "ing": "calling",
+        "past": "called",
+        "base": "call"
+      },
+      "tr": {
+        "prog": "arıyor",
+        "past": "aradı",
+        "fut": "arayacak",
+        "prog_neg": "aramıyor",
+        "past_neg": "aramadı",
+        "fut_neg": "aramayacak"
+      }
+    },
+    "think_about": {
+      "en": {
+        "ing": "thinking",
+        "past": "thought",
+        "base": "think",
+        "prep": "about"
+      },
+      "tr": {
+        "prog": "düşünüyor",
+        "past": "düşündü",
+        "fut": "düşünecek",
+        "prog_neg": "düşünmüyor",
+        "past_neg": "düşünmedi",
+        "fut_neg": "düşünmeyecek"
+      }
+    },
+    "want": {
+      "en": {
+        "ing": "wanting",
+        "past": "wanted",
+        "base": "want",
+        "s3": "wants",
+        "stative": true
+      },
+      "tr": {
+        "prog": "istiyor",
+        "past": "istiyordu",
+        "fut": "isteyecek",
+        "prog_neg": "istemiyor",
+        "past_neg": "istemiyordu",
+        "fut_neg": "istemeyecek"
+      }
+    },
+    "watch": {
+      "en": {
+        "ing": "watching",
+        "past": "watched",
+        "base": "watch"
+      },
+      "tr": {
+        "prog": "izliyor",
+        "past": "izledi",
+        "fut": "izleyecek",
+        "prog_neg": "izlemiyor",
+        "past_neg": "izlemedi",
+        "fut_neg": "izlemeyecek"
+      }
+    },
+    "play_instr": {
+      "en": {
+        "ing": "playing",
+        "past": "played",
+        "base": "play"
+      },
+      "tr": {
+        "prog": "çalıyor",
+        "past": "çaldı",
+        "fut": "çalacak",
+        "prog_neg": "çalmıyor",
+        "past_neg": "çalmadı",
+        "fut_neg": "çalmayacak"
+      }
+    },
+    "turn_on": {
+      "en": {
+        "ing": "turning on",
+        "past": "turned on",
+        "base": "turn on"
+      },
+      "tr": {
+        "prog": "açıyor",
+        "past": "açtı",
+        "fut": "açacak",
+        "prog_neg": "açmıyor",
+        "past_neg": "açmadı",
+        "fut_neg": "açmayacak"
+      }
+    },
+    "turn_off": {
+      "en": {
+        "ing": "turning off",
+        "past": "turned off",
+        "base": "turn off"
+      },
+      "tr": {
+        "prog": "kapatıyor",
+        "past": "kapattı",
+        "fut": "kapatacak",
+        "prog_neg": "kapatmıyor",
+        "past_neg": "kapatmadı",
+        "fut_neg": "kapatmayacak"
+      }
+    },
+    "open": {
+      "en": {
+        "ing": "opening",
+        "past": "opened",
+        "base": "open"
+      },
+      "tr": {
+        "prog": "açıyor",
+        "past": "açtı",
+        "fut": "açacak",
+        "prog_neg": "açmıyor",
+        "past_neg": "açmadı",
+        "fut_neg": "açmayacak"
+      }
+    },
+    "close": {
+      "en": {
+        "ing": "closing",
+        "past": "closed",
+        "base": "close"
+      },
+      "tr": {
+        "prog": "kapatıyor",
+        "past": "kapattı",
+        "fut": "kapatacak",
+        "prog_neg": "kapatmıyor",
+        "past_neg": "kapatmadı",
+        "fut_neg": "kapatmayacak"
+      }
+    },
+    "wait_for": {
+      "en": {
+        "ing": "waiting",
+        "past": "waited",
+        "base": "wait",
+        "prep": "for"
+      },
+      "tr": {
+        "prog": "bekliyor",
+        "past": "bekledi",
+        "fut": "bekleyecek",
+        "prog_neg": "beklemiyor",
+        "past_neg": "beklemedi",
+        "fut_neg": "beklemeyecek"
+      }
+    }
+  },
+  "emotions": [
+    {
+      "id": "happy",
+      "en": "happy",
+      "tr": "mutlu",
+      "mouth": "mouth_open",
+      "eyes": null,
+      "brows": null,
+      "mark": "mark_sparkle"
+    },
+    {
+      "id": "sad",
+      "en": "sad",
+      "tr": "üzgün",
+      "mouth": "mouth_sad",
+      "eyes": null,
+      "brows": "brows_worried",
+      "mark": "mark_tears"
+    },
+    {
+      "id": "tired",
+      "en": "tired",
+      "tr": "yorgun",
+      "mouth": "mouth_flat",
+      "eyes": "eyes_half",
+      "brows": null,
+      "mark": "mark_sweat"
+    },
+    {
+      "id": "angry",
+      "en": "angry",
+      "tr": "kızgın",
+      "mouth": "mouth_sad",
+      "eyes": null,
+      "brows": "brows_angry",
+      "mark": "mark_anger"
+    },
+    {
+      "id": "bored",
+      "en": "bored",
+      "tr": "sıkılmış",
+      "mouth": "mouth_flat",
+      "eyes": "eyes_half",
+      "brows": null,
+      "mark": null
+    },
+    {
+      "id": "worried",
+      "en": "worried",
+      "tr": "endişeli",
+      "mouth": "mouth_flat",
+      "eyes": null,
+      "brows": "brows_worried",
+      "mark": "mark_sweat"
+    },
+    {
+      "id": "surprised",
+      "en": "surprised",
+      "tr": "şaşırmış",
+      "mouth": "mouth_o",
+      "eyes": null,
+      "brows": null,
+      "mark": "mark_exclaim"
+    }
+  ],
+  "weather": [
+    {
+      "id": "rain",
+      "kind": "verb",
+      "overlay": "rain",
+      "sky": "#F1FAEE",
+      "en": {
+        "ing": "raining",
+        "past": "rained",
+        "base": "rain",
+        "in": "in the rain"
+      },
+      "tr": {
+        "noun": "yağmur",
+        "prog": "yağıyor",
+        "past": "yağdı",
+        "fut": "yağacak",
+        "prog_neg": "yağmıyor",
+        "past_neg": "yağmadı",
+        "fut_neg": "yağmayacak",
+        "in": "yağmurda"
+      }
+    },
+    {
+      "id": "snow",
+      "kind": "verb",
+      "overlay": "snow",
+      "sky": "#F1FAEE",
+      "en": {
+        "ing": "snowing",
+        "past": "snowed",
+        "base": "snow",
+        "in": "in the snow"
+      },
+      "tr": {
+        "noun": "kar",
+        "prog": "yağıyor",
+        "past": "yağdı",
+        "fut": "yağacak",
+        "prog_neg": "yağmıyor",
+        "past_neg": "yağmadı",
+        "fut_neg": "yağmayacak",
+        "in": "karda"
+      }
+    },
+    {
+      "id": "sunny",
+      "kind": "adj",
+      "overlay": "sun",
+      "sky": null,
+      "en": {
+        "adj": "sunny",
+        "in": "in the sun"
+      },
+      "tr": {
+        "adj": "güneşli",
+        "in": "güneşte"
+      }
+    },
+    {
+      "id": "cloudy",
+      "kind": "adj",
+      "overlay": "clouds",
+      "sky": "#F1FAEE",
+      "en": {
+        "adj": "cloudy"
+      },
+      "tr": {
+        "adj": "bulutlu"
+      }
+    },
+    {
+      "id": "windy",
+      "kind": "adj",
+      "overlay": "wind",
+      "sky": null,
+      "en": {
+        "adj": "windy"
+      },
+      "tr": {
+        "adj": "rüzgârlı"
+      }
+    }
+  ],
+  "times_of_day": [
+    {
+      "id": "morning",
+      "en": "in the morning",
+      "tr": "sabah",
+      "sky": "#A8DADC",
+      "overlay": "sun"
+    },
+    {
+      "id": "evening",
+      "en": "in the evening",
+      "tr": "akşam",
+      "sky": "#F4A261",
+      "overlay": null
+    },
+    {
+      "id": "night",
+      "en": "at night",
+      "tr": "gece",
+      "sky": "#2B2D42",
+      "overlay": "moon"
+    }
+  ],
+  "interactions": [
+    {
+      "id": "talk_to",
+      "subject_pose": "talk",
+      "other_pose": "stand",
+      "bubble": "speech",
+      "verb": "talk_to",
+      "tr_case": "ile",
+      "reverse": {
+        "verb": "listen_to",
+        "tr_case": "acc"
+      }
+    },
+    {
+      "id": "wave_at",
+      "subject_pose": "wave",
+      "other_pose": "stand",
+      "bubble": null,
+      "verb": "wave_at",
+      "tr_case": "dat"
+    },
+    {
+      "id": "call",
+      "subject_pose": "call",
+      "other_pose": null,
+      "bubble": "speech",
+      "bubble_content": "character",
+      "verb": "call",
+      "tr_case": "acc"
+    },
+    {
+      "id": "think_about",
+      "subject_pose": "think",
+      "other_pose": null,
+      "bubble": "thought",
+      "bubble_content": "character",
+      "verb": "think_about",
+      "tr_case": "acc"
+    },
+    {
+      "id": "want",
+      "subject_pose": "think",
+      "other_pose": null,
+      "bubble": "thought",
+      "bubble_content": "object",
+      "object_class": "want",
+      "verb": "want"
+    }
+  ],
+  "prop_actions": [
+    {
+      "id": "turn_on_light",
+      "pose": "stand",
+      "prop": "lamp",
+      "states": [
+        "off",
+        "on"
+      ],
+      "verb": "turn_on",
+      "places": [
+        "room",
+        "bedroom",
+        "office"
+      ]
+    },
+    {
+      "id": "turn_off_light",
+      "pose": "stand",
+      "prop": "lamp",
+      "states": [
+        "on",
+        "off"
+      ],
+      "verb": "turn_off",
+      "places": [
+        "room",
+        "bedroom",
+        "office"
+      ]
+    },
+    {
+      "id": "turn_on_tv",
+      "pose": "stand",
+      "prop": "tv",
+      "states": [
+        "off",
+        "on"
+      ],
+      "verb": "turn_on",
+      "places": [
+        "room",
+        "bedroom"
+      ]
+    },
+    {
+      "id": "turn_off_tv",
+      "pose": "stand",
+      "prop": "tv",
+      "states": [
+        "on",
+        "off"
+      ],
+      "verb": "turn_off",
+      "places": [
+        "room",
+        "bedroom"
+      ]
+    },
+    {
+      "id": "open_door",
+      "pose": "stand",
+      "prop": "door",
+      "states": [
+        "closed",
+        "open"
+      ],
+      "verb": "open",
+      "places": [
+        "room",
+        "bedroom",
+        "office",
+        "shop",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "close_door",
+      "pose": "stand",
+      "prop": "door",
+      "states": [
+        "open",
+        "closed"
+      ],
+      "verb": "close",
+      "places": [
+        "room",
+        "bedroom",
+        "office",
+        "shop",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "watch_tv",
+      "pose": "sit",
+      "prop": "tv",
+      "states": [
+        "on"
+      ],
+      "verb": "watch",
+      "obj_en": "TV",
+      "obj_tr": "televizyon",
+      "places": [
+        "room",
+        "bedroom"
+      ]
+    },
+    {
+      "id": "play_piano",
+      "pose": "sit",
+      "prop": "piano",
+      "states": null,
+      "verb": "play_instr",
+      "obj_tr": "piyano",
+      "places": [
+        "room",
+        "school"
+      ]
+    },
+    {
+      "id": "play_guitar",
+      "pose": "read",
+      "hold": "guitar",
+      "verb": "play_instr",
+      "obj_tr": "gitar",
+      "places": [
+        "room",
+        "park",
+        "bedroom",
+        "school",
+        "beach"
+      ]
+    },
+    {
+      "id": "wait_train",
+      "pose": "stand",
+      "prop": "train",
+      "states": null,
+      "verb": "wait_for",
+      "places": [
+        "station"
+      ]
+    }
+  ],
+  "layouts": {
+    "single": {
+      "actors": [
+        {
+          "x": 128,
+          "s": 1
+        }
+      ]
+    },
+    "pair": {
+      "actors": [
+        {
+          "x": 80,
+          "s": 0.8
+        },
+        {
+          "x": 176,
+          "s": 0.8
+        }
+      ]
+    },
+    "bubble": {
+      "actors": [
+        {
+          "x": 92,
+          "s": 0.78
+        }
+      ],
+      "bubble": {
+        "x": 136,
+        "y": 0,
+        "s": 0.46
+      },
+      "content": {
+        "x": 194,
+        "y": 58,
+        "s": 0.2
+      }
+    },
+    "pair_bubble": {
+      "actors": [
+        {
+          "x": 80,
+          "s": 0.72
+        },
+        {
+          "x": 180,
+          "s": 0.72
+        }
+      ],
+      "bubble": {
+        "x": 30,
+        "y": 0,
+        "s": 0.4
+      }
+    },
+    "prop": {
+      "actors": [
+        {
+          "x": 92,
+          "s": 0.88
+        }
+      ],
+      "prop": {
+        "x": 196,
+        "s": 0.55
+      }
+    },
+    "badge": {
+      "x": 6,
+      "y": 6,
+      "s": 0.24,
+      "dx": 62
+    },
+    "mark": {
+      "dx": 36,
+      "dy": 6,
+      "s": 0.32
+    },
+    "sky_overlay": {
+      "x": 196,
+      "y": 4,
+      "s": 0.22
+    }
   }
 }

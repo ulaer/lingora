@@ -24,8 +24,8 @@ public class GameLibraryTests
     {
         var library = GameFixture.Library;
 
-        Assert.Equal(54, library.Assets.Count);
-        Assert.Equal(4948, library.Scenes.Count);
+        Assert.Equal(141, library.Assets.Count);
+        Assert.Equal(8473, library.Scenes.Count);
         Assert.All(library.Assets.Values, a => Assert.True(File.Exists(library.AssetPath(a.Id)), a.File));
         Assert.All(library.Scenes, s =>
         {

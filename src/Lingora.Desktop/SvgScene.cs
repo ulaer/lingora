@@ -177,6 +177,20 @@ internal sealed class SvgScene
             var name = child.Name.LocalName;
             if (name == "g")
             {
+                // game-assets v2: animasyon karelerinden yalnızca 1. kare, durumlu nesnelerde yalnızca ilk durum
+                // çizilir (statik görünüm; aksi halde tüm kareler üst üste biner).
+                var frame = (string?)child.Attribute("data-frame");
+                if (frame is not null && frame != "1")
+                {
+                    continue;
+                }
+
+                if (child.Attribute("data-state") is not null &&
+                    child.ElementsBeforeSelf().Any(s => s.Attribute("data-state") is not null))
+                {
+                    continue;
+                }
+
                 Walk(child, matrix, shapes);
                 continue;
             }

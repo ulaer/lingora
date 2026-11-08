@@ -299,6 +299,8 @@ public sealed class GameLibrary
             ("mary", _) => "kız çocuk",
             ("man", _) => "yetişkin bir adam",
             ("woman", _) => "yetişkin bir kadın",
+            ("doctor", _) => "beyaz önlüklü bir doktor",
+            ("police", _) => "üniformalı bir polis memuru",
             (_, "animal") => "hayvan",
             _ => c.Kind,
         };
@@ -321,6 +323,8 @@ public sealed class GameLibrary
             "mary" => "A girl",
             "man" => "A man",
             "woman" => "A woman",
+            "doctor" => "A doctor",
+            "police" => "A police officer",
             _ => "A " + c.Id,
         });
         return string.Join(", ", names.Distinct().Select(n => $"\"{n}\"")) + " (resimde isim görünmediği için bunların hepsi doğrudur).";
@@ -343,6 +347,8 @@ public sealed class GameLibrary
             "mary" => new[] { "Bir kız", "Kız çocuğu" },
             "man" => new[] { "Bir adam" },
             "woman" => new[] { "Bir kadın" },
+            "doctor" => new[] { "Bir doktor" },
+            "police" => new[] { "Bir polis", "Polis memuru" },
             _ => new[] { "Bir " + c.Tr.ToLower(CultureInfo.GetCultureInfo("tr-TR")) },
         });
         return string.Join(", ", names.Distinct().Select(n => $"\"{n}\""))
@@ -363,6 +369,12 @@ public sealed class GameLibrary
         "drink_bowl" => "kâseden içiyor",
         "fly" => "uçuyor",
         "eat_ground" => "yerdeki yiyeceği yiyor",
+        "walk" => "yürüyor",
+        "talk" => "eliyle işaret ederek konuşuyor",
+        "wave" => "elini kaldırmış, el sallıyor",
+        "call" => "telefonu kulağına tutmuş, telefonla konuşuyor",
+        "think" => "eli çenesinde, düşünüyor",
+        "lie" => "yatakta yatıyor, gözleri kapalı, uyuyor",
         _ => pose,
     };
 

@@ -624,9 +624,16 @@ public class DesktopUiTests
         {
             var library = GameFixture.Library;
             var renderer = new SvgScene(library);
-            foreach (var id in library.Assets.Keys)
+            // Sahne asset'leri tek başına dolu bir resimdir; overlay ve yüz parçaları (v2) küçük eklerdir, ayrıca bakılır.
+            var sceneCategories = new HashSet<string> { "character", "object", "background" };
+            foreach (var a in library.Assets.Values.Where(a => sceneCategories.Contains(a.Category)))
             {
-                Assert.True(Opaque(Rasterize(renderer.RenderAsset(id))) > 300, id);
+                Assert.True(Opaque(Rasterize(renderer.RenderAsset(a.Id))) > 300, a.Id);
+            }
+
+            foreach (var a in library.Assets.Values.Where(a => !sceneCategories.Contains(a.Category)))
+            {
+                Assert.True(Opaque(Rasterize(renderer.RenderAsset(a.Id))) > 0, a.Id);
             }
 
             // Yeşil elma: alt-orta noktası (176,160) tutma noktasında, gövdesi ~ (176,145).

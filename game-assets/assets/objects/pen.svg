@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="pen">
+<g transform="translate(57 230) rotate(45)">
+<rect x="-12" y="-190" width="24" height="150" fill="#457B9D"/>
+<rect x="-13" y="-190" width="26" height="24" rx="3" fill="#2B2D42"/>
+<path d="M-12 -40H12L0 0Z" fill="#2B2D42"/>
+</g>
+</g>
+</svg>

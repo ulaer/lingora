@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="piano">
+<rect x="70" y="34" width="116" height="12" rx="3" fill="#2B2D42"/>
+<rect x="36" y="44" width="184" height="18" rx="4" fill="#2B2D42"/>
+<rect x="36" y="62" width="184" height="168" rx="4" fill="#2B2D42"/>
+<rect x="52" y="112" width="152" height="40" rx="3" fill="#F1FAEE"/>
+<rect x="66" y="112" width="10" height="24" rx="2" fill="#2B2D42"/>
+<rect x="85" y="112" width="10" height="24" rx="2" fill="#2B2D42"/>
+<rect x="123" y="112" width="10" height="24" rx="2" fill="#2B2D42"/>
+<rect x="142" y="112" width="10" height="24" rx="2" fill="#2B2D42"/>
+<rect x="161" y="112" width="10" height="24" rx="2" fill="#2B2D42"/>
+<rect x="69" y="128" width="2" height="24" fill="#2B2D42"/>
+<rect x="88" y="128" width="2" height="24" fill="#2B2D42"/>
+<rect x="107" y="128" width="2" height="24" fill="#2B2D42"/>
+<rect x="126" y="128" width="2" height="24" fill="#2B2D42"/>
+<rect x="145" y="128" width="2" height="24" fill="#2B2D42"/>
+<rect x="164" y="128" width="2" height="24" fill="#2B2D42"/>
+</g>
+</svg>
