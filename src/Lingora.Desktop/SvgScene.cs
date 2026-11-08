@@ -16,6 +16,9 @@ namespace Lingora.Desktop;
 internal sealed class SvgScene
 {
     private const double Size = 256;
+
+    /// <summary>Elde birden çok nesne: kopyalar arası mesafe (nesne genişliğinin oranı). v3: 0.55 → 0.3, kopyalar avuçta toplanır.</summary>
+    internal const double MultiSpacing = 0.3;
     private static readonly Regex TransformPart = new(@"(\w+)\s*\(([^)]*)\)", RegexOptions.Compiled);
     private static readonly Regex Number = new(@"-?\d*\.?\d+(?:[eE][-+]?\d+)?", RegexOptions.Compiled);
     private readonly GameLibrary _library;
@@ -106,7 +109,7 @@ internal sealed class SvgScene
             for (var i = 0; i < scene.Count; i++)
             {
                 // Nesnenin alt-orta noktası anchor'a oturur; çoğaltmada yan yana dizilir.
-                var dx = scene.AnchorX - (128 * s) + ((i - ((scene.Count - 1) / 2.0)) * 256 * s * 0.55);
+                var dx = scene.AnchorX - (128 * s) + ((i - ((scene.Count - 1) / 2.0)) * 256 * s * MultiSpacing);
                 var m = Matrix.Identity;
                 m.Scale(s, s);
                 m.Translate(dx, scene.AnchorY - (230 * s));
@@ -168,6 +171,9 @@ internal sealed class SvgScene
         return shapes;
     }
 
+    private static string? Inherited(XElement element, string attribute) =>
+        element.AncestorsAndSelf().Select(a => (string?)a.Attribute(attribute)).FirstOrDefault(v => v is not null);
+
     private static void Walk(XElement element, Matrix parent, List<Shape> shapes)
     {
         foreach (var child in element.Elements())
@@ -177,6 +183,20 @@ internal sealed class SvgScene
             var name = child.Name.LocalName;
             if (name == "g")
             {
+                // game-assets v2: animasyon karelerinden yalnızca 1. kare, durumlu nesnelerde yalnızca ilk durum
+                // çizilir (statik görünüm; aksi halde tüm kareler üst üste biner).
+                var frame = (string?)child.Attribute("data-frame");
+                if (frame is not null && frame != "1")
+                {
+                    continue;
+                }
+
+                if (child.Attribute("data-state") is not null &&
+                    child.ElementsBeforeSelf().Any(s => s.Attribute("data-state") is not null))
+                {
+                    continue;
+                }
+
                 Walk(child, matrix, shapes);
                 continue;
             }
@@ -187,13 +207,17 @@ internal sealed class SvgScene
                 continue;
             }
 
-            var fillText = (string?)child.Attribute("fill");
+            // fill/stroke grup üzerinde de olabilir (SVG mirası); en yakın atadaki değer geçerli.
+            var fillText = Inherited(child, "fill");
             var fill = fillText is null ? Brushes.Black : fillText == "none" ? null : Brush(fillText);
             Pen? pen = null;
-            if ((string?)child.Attribute("stroke") is { } stroke && stroke != "none")
+            if (Inherited(child, "stroke") is { } stroke && stroke != "none")
             {
-                pen = new Pen(Brush(stroke), D(child, "stroke-width", 1));
-                if ((string?)child.Attribute("stroke-linecap") == "round")
+                var width = Inherited(child, "stroke-width") is { } w
+                    ? double.Parse(w, CultureInfo.InvariantCulture)
+                    : 1;
+                pen = new Pen(Brush(stroke), width);
+                if (Inherited(child, "stroke-linecap") == "round")
                 {
                     pen.StartLineCap = pen.EndLineCap = PenLineCap.Round;
                 }

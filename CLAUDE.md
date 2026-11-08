@@ -67,7 +67,8 @@ src/Lingora.Desktop/   WPF arayüzü (exe adı: Lingora.exe)
   Ui.cs                     Kodla oluşturulan yazı öğeleri için yardımcılar
 tests/Lingora.Tests/   xUnit; DesktopUiTests WPF'i tek STA iş parçacığında çalıştırır
 game-assets/                Dil oyunu için flat SVG kütüphanesi: style-lock.md, manifest.json, scenes.json
-                            (tools/combine.py üretir), tools/validate.py, preview.html. Uygulamaya çıktı klasöründe
+                            (uygulama okur) + scenes/A1|A2|B1.jsonl (tools/combine.py + grammar.py üretir),
+                            tools/validate.py, tools/lint.py (combine kalite kapısı), preview.html. Uygulamaya çıktı klasöründe
                             game-assets\ olarak kopyalanır; Core/Game okur, Desktop/SvgScene çizer, Pages/GamePage oynatır.
 uygulama/                   Yayınlanmış exe (git dışı)
 ```

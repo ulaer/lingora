@@ -48,6 +48,9 @@ public sealed record GameScene(
     string Tr,
     string Subject)
 {
+    /// <summary>Örnekleme ağırlığı (scenes.json "weight"; yoksa 1). Kalabalık poz ailelerini (tutma) seyreltir.</summary>
+    public double Weight { get; init; } = 1;
+
     /// <summary>Hedef dildeki kanonik cümle.</summary>
     public string Sentence(TranslationDirection direction) =>
         direction == TranslationDirection.TurkishToEnglish ? En : Tr;
@@ -210,13 +213,41 @@ public sealed class GameLibrary
                 t.TryGetProperty("scale", out var scale) && scale.ValueKind == JsonValueKind.Number ? scale.GetDouble() : 1,
                 Str(s, "en"),
                 Str(s, "tr"),
-                Str(s, "subject")));
+                Str(s, "subject"))
+            {
+                Weight = s.TryGetProperty("weight", out var w) && w.ValueKind == JsonValueKind.Number && w.GetDouble() > 0
+                    ? w.GetDouble()
+                    : 1,
+            });
         }
 
         return new GameLibrary(directory, assets, characters, poses, colors, groupSubjects, scenes);
     }
 
-    public GameScene Pick(Random random) => Scenes[random.Next(Scenes.Count)];
+    /// <summary>Sahne seçer; ağırlıklı (Weight). Tümü 1 ise tekdüze seçimle aynıdır.</summary>
+    public GameScene Pick(Random random)
+    {
+        _cumulative ??= Cumulative(Scenes);
+        var target = random.NextDouble() * _cumulative[^1];
+        var index = Array.BinarySearch(_cumulative, target);
+        index = index < 0 ? ~index : index + 1;
+        return Scenes[Math.Min(index, Scenes.Count - 1)];
+    }
+
+    private double[]? _cumulative;
+
+    private static double[] Cumulative(IReadOnlyList<GameScene> scenes)
+    {
+        var sums = new double[scenes.Count];
+        double total = 0;
+        for (var i = 0; i < scenes.Count; i++)
+        {
+            total += scenes[i].Weight;
+            sums[i] = total;
+        }
+
+        return sums;
+    }
 
     /// <summary>Öznenin hedef dildeki hali (kullanıcıya ipucu olarak gösterilir).</summary>
     public string SubjectIn(GameScene scene, TranslationDirection direction)
@@ -299,6 +330,8 @@ public sealed class GameLibrary
             ("mary", _) => "kız çocuk",
             ("man", _) => "yetişkin bir adam",
             ("woman", _) => "yetişkin bir kadın",
+            ("doctor", _) => "beyaz önlüklü bir doktor",
+            ("police", _) => "üniformalı bir polis memuru",
             (_, "animal") => "hayvan",
             _ => c.Kind,
         };
@@ -321,6 +354,8 @@ public sealed class GameLibrary
             "mary" => "A girl",
             "man" => "A man",
             "woman" => "A woman",
+            "doctor" => "A doctor",
+            "police" => "A police officer",
             _ => "A " + c.Id,
         });
         return string.Join(", ", names.Distinct().Select(n => $"\"{n}\"")) + " (resimde isim görünmediği için bunların hepsi doğrudur).";
@@ -343,6 +378,8 @@ public sealed class GameLibrary
             "mary" => new[] { "Bir kız", "Kız çocuğu" },
             "man" => new[] { "Bir adam" },
             "woman" => new[] { "Bir kadın" },
+            "doctor" => new[] { "Bir doktor" },
+            "police" => new[] { "Bir polis", "Polis memuru" },
             _ => new[] { "Bir " + c.Tr.ToLower(CultureInfo.GetCultureInfo("tr-TR")) },
         });
         return string.Join(", ", names.Distinct().Select(n => $"\"{n}\""))
@@ -363,6 +400,12 @@ public sealed class GameLibrary
         "drink_bowl" => "kâseden içiyor",
         "fly" => "uçuyor",
         "eat_ground" => "yerdeki yiyeceği yiyor",
+        "walk" => "yürüyor",
+        "talk" => "eliyle işaret ederek konuşuyor",
+        "wave" => "elini kaldırmış, el sallıyor",
+        "call" => "telefonu kulağına tutmuş, telefonla konuşuyor",
+        "think" => "eli çenesinde, düşünüyor",
+        "lie" => "yatakta yatıyor, gözleri kapalı, uyuyor",
         _ => pose,
     };
 
