@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="fish">
+<polygon points="85.5,195 56.5,168 56.5,222" fill="#E63946"/>
+<polygon points="121.5,162 137.5,144 153.5,163" fill="#E63946"/>
+<ellipse cx="139.5" cy="195" rx="60" ry="35" fill="#F4A261"/>
+<ellipse cx="135.5" cy="214" rx="36" ry="10" fill="#F1FAEE"/>
+<path d="M111.5 186Q119.5 178 127.5 186Q119.5 194 111.5 186Z" fill="#F1FAEE"/>
+<circle cx="173.5" cy="186" r="6" fill="#2B2D42"/>
+</g>
+</svg>

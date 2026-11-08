@@ -66,6 +66,8 @@ src/Lingora.Desktop/   WPF arayüzü (exe adı: Lingora.exe)
                             JournalPage (Günlük: ders notu, PDF, günün kayıtları; üst çubukta Hedef ile Sözlük arası)
   Ui.cs                     Kodla oluşturulan yazı öğeleri için yardımcılar
 tests/Lingora.Tests/   xUnit; DesktopUiTests WPF'i tek STA iş parçacığında çalıştırır
+game-assets/                Dil oyunu için flat SVG kütüphanesi (arayüze bağlı değil): style-lock.md, manifest.json,
+                            scenes.json (tools/combine.py üretir), tools/validate.py, preview.html
 uygulama/                   Yayınlanmış exe (git dışı)
 ```
 
@@ -77,7 +79,8 @@ uygulama/                   Yayınlanmış exe (git dışı)
   Header: `x-goog-api-key`.
 - Kullanıcıya görünen metinler Türkçe. Kod tanımlayıcıları İngilizce.
 - Arayüz sade ve yazı ağırlıklı. Kullanıcının istediği istisnalar: küçük logo, hedef ve dişli ikonları
-  (vektör/font, resim dosyası yok). Başka görsel ekleme. Zemin gradyan, üst çubuk ayrı şerit değil,
+  (vektör/font, resim dosyası yok). Başka görsel ekleme (`game-assets/` arayüze bağlı değil;
+  bağlanacaksa önce bu kural güncellenir). Zemin gradyan, üst çubuk ayrı şerit değil,
   çalışma ekranındaki yazı alanı çerçevesiz ve şeffaf. Renkler `Theme.xaml` içinde.
 - WPF projelerinde `System.IO` örtük değil; gerekiyorsa `using System.IO;` ekle.
 - Zaman için `TimeProvider` enjekte edilir (testlerde sabit saat).

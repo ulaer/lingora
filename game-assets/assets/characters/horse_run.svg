@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="horse_run">
+<path d="M66 100 Q34 96 18 134 Q44 130 70 128 Z" fill="#2B2D42"/>
+<path d="M66 134 L88 144 L40 196 L28 186 Z" fill="#8D5A3B"/>
+<circle cx="32" cy="191" r="7" fill="#2B2D42"/>
+<path d="M70 138 L96 144 L84 224 L66 224 Z" fill="#8D5A3B"/>
+<rect x="63" y="222" width="24" height="8" rx="3" fill="#2B2D42"/>
+<path d="M140 140 L160 138 L210 168 L202 182 Z" fill="#8D5A3B"/>
+<circle cx="207" cy="176" r="7" fill="#2B2D42"/>
+<path d="M138 142 L156 148 L172 196 L156 200 Z" fill="#8D5A3B"/>
+<rect x="152" y="196" width="22" height="8" rx="3" fill="#2B2D42"/>
+<rect x="62" y="96" width="96" height="56" rx="26" fill="#8D5A3B"/>
+<path d="M138 100 L160 46 L186 50 L172 130 L140 140 Z" fill="#8D5A3B"/>
+<path d="M168 48 L196 40 L224 78 Q226 90 214 92 L186 84 L168 80 Z" fill="#8D5A3B"/>
+<path d="M158 40 L140 52 L128 96 L146 102 L162 62 Z" fill="#2B2D42"/>
+<path d="M172 44 L176 28 L188 42 Z" fill="#2B2D42"/>
+<path d="M198 46 L206 54 L218 80 L211 82 L199 62 Z" fill="#F1FAEE"/>
+<circle cx="188" cy="58" r="3.5" fill="#2B2D42"/>
+<circle cx="216" cy="86" r="3" fill="#2B2D42"/>
+</g>
+</svg>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="cat_drink">
+<path d="M66 156 Q36 158 30 128 Q50 140 76 148 Z" fill="#F4A261"/>
+<rect x="82" y="170" width="14" height="60" rx="7" fill="#F4A261"/>
+<rect x="66" y="168" width="14" height="62" rx="7" fill="#F4A261"/>
+<rect x="62" y="224" width="38" height="6" rx="3" fill="#F1FAEE"/>
+<rect x="136" y="172" width="14" height="58" rx="7" fill="#F4A261"/>
+<rect x="120" y="172" width="14" height="58" rx="7" fill="#F4A261"/>
+<rect x="116" y="224" width="38" height="6" rx="3" fill="#F1FAEE"/>
+<rect x="64" y="146" width="84" height="34" rx="17" fill="#F4A261" transform="rotate(8 106 163)"/>
+<ellipse cx="106" cy="175" rx="22" ry="6" fill="#F1FAEE" transform="rotate(8 106 175)"/>
+<path d="M130 150 L150 160 L158 182 L140 190 Z" fill="#F4A261"/>
+<polygon points="142,176 140,152 156,172" fill="#F4A261"/>
+<polygon points="158,172 172,156 172,180" fill="#F4A261"/>
+<circle cx="156" cy="190" r="18" fill="#F4A261"/>
+<rect x="162" y="194" width="24" height="14" rx="7" fill="#F1FAEE"/>
+<circle cx="164" cy="186" r="3.5" fill="#2B2D42"/>
+<circle cx="183" cy="200" r="3" fill="#2B2D42"/>
+</g>
+</svg>

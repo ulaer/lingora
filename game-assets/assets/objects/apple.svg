@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="apple">
+<rect x="126" y="96" width="4" height="44" rx="2" fill="#8D5A3B"/>
+<path d="M128 230C92 230 58 214 58 172C58 142 74 128 92 128C106 128 116 138 128 138C140 138 150 128 164 128C182 128 198 142 198 172C198 214 164 230 128 230Z" fill="#E63946" data-tint="primary"/>
+<path d="M130 112C138 92 156 84 172 88C164 106 150 116 130 112Z" fill="#2A9D8F"/>
+</g>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="dog_sit">
+<path d="M64 224 Q38 220 36 192 Q52 204 72 202 Z" fill="#8D5A3B"/>
+<rect x="100" y="130" width="50" height="95" rx="22" fill="#8D5A3B"/>
+<ellipse cx="90" cy="202" rx="34" ry="28" fill="#8D5A3B"/>
+<rect x="88" y="220" width="44" height="10" rx="5" fill="#8D5A3B"/>
+<ellipse cx="142" cy="188" rx="11" ry="30" fill="#F4A261"/>
+<rect x="132" y="170" width="16" height="56" rx="7" fill="#8D5A3B"/>
+<rect x="130" y="222" width="26" height="8" rx="4" fill="#F4A261"/>
+<rect x="124" y="128" width="32" height="9" rx="4" fill="#E63946"/>
+<circle cx="148" cy="108" r="24" fill="#8D5A3B"/>
+<rect x="158" y="104" width="34" height="22" rx="10" fill="#F4A261"/>
+<circle cx="190" cy="108" r="5" fill="#2B2D42"/>
+<circle cx="156" cy="100" r="3.5" fill="#2B2D42"/>
+<path d="M132 92 Q116 96 120 126 Q138 124 142 100 Z" fill="#F4A261"/>
+</g>
+</svg>

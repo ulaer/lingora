@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="book">
+<rect x="58" y="84" width="140" height="146" rx="6" fill="#F1FAEE"/>
+<rect x="68" y="78" width="120" height="152" rx="6" fill="#457B9D" data-tint="primary"/>
+<path d="M92 122H164" stroke="#2B2D42" stroke-width="4" stroke-linecap="round" fill="none"/>
+</g>
+</svg>
