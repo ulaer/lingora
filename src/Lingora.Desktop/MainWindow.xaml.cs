@@ -1,5 +1,7 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using Lingora.Core.Game;
 using System.Windows.Input;
 using Lingora.Core;
 using Lingora.Core.Gemini;
@@ -58,6 +60,43 @@ public partial class MainWindow : Window
     internal VocabularyPage Vocabulary { get; }
 
     internal JournalPage Journal { get; }
+
+    /// <summary>Oyun sayfası; ilk açılışta oluşturulur (sahne kütüphanesi o zaman yüklenir).</summary>
+    internal GamePage? Game { get; private set; }
+
+    /// <summary>Oyun kütüphanesinin klasörü (testler değiştirebilir); null ise uygulama klasöründe aranır.</summary>
+    internal string? GameAssetsDirectory { get; set; }
+
+    /// <summary>Oyunda sahne seçimi için rastgele üreteç (testlerde sabit tohum).</summary>
+    internal Random? GameRandom { get; set; }
+
+    internal void OpenGame()
+    {
+        if (Game is null)
+        {
+            GameLibrary? library = null;
+            var directory = GameAssetsDirectory ?? GameLibrary.FindDirectory();
+            if (directory is not null)
+            {
+                try
+                {
+                    library = GameLibrary.Load(directory);
+                }
+                catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or KeyNotFoundException)
+                {
+                    library = null;
+                }
+            }
+
+            Game = new GamePage(_session, library, GameRandom);
+            Game.Evaluated += (_, _) => UpdateToday();
+        }
+
+        Game.Refresh();
+        ShowPage("Oyun", Game, 1080, 780);
+    }
+
+    private void OnGameClick(object sender, RoutedEventArgs e) => OpenGame();
 
     /// <summary>Ek pencereyi gösterir. Testler bunu değiştirip pencereyi ekranda açmadan inceler.</summary>
     internal Func<PageWindow, bool?> ShowDialogHandler { get; set; } = window => window.ShowDialog();

@@ -38,6 +38,9 @@ public sealed class AppSettings
 
     public string Model { get; set; } = DefaultModel;
 
+    /// <summary>Oyunda resmin hangi dilde anlatılacağı (hedef dil). Çalışma ekranındaki moddan bağımsızdır.</summary>
+    public TranslationDirection GameDirection { get; set; } = TranslationDirection.TurkishToEnglish;
+
     /// <summary>Sesli ders seslendirme modeli.</summary>
     public string TtsModel { get; set; } = DefaultTtsModel;
 
@@ -61,6 +64,11 @@ public sealed class AppSettings
         if (!Enum.IsDefined(Direction))
         {
             Direction = TranslationDirection.TurkishToEnglish;
+        }
+
+        if (!Enum.IsDefined(GameDirection))
+        {
+            GameDirection = TranslationDirection.TurkishToEnglish;
         }
 
         if (!Enum.IsDefined(Difficulty))

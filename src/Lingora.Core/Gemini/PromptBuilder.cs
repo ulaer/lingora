@@ -45,9 +45,35 @@ public static class PromptBuilder
 
     public static readonly string[] VocabularyFields = ["term", "meaning", "example", "type"];
 
+    /// <summary>Resmi anlat modunda sistem istemine eklenen kurallar.</summary>
+    public const string ImageModeRules = """
+
+        RESİM MODU (görev "resmi anlat" ise):
+        - Öğrenci bir çeviri yapmıyor; kendisine gösterilen resmi hedef dilde tek cümleyle anlatıyor. Sen resmi göremezsin;
+          resimde kesin olarak görünenler "Resimdeki olgular" listesinde verilir. Değerlendirmeyi YALNIZCA bu olgulara göre yap.
+        - Her öğeyi tek tek kontrol et: özne (kim/kaç kişi), eylem, nesne, renk, adet ve yer. Olgularla çelişen
+          (yanlış renk, yanlış adet, yanlış nesne, yanlış eylem, yanlış yer) her öğe gerçek bir hatadır ve mistakes'e
+          "yazılan → resimde olan: neden" biçiminde, resimde gerçekte ne olduğunu açıkça söyleyerek yazılır.
+        - Resimde olmayan bir şey eklemek (ör. arka plan yokken yer uydurmak) hatadır. Önemli bir öğeyi (nesne, renk, adet)
+          hiç söylememek eksik anlatımdır: puanı biraz düşür ve mistakes'e "eksik: ..." diye yaz. Yer belirtilmemişse ve
+          resimde yer varsa yalnızca tip'te öner, hata sayma.
+        - Resimde isim yazmadığı için kişiye olgulardaki herhangi bir doğru gönderme ile işaret etmek doğrudur
+          (İngilizcede "Tom", "he", "the boy"; Türkçede "Tom", "O", "Erkek çocuk" ya da öznesiz cümle);
+          kanonik cümle tek doğru cevap değildir.
+        - Değerlendirmeyi daima HEDEF DİLDE yap: hedef dil Türkçeyse düzeltilmiş ve doğal cümle Türkçe, İngilizceyse İngilizce olur.
+        - correctedTranslation: öğrencinin cümlesinin resme uygun en az değişiklikle düzeltilmiş hali;
+          naturalTranslation: resmi anlatan doğal bir cümle (kanonik cümleye yakın olabilir).
+        - tip: bu resimden öğrenilecek tek bir kural (ör. "holding" + nesne, çoğul -s, renk sıfatının yeri, yer edatları).
+        """;
+
     public static string BuildUserPrompt(PracticeItem item, string userTranslation)
     {
         ArgumentNullException.ThrowIfNull(item);
+        if (item.ImageFacts is { } facts)
+        {
+            return BuildImagePrompt(item, facts, userTranslation);
+        }
+
         var source = item.Direction.SourceLanguage();
         var target = item.Direction.TargetLanguage();
 
@@ -72,12 +98,53 @@ public static class PromptBuilder
         return builder.ToString();
     }
 
+    private static string BuildImagePrompt(PracticeItem item, string facts, string userTranslation)
+    {
+        var target = item.Direction.TargetLanguage();
+        var builder = new StringBuilder();
+        builder.Append("Görev: resmi anlat. Öğrenci resmi ").Append(target).AppendLine(" tek cümleyle anlattı.");
+        builder.Append("HEDEF DİL: ").Append(target.ToUpper(System.Globalization.CultureInfo.GetCultureInfo("tr-TR"))).AppendLine(".");
+        if (item.Direction == TranslationDirection.EnglishToTurkish)
+        {
+            builder.AppendLine(
+                "Öğrencinin cümlesi TÜRKÇEDİR ve Türkçe olarak değerlendirilir: Türkçe dil bilgisi (ekler, ünlü uyumu, -yor, "
+                + "yer bildiren -de/-da, belirtme durumu, kelime sırası) ve resme uygunluk. correctedTranslation ve naturalTranslation "
+                + "MUTLAKA TÜRKÇE cümle olmalı; asla İngilizce cümle önerme, İngilizce kurala göre puan verme. "
+                + "mistakes'te yanlış ve doğru kısımlar Türkçe yazılır (ör. \"iki elma → üç elma: resimde üç elma var\"). "
+                + "vocabulary yine İngilizce terim + Türkçe anlam olabilir.");
+        }
+        else
+        {
+            builder.AppendLine(
+                "Öğrencinin cümlesi İNGİLİZCEDİR: İngilizce dil bilgisi ve resme uygunluk değerlendirilir; correctedTranslation ve "
+                + "naturalTranslation İngilizce cümle olmalı, açıklamalar Türkçe.");
+        }
+
+        builder.AppendLine("Resimdeki olgular (kesin; değerlendirmeyi bunlara göre yap):");
+        builder.AppendLine(facts);
+        if (item.References.Count > 0)
+        {
+            builder.Append("Kanonik ").Append(target).AppendLine(" cümle (tek doğru cevap değildir):");
+            foreach (var reference in item.References)
+            {
+                builder.Append("- ").AppendLine(reference);
+            }
+        }
+
+        builder.Append("Öğrencinin ").Append(target).AppendLine(" cümlesi:");
+        builder.AppendLine("<<<");
+        builder.AppendLine((userTranslation ?? string.Empty).Trim());
+        builder.AppendLine(">>>");
+        builder.Append("Cümleyi resim moduna ve genel kurallara göre değerlendir; resimde gerçekte ne olduğunu açıkça belirt ve yalnızca istenen JSON nesnesini döndür.");
+        return builder.ToString();
+    }
+
     /// <summary>generateContent isteğinin JSON gövdesi (yapılandırılmış JSON çıktısı ister).</summary>
     public static JsonObject BuildRequestBody(PracticeItem item, string userTranslation) => new()
     {
         ["systemInstruction"] = new JsonObject
         {
-            ["parts"] = new JsonArray(new JsonObject { ["text"] = SystemInstruction }),
+            ["parts"] = new JsonArray(new JsonObject { ["text"] = item.ImageFacts is null ? SystemInstruction : SystemInstruction + ImageModeRules }),
         },
         ["contents"] = new JsonArray(new JsonObject
         {

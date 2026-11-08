@@ -8,11 +8,13 @@ public readonly record struct SentencePair(string English, string Turkish);
 /// <param name="Source">Çevrilecek cümle (kaynak dilde).</param>
 /// <param name="References">Veri dosyasındaki hedef dil çevirileri (referans).</param>
 /// <param name="CorpusIndex">Cümlenin korpustaki satır indeksi.</param>
+/// <param name="ImageFacts">Oyun (resmi anlat) modunda resimde kesin görünenler; doluysa istem resim moduna geçer.</param>
 public sealed record PracticeItem(
     TranslationDirection Direction,
     string Source,
     IReadOnlyList<string> References,
-    int CorpusIndex);
+    int CorpusIndex,
+    string? ImageFacts = null);
 
 /// <summary>Gemini'nin önerdiği tek bir kelime/kalıp/tamlama.</summary>
 /// <param name="Term">İngilizce terim (sözlük biçiminde).</param>

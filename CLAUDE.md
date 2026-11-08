@@ -66,8 +66,10 @@ src/Lingora.Desktop/   WPF arayüzü (exe adı: Lingora.exe)
                             JournalPage (Günlük: ders notu, PDF, günün kayıtları; üst çubukta Hedef ile Sözlük arası)
   Ui.cs                     Kodla oluşturulan yazı öğeleri için yardımcılar
 tests/Lingora.Tests/   xUnit; DesktopUiTests WPF'i tek STA iş parçacığında çalıştırır
-game-assets/                Dil oyunu için flat SVG kütüphanesi (arayüze bağlı değil): style-lock.md, manifest.json,
-                            scenes/A1|A2|B1.jsonl (tools/combine.py + grammar.py üretir), tools/validate.py, preview.html
+game-assets/                Dil oyunu için flat SVG kütüphanesi: style-lock.md, manifest.json, scenes.json
+                            (uygulama okur) + scenes/A1|A2|B1.jsonl (tools/combine.py + grammar.py üretir),
+                            tools/validate.py, preview.html. Uygulamaya çıktı klasöründe
+                            game-assets\ olarak kopyalanır; Core/Game okur, Desktop/SvgScene çizer, Pages/GamePage oynatır.
 uygulama/                   Yayınlanmış exe (git dışı)
 ```
 
@@ -79,8 +81,9 @@ uygulama/                   Yayınlanmış exe (git dışı)
   Header: `x-goog-api-key`.
 - Kullanıcıya görünen metinler Türkçe. Kod tanımlayıcıları İngilizce.
 - Arayüz sade ve yazı ağırlıklı. Kullanıcının istediği istisnalar: küçük logo, hedef ve dişli ikonları
-  (vektör/font, resim dosyası yok). Başka görsel ekleme (`game-assets/` arayüze bağlı değil;
-  bağlanacaksa önce bu kural güncellenir). Zemin gradyan, üst çubuk ayrı şerit değil,
+  (vektör/font, resim dosyası yok). Başka görsel ekleme. Tek istisna (08.11.2026, kullanıcı isteği):
+  **Oyun penceresi** `game-assets/` SVG sahnelerini gösterir; çalışma ekranı yine yazı ağırlıklı kalır.
+  Zemin gradyan, üst çubuk ayrı şerit değil,
   çalışma ekranındaki yazı alanı çerçevesiz ve şeffaf. Renkler `Theme.xaml` içinde.
 - WPF projelerinde `System.IO` örtük değil; gerekiyorsa `using System.IO;` ekle.
 - Zaman için `TimeProvider` enjekte edilir (testlerde sabit saat).

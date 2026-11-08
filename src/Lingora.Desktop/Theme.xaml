@@ -217,6 +217,41 @@
         </Setter>
     </Style>
 
+    <!-- Oyun: doğru / yanlış seçenek renkleri ve seçenek düğmesi -->
+    <SolidColorBrush x:Key="SuccessBrush" Color="#3DDC97" />
+    <SolidColorBrush x:Key="SuccessSoftBrush" Color="#263DDC97" />
+    <SolidColorBrush x:Key="ErrorBrush" Color="#FF6B6B" />
+    <SolidColorBrush x:Key="ErrorSoftBrush" Color="#26FF6B6B" />
+    <Style x:Key="ChoiceButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="Background" Value="{StaticResource GlassBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Margin" Value="0,0,0,10" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1.5" CornerRadius="12" Padding="18,13">
+                        <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Sesli dersteki yuvarlak oynat/duraklat düğmesi -->
     <Style x:Key="PlayButton" TargetType="Button">
         <Setter Property="Cursor" Value="Hand" />

@@ -87,8 +87,8 @@ def obj_en_lower(ch):
 
 
 def anchor_of(asset_id, pose):
-    a = A[asset_id]
-    return a.get("hand") or pose.get("anchor")
+    """Pozun manifest anchor'ı önceliklidir (v1 sahneleriyle birebir uyum); yoksa SVG'deki data-hand."""
+    return pose.get("anchor") or A[asset_id].get("hand")
 
 
 def actor(asset_id, x=128, s=1.0, hold=None, expr=None):
@@ -188,7 +188,7 @@ for ca in char_assets:
                         items.append((obj["id"], variant, n, hold, en_o, tr_o))
         for oid, variant, n, hold, en_o, tr_o in items:
             default = (variant is None or (oid and A[oid].get("tint_role") == "contents")) and n == 1
-            subs = subjects_for(ch, pid) if default else [subj_of(ch)]
+            subs = subjects_for(ch, pid)  # takma adlar tüm varyantlarda (uygulamanın scenes.json'u buna dayanır)
             sentences = [sent("prog", G.verb_clause("prog", s, verb, en_o, tr_o, pp), s["en"]) for s in subs]
             rid = "__".join(x for x in [ca["id"], oid, variant, f"x{n}" if n > 1 else None, pid] if x)
             r = rec(rid, "A1", pid, [actor(ca["id"], hold=hold)], sentences)
@@ -414,9 +414,38 @@ out_dir.mkdir(exist_ok=True)
 levels = {"A1": A1, "A2": A2, "B1": B1}
 for name, rows in levels.items():
     (out_dir / f"{name}.jsonl").write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8")
-old = ROOT / "scenes.json"
-if old.exists():
-    old.unlink()
+
+# Uygulama uyumluluğu: Core/Game/GameLibrary scenes.json'u (v1 biçimi) okur. A1 kayıtları cümle başına
+# bir sahneye açılır; kimlikler v1 ile aynı kalır (takma ad/grup öznesi için "__as_<özne>" eki).
+def slug(text):
+    return text.lower().replace(" ", "_")
+
+
+compat = []
+for r in A1:
+    group = r["layout"] == "pair"
+    for i, s in enumerate(r["sentences"]):
+        canonical = i == 0 and not group
+        a0 = r["actors"][0]
+        hold = a0.get("hold")
+        entry = {
+            "id": r["id"] if canonical else f"{r['id']}__as_{slug(s['subject'])}",
+            "background": r["bg"],
+            "character": a0["char"],
+            "object": hold["obj"] if hold else None,
+            "transform": {"tint": hold.get("tint") if hold else None,
+                          "count": hold.get("n", 1) if hold else 0,
+                          **({"anchor": hold["anchor"], "scale": hold["s"]} if hold and hold.get("anchor") else {})},
+            "subject": s["subject"],
+            "en": s["en"],
+            "tr": s["tr"],
+        }
+        if group:
+            entry["group"] = [{"character": a["char"], "x": a["x"], "scale": a["s"]} for a in r["actors"]]
+        compat.append(entry)
+(ROOT / "scenes.json").write_text(
+    '{"version": 1, "count": %d, "scenes": [\n%s\n]}\n' % (len(compat), ",\n".join(json.dumps(s, ensure_ascii=False) for s in compat)),
+    encoding="utf-8")
 
 # ---------------------------------------------------------------- coverage.md
 by_cat = Counter(a["category"] for a in assets if (ROOT / a["file"]).exists())

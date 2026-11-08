@@ -587,10 +587,6 @@
       "verb_tr": "telefonla konuşuyor",
       "requires": "none",
       "attach": "phone",
-      "anchor": [
-        160,
-        80
-      ],
       "scale": 0.18,
       "places": [
         "park",

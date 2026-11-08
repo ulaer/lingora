@@ -14,6 +14,7 @@ gökyüzü rengi, durum ve animasyon dönüşümleri).
 | `assets/overlays/` | konuşma/düşünce balonu, dün/yarın/olumsuz/soru rozetleri, güneş/ay/saat, hava (yağmur, kar…), duygu işaretleri |
 | `assets/overlays/face/` | yüz parçaları (ağız/göz/kaş) — duygu ifadeleri için değiştirilir |
 | `manifest.json` | asset → kelime/anlam; fiil çekimleri (EN/TR), yer kuralları, takma adlar, gruplar, duygular, hava, etkileşimler, yerleşimler |
+| `scenes.json` | Uygulamanın okuduğu biçim (Core/Game/GameLibrary): A1 kayıtları cümle başına bir sahne, v1 kimlikleriyle |
 | `scenes/A1.jsonl` | şimdiki zaman: özne + fiil + nesne + yer, gruplar |
 | `scenes/A2.jsonl` | dün/yarın, olumsuz, soru (rozetli), duygular, günün vakti, hava durumu |
 | `scenes/B1.jsonl` | etkileşim (konuşmak/dinlemek, el sallamak, aramak), düşünce balonu (istemek, birini düşünmek), ışık/TV/kapı durum değişimi, sıralı iki panel |

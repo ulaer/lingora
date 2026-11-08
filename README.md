@@ -7,7 +7,7 @@
 ![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)
 ![WPF](https://img.shields.io/badge/WPF-Windows-0078D4?logo=windows&logoColor=white)
 ![Gemini](https://img.shields.io/badge/Google-Gemini%20API-4285F4?logo=googlegemini&logoColor=white)
-![Tests](https://img.shields.io/badge/testler-203%20ba%C5%9Far%C4%B1l%C4%B1-2EA043)
+![Tests](https://img.shields.io/badge/testler-222%20ba%C5%9Far%C4%B1l%C4%B1-2EA043)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0B1120)
 
 <img src="docs/media/demo.gif" alt="Lingora demo: çeviri yazılıyor, Gemini değerlendiriyor, cevap harf harf ekrana geliyor" width="820" />
@@ -33,6 +33,12 @@ sen çevirini yazarsın; Google Gemini çevirini bir öğretmen gibi değerlendi
 - **Sesli ders (MP3):** aynı günlük kayıtlardan, öğretmen anlatımıyla 3-4 dakikalık yalnızca metin bir ders yazılır
   ve Gemini'nin metin okuma (TTS) sesiyle seslendirilir. Uygulama içinde dinle ya da **MP3 olarak kaydet**;
   yolda, yürürken tekrar et. Ses tonu Ayarlar → Genel'den seçilir (varsayılan: sıcak, sakin öğretmen).
+- **Resimli oyun:** `game-assets` kütüphanesindeki ~4.700 resimli sahneyle iki mod. **Resmi anlat:** resmi
+  hedef dilde bir cümleyle anlatırsın, Gemini resimdeki kesin olgulara (kim, eylem, nesne, renk, adet, yer) göre
+  değerlendirir ve neyin resimle uyuşmadığını açıkça söyler. **Doğru cümleyi seç:** dört cümleden resmi anlatanı
+  seçersin; çeldiriciler tek bir ayrıntıyla farklıdır (renk, adet, nesne, yer…). Oyun penceresindeki
+  **İngilizce / Türkçe** seçiciyle resmi hangi dilde anlatacağını seçersin (çalışma ekranındaki moddan bağımsız);
+  Türkçe seçiliyse değerlendirme de düzeltmeler de Türkçe olur. Sonuçlar bugünkü hedefe ve günlüğe sayılır.
 - **Kişisel sözlük:** eksik kaldığın kelime, kalıp ve tamlamalar anlamı ve örnek cümlesiyle otomatik
   kaydedilir. Aynı terimde tekrar hata yaparsan yeni kayıt açılmaz, "N kez" sayacı artar.
 - **İki yön:** TR → EN yazmayı, EN → TR okumayı çalıştırır.
@@ -47,6 +53,8 @@ sen çevirini yazarsın; Google Gemini çevirini bir öğretmen gibi değerlendi
 | <img src="docs/media/06-aciklama.png" alt="Hata satırının ayrıntılı açıklaması" width="420" /> | <img src="docs/media/07-ders-notu.png" alt="Günlük ders notu" width="420" /> |
 | **Sesli ders (MP3)** | **Günlük: hatalar ve ipuçları** |
 | <img src="docs/media/09-sesli-ders.png" alt="Sesli ders" width="420" /> | <img src="docs/media/08-gunluk.png" alt="Günlük kayıtları" width="420" /> |
+| **Oyun: resmi anlat** | **Oyun: doğru cümleyi seç** |
+| <img src="docs/media/10-oyun-anlat.png" alt="Oyun - resmi anlat" width="420" /> | <img src="docs/media/11-oyun-sec.png" alt="Oyun - doğru cümleyi seç" width="420" /> |
 | **Sözlük** | |
 | <img src="docs/media/03-sozluk.png" alt="Sözlük" width="420" /> | |
 | **Günlük hedef** | **Adım adım yardım** |
@@ -90,6 +98,7 @@ dotnet publish src/Lingora.Desktop -c Release -r win-x64 --self-contained false 
 | **TR → EN / EN → TR** | Çeviri yönü |
 | **◎ 13/20** | Hedef penceresi: bugün, seri, toplam, ortalama puan, son 7 gün |
 | **📅** | Günlük: **Ders notu** (oluştur / yenile / PDF), **Sesli ders** (oluştur / dinle / MP3 olarak kaydet), **Hatalar ve ipuçları** |
+| **🎮** | Oyun: **Resmi anlat** (Gemini değerlendirir) / **Doğru cümleyi seç** (dört seçenek, anında) |
 | **📖 11** | Sözlük: arama, sıralama (son eklenen / en çok hata / A–Z), silme |
 | **⚙** | Ayarlar: API anahtarı, veri dosyası, günlük hedef, zorluk, sıra, başlangıç satırı, model, sistem kontrolü |
 
@@ -125,7 +134,9 @@ src/Lingora.Core/       İş mantığı (arayüzden bağımsız, test edilen kı
   Lexicon/              Kişisel sözlük ve benzer terim birleştirme
   Progress/             İlerleme kaydı (JSON Lines), seri ve günlük hedef hesapları
   Storage/              Ayarlar, DPAPI ile şifreli anahtar, veri klasörü
-src/Lingora.Desktop/    WPF arayüzü: özel başlık çubuğu, tema, daktilo animasyonu
+  Game/                 game-assets okuyucu: sahneler, resmin kesin olguları (istem için), çeldirici üretimi
+src/Lingora.Desktop/    WPF arayüzü: özel başlık çubuğu, tema, daktilo animasyonu, SVG sahne çizici (SvgScene)
+game-assets/            Oyun için flat SVG kütüphanesi ve sahne listesi (ayrıntı: game-assets/README.md)
 tests/Lingora.Tests/    xUnit: çekirdek + WPF arayüz testleri (pencere açmadan, ekran görüntüsüyle)
 ```
 

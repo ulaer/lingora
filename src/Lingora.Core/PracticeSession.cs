@@ -1,4 +1,5 @@
 using Lingora.Core.Corpus;
+using Lingora.Core.Game;
 using Lingora.Core.Gemini;
 using Lingora.Core.Journal;
 using Lingora.Core.Lexicon;
@@ -545,13 +546,115 @@ public sealed class PracticeSession
             return new SubmitOutcome(false, "Lütfen önce çevirinizi yazın.");
         }
 
+        State = SessionState.Evaluating;
+        var outcome = await EvaluateAndRecordAsync(item, text, cancellationToken).ConfigureAwait(false);
+        if (outcome.Success)
+        {
+            _picker.MarkSeen(item.Direction, item.Source);
+            State = SessionState.ShowingResult;
+        }
+        else
+        {
+            State = SessionState.AwaitingAnswer;
+        }
+
+        return outcome;
+    }
+
+    /// <summary>
+    /// Oyun – resmi anlat: sahnenin kesin olgularıyla Gemini'ye gönderir. Sonuç günlük hedefe, günlüğe ve
+    /// sözlüğe çeviri gibi sayılır; çalışma ekranındaki cümleyi ve durumu değiştirmez.
+    /// </summary>
+    public async Task<SubmitOutcome> SubmitSceneAsync(GameLibrary library, GameScene scene, string userSentence, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(library);
+        ArgumentNullException.ThrowIfNull(scene);
+        var text = (userSentence ?? string.Empty).Trim();
+        if (text.Length == 0)
+        {
+            return new SubmitOutcome(false, "Lütfen önce resmi anlatan cümleni yaz.");
+        }
+
+        return await EvaluateAndRecordAsync(SceneItem(library, scene), text, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Oyunda resmin anlatılacağı dil (TurkishToEnglish = İngilizce yaz). Kalıcıdır.</summary>
+    public void SetGameDirection(TranslationDirection direction)
+    {
+        Settings.GameDirection = direction;
+        SaveSettings();
+    }
+
+    /// <summary>Resmi anlat sahnesinin değerlendirme öğesi (kaynak: resim etiketi, referans: kanonik cümle).</summary>
+    public PracticeItem SceneItem(GameLibrary library, GameScene scene)
+    {
+        var direction = Settings.GameDirection;
+        var sourceSentence = direction == TranslationDirection.TurkishToEnglish ? scene.Tr : scene.En;
+        return new PracticeItem(direction, "Resim: " + sourceSentence, [scene.Sentence(direction)], -1, library.DescribeFacts(scene, direction));
+    }
+
+    /// <summary>
+    /// Oyun – doğru cümleyi seç: yerel değerlendirme (AI yok). Günlük hedefe sayılır; yanlışsa doğrusu
+    /// günlüğe hata olarak yazılır.
+    /// </summary>
+    public JournalEntry RecordChoice(ChoiceQuestion question, int chosenIndex)
+    {
+        ArgumentNullException.ThrowIfNull(question);
+        var correct = chosenIndex == question.CorrectIndex;
+        var chosen = chosenIndex >= 0 && chosenIndex < question.Options.Count ? question.Options[chosenIndex] : string.Empty;
+        var now = _time.GetLocalNow();
+        var direction = question.Direction;
+        var source = "Resim (seçmeli): " + (direction == TranslationDirection.TurkishToEnglish ? question.Scene.Tr : question.Scene.En);
+
+        var record = new AttemptRecord
+        {
+            Timestamp = now,
+            Direction = direction,
+            Source = source,
+            UserTranslation = chosen,
+            Score = correct ? 100 : 0,
+            IsCorrect = correct,
+            DailyGoal = Settings.DailyGoal,
+        };
+        var entry = new JournalEntry
+        {
+            Timestamp = now,
+            Direction = direction,
+            Source = source,
+            UserTranslation = chosen,
+            Score = record.Score,
+            IsCorrect = correct,
+            CorrectedTranslation = question.Correct,
+            NaturalTranslation = question.Correct,
+        };
+        if (!correct)
+        {
+            entry.Mistakes.Add($"{chosen} → {question.Correct}: resimle uyuşmuyor");
+        }
+
+        try
+        {
+            _progressStore.Append(record);
+            Journal.Append(entry);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Warnings.Add($"Oyun sonucu kaydedilemedi: {ex.Message}");
+        }
+
+        _attempts.Add(record);
+        return entry;
+    }
+
+    /// <summary>Değerlendirir ve sonucu ilerleme, sözlük ve günlüğe yazar (çalışma ekranı ve oyun ortak).</summary>
+    private async Task<SubmitOutcome> EvaluateAndRecordAsync(PracticeItem item, string text, CancellationToken cancellationToken)
+    {
         var key = GetApiKey();
         if (!key.HasKey)
         {
             return new SubmitOutcome(false, key.Error ?? "API anahtarı girilmemiş. Ayarlar > API Anahtarı menüsünden ekleyin.");
         }
 
-        State = SessionState.Evaluating;
         Evaluation evaluation;
         try
         {
@@ -561,17 +664,14 @@ public sealed class PracticeSession
         }
         catch (GeminiException ex)
         {
-            State = SessionState.AwaitingAnswer;
             return new SubmitOutcome(false, ex.Message);
         }
         catch (OperationCanceledException)
         {
-            State = SessionState.AwaitingAnswer;
             return new SubmitOutcome(false, "İşlem iptal edildi.");
         }
         catch (Exception ex)
         {
-            State = SessionState.AwaitingAnswer;
             return new SubmitOutcome(false, $"Beklenmeyen hata: {ex.Message}");
         }
 
@@ -627,8 +727,6 @@ public sealed class PracticeSession
         }
 
         _attempts.Add(record);
-        _picker.MarkSeen(item.Direction, item.Source);
-        State = SessionState.ShowingResult;
         return new SubmitOutcome(true, EvaluationFormatter.Format(item, text, evaluation) + saveWarning, evaluation, words, entry);
     }
 
