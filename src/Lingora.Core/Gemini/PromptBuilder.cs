@@ -57,8 +57,10 @@ public static class PromptBuilder
         - Resimde olmayan bir şey eklemek (ör. arka plan yokken yer uydurmak) hatadır. Önemli bir öğeyi (nesne, renk, adet)
           hiç söylememek eksik anlatımdır: puanı biraz düşür ve mistakes'e "eksik: ..." diye yaz. Yer belirtilmemişse ve
           resimde yer varsa yalnızca tip'te öner, hata sayma.
-        - Resimde isim yazmadığı için kişiye "Tom", "he", "the boy", "a boy" gibi olgulardaki herhangi bir doğru gönderme
-          ile işaret etmek doğrudur; kanonik cümle tek doğru cevap değildir.
+        - Resimde isim yazmadığı için kişiye olgulardaki herhangi bir doğru gönderme ile işaret etmek doğrudur
+          (İngilizcede "Tom", "he", "the boy"; Türkçede "Tom", "O", "Erkek çocuk" ya da öznesiz cümle);
+          kanonik cümle tek doğru cevap değildir.
+        - Değerlendirmeyi daima HEDEF DİLDE yap: hedef dil Türkçeyse düzeltilmiş ve doğal cümle Türkçe, İngilizceyse İngilizce olur.
         - correctedTranslation: öğrencinin cümlesinin resme uygun en az değişiklikle düzeltilmiş hali;
           naturalTranslation: resmi anlatan doğal bir cümle (kanonik cümleye yakın olabilir).
         - tip: bu resimden öğrenilecek tek bir kural (ör. "holding" + nesne, çoğul -s, renk sıfatının yeri, yer edatları).
@@ -101,6 +103,23 @@ public static class PromptBuilder
         var target = item.Direction.TargetLanguage();
         var builder = new StringBuilder();
         builder.Append("Görev: resmi anlat. Öğrenci resmi ").Append(target).AppendLine(" tek cümleyle anlattı.");
+        builder.Append("HEDEF DİL: ").Append(target.ToUpper(System.Globalization.CultureInfo.GetCultureInfo("tr-TR"))).AppendLine(".");
+        if (item.Direction == TranslationDirection.EnglishToTurkish)
+        {
+            builder.AppendLine(
+                "Öğrencinin cümlesi TÜRKÇEDİR ve Türkçe olarak değerlendirilir: Türkçe dil bilgisi (ekler, ünlü uyumu, -yor, "
+                + "yer bildiren -de/-da, belirtme durumu, kelime sırası) ve resme uygunluk. correctedTranslation ve naturalTranslation "
+                + "MUTLAKA TÜRKÇE cümle olmalı; asla İngilizce cümle önerme, İngilizce kurala göre puan verme. "
+                + "mistakes'te yanlış ve doğru kısımlar Türkçe yazılır (ör. \"iki elma → üç elma: resimde üç elma var\"). "
+                + "vocabulary yine İngilizce terim + Türkçe anlam olabilir.");
+        }
+        else
+        {
+            builder.AppendLine(
+                "Öğrencinin cümlesi İNGİLİZCEDİR: İngilizce dil bilgisi ve resme uygunluk değerlendirilir; correctedTranslation ve "
+                + "naturalTranslation İngilizce cümle olmalı, açıklamalar Türkçe.");
+        }
+
         builder.AppendLine("Resimdeki olgular (kesin; değerlendirmeyi bunlara göre yap):");
         builder.AppendLine(facts);
         if (item.References.Count > 0)

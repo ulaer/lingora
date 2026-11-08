@@ -36,7 +36,9 @@ sen çevirini yazarsın; Google Gemini çevirini bir öğretmen gibi değerlendi
 - **Resimli oyun:** `game-assets` kütüphanesindeki ~4.700 resimli sahneyle iki mod. **Resmi anlat:** resmi
   hedef dilde bir cümleyle anlatırsın, Gemini resimdeki kesin olgulara (kim, eylem, nesne, renk, adet, yer) göre
   değerlendirir ve neyin resimle uyuşmadığını açıkça söyler. **Doğru cümleyi seç:** dört cümleden resmi anlatanı
-  seçersin; çeldiriciler tek bir ayrıntıyla farklıdır (renk, adet, nesne, yer…). Sonuçlar bugünkü hedefe ve günlüğe sayılır.
+  seçersin; çeldiriciler tek bir ayrıntıyla farklıdır (renk, adet, nesne, yer…). Oyun penceresindeki
+  **İngilizce / Türkçe** seçiciyle resmi hangi dilde anlatacağını seçersin (çalışma ekranındaki moddan bağımsız);
+  Türkçe seçiliyse değerlendirme de düzeltmeler de Türkçe olur. Sonuçlar bugünkü hedefe ve günlüğe sayılır.
 - **Kişisel sözlük:** eksik kaldığın kelime, kalıp ve tamlamalar anlamı ve örnek cümlesiyle otomatik
   kaydedilir. Aynı terimde tekrar hata yaparsan yeni kayıt açılmaz, "N kez" sayacı artar.
 - **İki yön:** TR → EN yazmayı, EN → TR okumayı çalıştırır.

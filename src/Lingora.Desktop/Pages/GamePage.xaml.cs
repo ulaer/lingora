@@ -47,8 +47,47 @@ public partial class GamePage : UserControl
             return;
         }
 
+        UpdateLanguageButtons();
         UpdateScore();
         NextScene();
+    }
+
+    private bool _updatingLanguage;
+
+    private void UpdateLanguageButtons()
+    {
+        _updatingLanguage = true;
+        LangEnglish.IsChecked = Direction == TranslationDirection.TurkishToEnglish;
+        LangTurkish.IsChecked = Direction == TranslationDirection.EnglishToTurkish;
+        _updatingLanguage = false;
+    }
+
+    /// <summary>Resmi İngilizce ya da Türkçe anlatma; seçim kalıcıdır, yeni resim gelir.</summary>
+    internal void SetLanguage(TranslationDirection direction)
+    {
+        if (IsBusy)
+        {
+            UpdateLanguageButtons();
+            return;
+        }
+
+        if (direction != Direction)
+        {
+            _session.SetGameDirection(direction);
+            NextScene();
+        }
+
+        UpdateLanguageButtons();
+    }
+
+    private void OnLanguageChecked(object sender, RoutedEventArgs e)
+    {
+        if (_updatingLanguage || LangEnglish is null || _library is null)
+        {
+            return;
+        }
+
+        SetLanguage(sender == LangTurkish ? TranslationDirection.EnglishToTurkish : TranslationDirection.TurkishToEnglish);
     }
 
     /// <summary>Bir sonuç alındı (üst çubuktaki bugün sayacı için).</summary>
@@ -59,6 +98,9 @@ public partial class GamePage : UserControl
 
     internal bool IsBusy { get; private set; }
 
+    /// <summary>Sahne kütüphanesi (yoksa null).</summary>
+    internal GameLibrary? Library => _library;
+
     /// <summary>Ekrandaki sahne.</summary>
     internal GameScene? Scene { get; private set; }
 
@@ -67,7 +109,8 @@ public partial class GamePage : UserControl
 
     internal bool IsChooseMode => ModeChoose.IsChecked == true;
 
-    private TranslationDirection Direction => _session.Settings.Direction;
+    /// <summary>Oyunun hedef dili (pencerede seçilir; çalışma ekranındaki moddan bağımsız).</summary>
+    internal TranslationDirection Direction => _session.Settings.GameDirection;
 
     private string TargetUpper => Ui.Upper(Direction.TargetLanguage());
 

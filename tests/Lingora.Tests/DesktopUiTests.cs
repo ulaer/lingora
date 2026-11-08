@@ -775,6 +775,55 @@ public class DesktopUiTests
     }
 
     [Fact]
+    public async Task GameLanguageSelectorSwitchesToTurkishEverywhere()
+    {
+        using var s = Create();
+        s.Evaluator.Handler = (item, _) => new Evaluation
+        {
+            Score = 80,
+            IsCorrect = true,
+            CorrectedTranslation = item.References[0],
+            NaturalTranslation = item.References[0],
+        };
+        await WpfHost.RunAsync(async () =>
+        {
+            var (window, _) = CreateWindow(s);
+            window.GameRandom = new Random(7);
+            window.OpenGame();
+            var game = window.Game!;
+            game.AnimateResults = false;
+            Assert.True(game.LangEnglish.IsChecked);
+            Assert.False(game.LangTurkish.IsChecked);
+
+            game.LangTurkish.IsChecked = true;
+
+            Assert.Equal(TranslationDirection.EnglishToTurkish, s.Session.Settings.GameDirection);
+            Assert.Equal(TranslationDirection.TurkishToEnglish, s.Session.Settings.Direction);
+            Assert.Equal("RESMİ TÜRKÇE BİR CÜMLEYLE ANLAT", game.DescribeCaption.Text);
+            Assert.Contains("Türkçe yaz", game.Placeholder.Text);
+            Assert.Equal(game.Scene!.Tr, game.Question!.Correct);
+            Assert.Contains(game.Library!.SubjectIn(game.Scene, TranslationDirection.EnglishToTurkish), game.HintText.Text);
+            WpfHost.ScreenshotPage(game, "26-oyun-turkce", 1080, 780);
+
+            game.InputBox.Text = "Resimdeki kişi bir şey tutuyor";
+            await game.SendAsync();
+            var call = Assert.Single(s.Evaluator.Calls);
+            Assert.Equal(TranslationDirection.EnglishToTurkish, call.Item.Direction);
+            Assert.Equal(game.Scene.Tr, call.Item.References[0]);
+            Assert.Contains(game.Scene.Tr, AllText(game.ResultBody));
+
+            game.ModeChoose.IsChecked = true;
+            Assert.Contains("DOĞRU TÜRKÇE CÜMLE", game.ChooseCaption.Text);
+            Assert.All(game.Question!.Options, o => Assert.Contains(o, game.Library.Scenes.Select(x => x.Tr)));
+
+            // Geri İngilizceye.
+            game.LangEnglish.IsChecked = true;
+            Assert.Equal(TranslationDirection.TurkishToEnglish, s.Session.Settings.GameDirection);
+            Assert.Equal(game.Scene!.En, game.Question!.Correct);
+        });
+    }
+
+    [Fact]
     public void ChooseModeMarksAnswerRecordsItAndMovesOn()
     {
         using var s = Create();

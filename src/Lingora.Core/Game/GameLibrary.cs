@@ -246,18 +246,20 @@ public sealed class GameLibrary
     /// Resimde kesin olarak görünenler (Türkçe, maddeler halinde). Gemini istemine "resmin doğru tarifi"
     /// olarak konur; değerlendirme bu olgulara göre yapılır.
     /// </summary>
-    public string DescribeFacts(GameScene scene)
+    public string DescribeFacts(GameScene scene, TranslationDirection direction = TranslationDirection.TurkishToEnglish)
     {
         var b = new StringBuilder();
         var people = scene.Group is { Count: > 0 }
             ? scene.Group.Select(m => Assets[m.Character]).ToList()
             : new List<GameAsset> { Assets[scene.Character] };
         var pose = Poses.TryGetValue(people[0].Pose ?? string.Empty, out var p) ? p : null;
+        var turkish = direction == TranslationDirection.EnglishToTurkish;
 
         var who = string.Join(" ve ", people.Select(a => Who(a.Character!)));
         b.Append("- Kim: ").Append(who).Append(". Resimde isim yazmaz; kanonik cümlede özne \"")
-            .Append(scene.Subject).AppendLine("\".");
-        b.Append("- Kabul edilebilir özne göndermeleri: ").AppendLine(AcceptableSubjects(scene, people));
+            .Append(SubjectIn(scene, direction)).AppendLine("\".");
+        b.Append("- Kabul edilebilir özne göndermeleri: ")
+            .AppendLine(turkish ? AcceptableSubjectsTr(scene, people) : AcceptableSubjects(scene, people));
         if (pose is not null)
         {
             b.Append("- Eylem: ").Append(PoseDescription(pose.Id)).Append(" (").Append(pose.VerbEn).Append(" / ").Append(pose.VerbTr).AppendLine(").");
@@ -322,6 +324,29 @@ public sealed class GameLibrary
             _ => "A " + c.Id,
         });
         return string.Join(", ", names.Distinct().Select(n => $"\"{n}\"")) + " (resimde isim görünmediği için bunların hepsi doğrudur).";
+    }
+
+    private string AcceptableSubjectsTr(GameScene scene, IReadOnlyList<GameAsset> people)
+    {
+        if (people.Count > 1)
+        {
+            return $"\"{SubjectIn(scene, TranslationDirection.EnglishToTurkish)}\", \"Onlar\" ve resmi doğru anlatan çoğul özneler; "
+                   + "Türkçede özne düşürülebilir (ör. \"Koşuyorlar.\").";
+        }
+
+        var c = Characters[people[0].Character!];
+        var names = new List<string> { c.Tr };
+        names.AddRange(c.Aliases.Select(a => a.Tr));
+        names.AddRange(c.Id switch
+        {
+            "tom" => new[] { "Bir erkek çocuk", "Oğlan" },
+            "mary" => new[] { "Bir kız", "Kız çocuğu" },
+            "man" => new[] { "Bir adam" },
+            "woman" => new[] { "Bir kadın" },
+            _ => new[] { "Bir " + c.Tr.ToLower(CultureInfo.GetCultureInfo("tr-TR")) },
+        });
+        return string.Join(", ", names.Distinct().Select(n => $"\"{n}\""))
+               + " (resimde isim görünmediği için hepsi doğrudur; Türkçede özne düşürülebilir, ör. \"Elma tutuyor.\").";
     }
 
     private static string PoseDescription(string pose) => pose switch

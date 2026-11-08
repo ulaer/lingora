@@ -177,6 +177,55 @@ public class ScenePromptTests
     }
 }
 
+public class TurkishScenePromptTests
+{
+    [Fact]
+    public void TurkishGameLanguageMakesGeminiEvaluateAndAnswerInTurkish()
+    {
+        using var dir = new TempDir();
+        var session = new PracticeSession(new AppPaths(dir.Path), new FakeEvaluator(), new FixedTimeProvider(FixedTimeProvider.Local(2026, 11, 8, 10)), new ApiKeyStore(_ => null));
+        session.SetGameDirection(TranslationDirection.EnglishToTurkish);
+        var scene = GameFixture.Scene("mary_stand__ball__yellow__x2__school");
+
+        var item = session.SceneItem(GameFixture.Library, scene);
+        var body = PromptBuilder.BuildRequestBody(item, "Kız okulda iki sarı top tutuyor");
+        var system = body["systemInstruction"]!["parts"]![0]!["text"]!.GetValue<string>();
+        var prompt = body["contents"]![0]!["parts"]![0]!["text"]!.GetValue<string>();
+
+        Assert.Equal(TranslationDirection.EnglishToTurkish, item.Direction);
+        Assert.Equal("Mary okulda iki sarı top tutuyor.", Assert.Single(item.References));
+        Assert.Equal("Resim: Mary is holding two yellow balls at school.", item.Source);
+        Assert.Contains("Öğrenci resmi Türkçe tek cümleyle anlattı", prompt);
+        Assert.Contains("HEDEF DİL: TÜRKÇE", prompt);
+        Assert.Contains("MUTLAKA TÜRKÇE", prompt);
+        Assert.Contains("asla İngilizce cümle önerme", prompt);
+        Assert.Contains("Kanonik Türkçe cümle", prompt);
+        Assert.Contains("\"Kız\"", prompt);
+        Assert.Contains("\"O\"", prompt);
+        Assert.Contains("özne düşürülebilir", prompt);
+        Assert.DoesNotContain("\"The girl\"", prompt);
+        Assert.Contains("Değerlendirmeyi daima HEDEF DİLDE yap", system);
+
+        // Seçim kalıcı; çalışma ekranının modu değişmez.
+        var reopened = new PracticeSession(new AppPaths(dir.Path), new FakeEvaluator(), new FixedTimeProvider(FixedTimeProvider.Local(2026, 11, 8, 10)), new ApiKeyStore(_ => null));
+        Assert.Equal(TranslationDirection.EnglishToTurkish, reopened.Settings.GameDirection);
+        Assert.Equal(TranslationDirection.TurkishToEnglish, reopened.Settings.Direction);
+    }
+
+    [Fact]
+    public void ChoiceRecordsUseTheQuestionsLanguage()
+    {
+        using var dir = new TempDir();
+        var session = new PracticeSession(new AppPaths(dir.Path), new FakeEvaluator(), new FixedTimeProvider(FixedTimeProvider.Local(2026, 11, 8, 10)), new ApiKeyStore(_ => null));
+        var question = ChoiceBuilder.Build(GameFixture.Library, GameFixture.Scene("tom_stand__apple__park"), TranslationDirection.EnglishToTurkish, new Random(1));
+
+        Assert.Equal("Tom parkta bir elma tutuyor.", question.Correct);
+        var entry = session.RecordChoice(question, question.CorrectIndex);
+        Assert.Equal(TranslationDirection.EnglishToTurkish, entry.Direction);
+        Assert.Equal("Resim (seçmeli): Tom is holding an apple in the park.", entry.Source);
+    }
+}
+
 public class GameSessionTests
 {
     private static PracticeSession Create(TempDir dir, FakeEvaluator evaluator)

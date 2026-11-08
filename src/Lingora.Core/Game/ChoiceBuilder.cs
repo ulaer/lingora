@@ -3,7 +3,7 @@ using Lingora.Core.Models;
 namespace Lingora.Core.Game;
 
 /// <summary>"Doğru cümleyi seç" sorusu: seçenekler hedef dilde, biri doğru.</summary>
-public sealed record ChoiceQuestion(GameScene Scene, IReadOnlyList<string> Options, int CorrectIndex)
+public sealed record ChoiceQuestion(GameScene Scene, IReadOnlyList<string> Options, int CorrectIndex, TranslationDirection Direction = TranslationDirection.TurkishToEnglish)
 {
     public string Correct => Options[CorrectIndex];
 }
@@ -45,7 +45,7 @@ public static class ChoiceBuilder
         }
 
         var shuffled = options.OrderBy(_ => random.Next()).ToList();
-        return new ChoiceQuestion(scene, shuffled, shuffled.IndexOf(correct));
+        return new ChoiceQuestion(scene, shuffled, shuffled.IndexOf(correct), direction);
     }
 
     /// <summary>Resmin görsel anahtarı: (kişiler+poz, nesne, renk/içerik, adet, yer).</summary>

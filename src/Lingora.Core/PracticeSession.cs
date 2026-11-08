@@ -578,12 +578,19 @@ public sealed class PracticeSession
         return await EvaluateAndRecordAsync(SceneItem(library, scene), text, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>Oyunda resmin anlatılacağı dil (TurkishToEnglish = İngilizce yaz). Kalıcıdır.</summary>
+    public void SetGameDirection(TranslationDirection direction)
+    {
+        Settings.GameDirection = direction;
+        SaveSettings();
+    }
+
     /// <summary>Resmi anlat sahnesinin değerlendirme öğesi (kaynak: resim etiketi, referans: kanonik cümle).</summary>
     public PracticeItem SceneItem(GameLibrary library, GameScene scene)
     {
-        var direction = Settings.Direction;
+        var direction = Settings.GameDirection;
         var sourceSentence = direction == TranslationDirection.TurkishToEnglish ? scene.Tr : scene.En;
-        return new PracticeItem(direction, "Resim: " + sourceSentence, [scene.Sentence(direction)], -1, library.DescribeFacts(scene));
+        return new PracticeItem(direction, "Resim: " + sourceSentence, [scene.Sentence(direction)], -1, library.DescribeFacts(scene, direction));
     }
 
     /// <summary>
@@ -596,7 +603,7 @@ public sealed class PracticeSession
         var correct = chosenIndex == question.CorrectIndex;
         var chosen = chosenIndex >= 0 && chosenIndex < question.Options.Count ? question.Options[chosenIndex] : string.Empty;
         var now = _time.GetLocalNow();
-        var direction = Settings.Direction;
+        var direction = question.Direction;
         var source = "Resim (seçmeli): " + (direction == TranslationDirection.TurkishToEnglish ? question.Scene.Tr : question.Scene.En);
 
         var record = new AttemptRecord
