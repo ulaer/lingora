@@ -75,6 +75,12 @@
                     </StackPanel>
                 </Button>
 
+                <!-- Oyun: resimli sahneler (game-assets) -->
+                <Button x:Name="GameButton" Style="{StaticResource IconButton}" ToolTip="Oyun: resmi anlat / doğru cümleyi seç"
+                        Margin="4,0,0,0" Click="OnGameClick">
+                    <TextBlock Text="&#xE7FC;" FontFamily="{StaticResource IconFont}" FontSize="17" VerticalAlignment="Center" />
+                </Button>
+
                 <!-- Ayarlar -->
                 <Button x:Name="SettingsButton" Style="{StaticResource IconButton}" ToolTip="Ayarlar"
                         Margin="4,0,0,0" Click="OnSettingsClick">

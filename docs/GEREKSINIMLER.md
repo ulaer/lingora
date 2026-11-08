@@ -35,6 +35,7 @@ geri gelir. İlerleme günlük olarak kaydedilir.
 | R19 | AI destek: (a) sonuçtaki her hata ve ipucu satırı için istenirse ayrıntılı açıklama; (b) her günün hataları, ipuçları ve açıklamaları günlüğe kaydedilir; (c) her gün için AI ders notu bir kez üretilir, sonra kayıttan açılır, PDF olarak kaydedilebilir; (d) Günlük, üst çubukta Hedef ile Sözlük arasında ikon butonla açılır | `Core/Journal/*` (JournalStore, LessonStore, LessonPdfExporter), `PromptBuilder` (Explain/Lesson), `GeminiClient : IStudyAssistant`, `PracticeSession.ExplainAsync/GetOrCreateLessonAsync`, `PracticePage`, `Pages/JournalPage`, `MainWindow` | `JournalStoreTests`, `StudyAssistantSessionTests`, `StudyAssistantGeminiTests`, `LessonPdfTests`, `JournalUiTests` |
 | R20 | (a) Ayrıntılı açıklama ilk cevap gibi kutusuz/şeffaf ve harf harf yazılarak gelir; (b) ders notu oluşturulduktan sonra o gün yeni çeviri yapıldıysa yeniden oluşturulabilir; (c) aynı günlük kayıtlardan yalnızca metin bir sesli ders anlatımı üretilir, uygun öğretmen üslubuyla seslendirilir ve MP3 olarak kaydedilir | `PracticePage` (ExplainSlot + Typewriter), `PracticeSession.GetOrCreateLessonAsync(regenerate)`, `GetOrCreateAudioLessonAsync`, `StudyPrompts` (AudioScript, SpeechStyle, TTS gövdesi), `GeminiClient.SynthesizeAsync`, `AudioLessonStore`, `SpeechChunker`, `Desktop/Mp3Encoder`, `JournalPage` (Sesli ders sekmesi), `SettingsPage` (ses, TTS modeli) | `AudioLessonSessionTests`, `SpeechChunkerTests`, `SpeechGeminiTests`, `DesktopUiTests.Explanation...`, `...BuildsAudioLesson`, `Mp3EncoderWritesPlayableMp3...` |
 | R21 | Dil öğrenme oyunu için flat SVG asset kütüphanesi: tek palet ve stil kilidi, 256×256 saydam zemin, ortak taban çizgisi; az sayıda modüler asset + uygulama içi dönüşüm (renk, adet, konum, grup) ile en çok cümleyi kapsar; sahneler ve kanonik EN/TR cümleler model kullanmadan yerel script ile üretilir. Arayüze henüz bağlı değil | `game-assets/` (style-lock.md, manifest.json, scenes.json, tools/combine.py, preview.html) | `tools/validate.py` (stil kilidi denetimi), `preview.html` ile gözle kontrol, coverage.md |
+| R22 | `game-assets` uygulamaya eklenir: üst çubukta Oyun ikonu, iki mod — **Resmi anlat** (sahne gösterilir, kullanıcı hedef dilde cümleyle anlatır; her zaman Gemini değerlendirir; istem resmi kesin olgularla tarif eder) ve **Doğru cümleyi seç** (4 seçenek, çeldiriciler tek görsel farkla, yerel). Oyundaki cümleler günlük hedefe, günlüğe ve (AI değerlendirmesinde) sözlüğe sayılır | `Core/Game/*` (GameLibrary, SceneFacts, ChoiceBuilder), `PracticeItem.ImageContext`, `PromptBuilder` (resim modu), `PracticeSession.SubmitSceneAsync/RecordChoice`, `Desktop/SvgScene`, `Pages/GamePage`, `MainWindow` | `GameLibraryTests`, `ScenePromptTests`, `GameSessionTests`, `SvgSceneTests`, `GameUiTests` |
 | R12 | Model: istek Gemini 1.5 Flash idi; bu model Google tarafından kaldırıldı. Model adı ayarlanabilir, varsayılan `gemini-flash-latest` | `Core/Models/AppSettings.cs`, `SettingsPage` (Genel) | `SettingsStoreTests`, `GeminiClientTests` |
 
 ## 3. Tasarım kararları
@@ -142,6 +143,14 @@ metodlarıyla çalıştırıldı); gerçek ekranda büyütülmüş pencerenin ke
 görüntüleri (20-aciklama-seffaf, 21-sesli-ders, docs/media/09) kontrol edildi. TTS modeli adı Google belgelerinden
 (`gemini-3.1-flash-tts-preview`, ham 24 kHz PCM). **Doğrulanamayan:** gerçek anahtarla anlatım/seslendirme ve
 uygulama içinde sesin gerçekten çalınması (testte oynatıcı açılmadı).
+
+**08.11.2026 – Resimli oyun (R22)**
+
+`dotnet test`: 222/222 başarılı, 0 uyarı. 54 SVG'nin hepsi kendi çizicimizle (SvgScene) çiziliyor; renk/tutma
+noktası kompozisyonu piksel testiyle doğrulandı. Ekran görüntüleri (22–25, docs/media 10–11) kontrol edildi.
+Nesnesi arkasındaki renge karışan 241 sahne (ör. sarı tişört önünde sarı elma, gökyüzü önünde su bardağı)
+oyunda gösterilmez (`SvgScene.ObjectVisibility` < 0,6). Rengi/yeri söylemeyen ve resim için de doğru olan cümleler
+çeldirici yapılmaz. **Doğrulanamayan:** gerçek Gemini'nin resim modu yanıt kalitesi.
 
 Gelecek çalışmalar (kullanıcı notu): ders notu üretiminde iyileştirmeler ve düzeltmeler eklenecek
 (ör. yeniden üretme, gün aralığı için not).

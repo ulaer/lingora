@@ -23,4 +23,14 @@
     <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
   </ItemGroup>
 
+  <!-- Oyun: game-assets sahne kütüphanesi uygulama klasörüne game-assets\ olarak kopyalanır. -->
+  <ItemGroup>
+    <Content Include="..\..\game-assets\manifest.json;..\..\game-assets\scenes.json"
+             Link="game-assets\%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\game-assets\assets\**\*.svg"
+             Link="game-assets\assets\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

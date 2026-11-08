@@ -242,8 +242,38 @@ public class MediaCapture
             await window.Journal.CreateAudioAsync();
             SavePage(window.Journal, "Günlük", Path.Combine(output, "09-sesli-ders.png"), 1040, 820);
             LessonPdfExporter.Export(window.Journal.ShownLesson!, Path.Combine(output, "ornek-ders-notu.pdf"));
+
+            // Oyun: resmi anlat (Gemini sonucu örnek) ve doğru cümleyi seç.
+            evaluator.Handler = (item, _) => new Evaluation
+            {
+                Score = 76,
+                IsCorrect = false,
+                CorrectedTranslation = item.References[0],
+                NaturalTranslation = item.References[0],
+                Mistakes = ["two apples → three apples: resimde adamın elinde üç elma var"],
+                MinorIssues = ["Sonda nokta eksik."],
+                Tip = "Sayıyı isimden önce söyle ve ismi çoğul yap: three apples.",
+            };
+            window.GameRandom = new Random(21);
+            window.OpenGame();
+            var game = window.Game!;
+            game.AnimateResults = false;
+            var applesScene = Lingora.Core.Game.GameLibrary.Load(Lingora.Core.Game.GameLibrary.FindDirectory()!)
+                .Scenes.First(s => s.Id == "man_stand__apple__green__x3__park");
+            ShowScene(game, applesScene);
+            game.InputBox.Text = "The man is holding two green apples in the park";
+            await game.SendAsync();
+            SavePage(game, "Oyun", Path.Combine(output, "10-oyun-anlat.png"), 1080, 980);
+
+            game.ModeChoose.IsChecked = true;
+            var question = game.Question!;
+            game.Choose(Enumerable.Range(0, question.Options.Count).First(i => i != question.CorrectIndex));
+            SavePage(game, "Oyun", Path.Combine(output, "11-oyun-sec.png"), 1080, 600);
         });
     }
+
+    /// <summary>Tanıtım görseli için belirli bir sahneyi gösterir.</summary>
+    private static void ShowScene(GamePage game, Lingora.Core.Game.GameScene scene) => game.ShowSceneForMedia(scene);
 
     private static void SavePage(UserControl page, string title, string path, double width, double height)
     {

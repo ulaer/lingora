@@ -618,6 +618,211 @@ public class DesktopUiTests
     }
 
     [Fact]
+    public void SvgSceneDrawsEveryAssetAndComposesTintedObjectsAtAnchor()
+    {
+        WpfHost.Run(() =>
+        {
+            var library = GameFixture.Library;
+            var renderer = new SvgScene(library);
+            foreach (var id in library.Assets.Keys)
+            {
+                Assert.True(Opaque(Rasterize(renderer.RenderAsset(id))) > 300, id);
+            }
+
+            // Yeşil elma: alt-orta noktası (176,160) tutma noktasında, gövdesi ~ (176,145).
+            var green = Rasterize(renderer.Render(GameFixture.Scene("tom_stand__apple__green")));
+            Assert.Equal(Color.FromRgb(0x2A, 0x9D, 0x8F), Pixel(green, 176, 145));
+            var red = Rasterize(renderer.Render(GameFixture.Scene("tom_stand__apple")));
+            Assert.Equal(Color.FromRgb(0xE6, 0x39, 0x46), Pixel(red, 176, 145));
+
+            // Arka planlı sahne kenara kadar dolu; grup sahnesinde iki karakter yan yana.
+            var park = Rasterize(renderer.Render(GameFixture.Scene("tom_stand__apple__park")));
+            Assert.Equal(Color.FromRgb(0xA8, 0xDA, 0xDC), Pixel(park, 128, 5));
+            var kids = Rasterize(renderer.Render(GameFixture.Scene("kids__run__as_tom_and_mary")));
+            Assert.True(Opaque(kids, 0, 128) > 300 && Opaque(kids, 128, 256) > 300);
+        });
+    }
+
+    [Fact]
+    public void ObjectsThatBlendIntoClothingAreDetectedAndSkipped()
+    {
+        using var s = Create();
+        WpfHost.Run(() =>
+        {
+            var library = GameFixture.Library;
+            var renderer = new SvgScene(library);
+            var yellowOnYellow = library.Scenes.First(x => x.En == "She is holding a yellow apple in the park." && x.Character == "woman_stand");
+            var redOnBlue = GameFixture.Scene("tom_stand__apple");
+
+            Assert.True(renderer.ObjectVisibility(yellowOnYellow) < GamePage.MinObjectVisibility);
+            Assert.True(renderer.ObjectVisibility(redOnBlue) > 0.9);
+            Assert.Equal(1, renderer.ObjectVisibility(GameFixture.Scene("tom_run")));
+
+            // Oyun bu sahneleri göstermez.
+            var (window, _) = CreateWindow(s);
+            window.GameRandom = new Random(2);
+            window.OpenGame();
+            var game = window.Game!;
+            for (var i = 0; i < 40; i++)
+            {
+                Assert.True(renderer.ObjectVisibility(game.Scene!) >= GamePage.MinObjectVisibility, game.Scene!.Id);
+                game.NextScene();
+            }
+        });
+    }
+
+    private static BitmapSource Rasterize(DrawingImage image)
+    {
+        var visual = new DrawingVisual();
+        using (var dc = visual.RenderOpen())
+        {
+            dc.DrawImage(image, new Rect(0, 0, 256, 256));
+        }
+
+        var bitmap = new RenderTargetBitmap(256, 256, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(visual);
+        return bitmap;
+    }
+
+    private static Color Pixel(BitmapSource bitmap, int x, int y)
+    {
+        var px = new byte[4];
+        bitmap.CopyPixels(new Int32Rect(x, y, 1, 1), px, 4, 0);
+        return Color.FromRgb(px[2], px[1], px[0]);
+    }
+
+    private static int Opaque(BitmapSource bitmap, int fromX = 0, int toX = 256)
+    {
+        var pixels = new byte[256 * 256 * 4];
+        bitmap.CopyPixels(pixels, 256 * 4, 0);
+        var count = 0;
+        for (var y = 0; y < 256; y++)
+        {
+            for (var x = fromX; x < toX; x++)
+            {
+                if (pixels[(((y * 256) + x) * 4) + 3] > 200)
+                {
+                    count++;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    [Fact]
+    public void GameIconSitsAfterDictionaryAndOpensGameWindow()
+    {
+        using var s = Create();
+        WpfHost.Run(() =>
+        {
+            var (window, opened) = CreateWindow(s);
+            var bar = (StackPanel)window.GameButton.Parent;
+            Assert.Equal(bar.Children.IndexOf(window.VocabularyButton) + 1, bar.Children.IndexOf(window.GameButton));
+            Assert.Equal(bar.Children.IndexOf(window.GameButton) + 1, bar.Children.IndexOf(window.SettingsButton));
+
+            window.GameRandom = new Random(11);
+            window.GameButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            Assert.Equal(["Oyun"], opened);
+            Assert.NotNull(window.Game!.Scene);
+            Assert.NotNull(window.Game.SceneImage.Source);
+        });
+    }
+
+    [Fact]
+    public async Task DescribeModeSendsPictureToGeminiAndShowsResult()
+    {
+        using var s = Create();
+        s.Evaluator.Handler = (item, text) => new Evaluation
+        {
+            Score = 74,
+            IsCorrect = false,
+            CorrectedTranslation = item.References[0],
+            NaturalTranslation = item.References[0],
+            Mistakes = ["red → yellow: resimdeki toplar sarı"],
+            Tip = "Renk sıfatı isimden önce gelir: two yellow balls.",
+        };
+        await WpfHost.RunAsync(async () =>
+        {
+            var (window, _) = CreateWindow(s);
+            window.GameRandom = new Random(11);
+            window.OpenGame();
+            var game = window.Game!;
+            game.AnimateResults = false;
+            Assert.Contains("İNGİLİZCE", game.DescribeCaption.Text);
+            Assert.StartsWith("İpucu · özne: ", game.HintText.Text);
+            WpfHost.ScreenshotPage(game, "22-oyun-anlat", 1080, 780);
+
+            game.InputBox.Text = "There are some balls";
+            await game.SendAsync();
+
+            var call = Assert.Single(s.Evaluator.Calls);
+            Assert.NotNull(call.Item.ImageFacts);
+            Assert.Equal(game.Scene!.En, call.Item.References[0]);
+            Assert.Equal(Visibility.Visible, game.ResultPanel.Visibility);
+            Assert.Equal("74 / 100   ·   Düzeltilmeli", game.ResultHeadline.Text);
+            Assert.Equal("Sonraki resim", game.SendButton.Content);
+            Assert.Equal("1/20", window.TodayText.Text);
+            Assert.Contains("1 resim", game.ScoreText.Text);
+            WpfHost.ScreenshotPage(game, "23-oyun-sonuc", 1080, 1000);
+
+            var first = game.Scene;
+            await game.SendAsync();
+            Assert.NotSame(first, game.Scene);
+            Assert.Equal(Visibility.Collapsed, game.ResultPanel.Visibility);
+            Assert.Equal(string.Empty, game.InputBox.Text);
+        });
+    }
+
+    [Fact]
+    public void ChooseModeMarksAnswerRecordsItAndMovesOn()
+    {
+        using var s = Create();
+        WpfHost.Run(() =>
+        {
+            var (window, _) = CreateWindow(s);
+            window.GameRandom = new Random(4);
+            window.OpenGame();
+            var game = window.Game!;
+            game.ModeChoose.IsChecked = true;
+            Assert.Equal(Visibility.Visible, game.ChoosePanel.Visibility);
+            Assert.Equal(Visibility.Collapsed, game.DescribePanel.Visibility);
+            Assert.Equal(4, game.OptionButtons.Count);
+            WpfHost.ScreenshotPage(game, "24-oyun-sec", 1080, 780);
+
+            var question = game.Question!;
+            var wrong = Enumerable.Range(0, 4).First(i => i != question.CorrectIndex);
+            game.OptionButtons[wrong].RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+
+            Assert.All(game.OptionButtons, b => Assert.False(b.IsEnabled));
+            Assert.Equal(Ui.Brush("SuccessBrush"), game.OptionButtons[question.CorrectIndex].BorderBrush);
+            Assert.Equal(Ui.Brush("ErrorBrush"), game.OptionButtons[wrong].BorderBrush);
+            Assert.Contains(question.Correct, game.ChoiceFeedback.Text);
+            Assert.Equal(Visibility.Visible, game.NextChoiceButton.Visibility);
+            Assert.Equal("1/20", window.TodayText.Text);
+            Assert.Empty(s.Evaluator.Calls);
+            WpfHost.ScreenshotPage(game, "25-oyun-sec-sonuc", 1080, 780);
+
+            game.NextChoiceButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            Assert.NotSame(question, game.Question);
+            Assert.All(game.OptionButtons, b => Assert.True(b.IsEnabled));
+        });
+    }
+
+    [Fact]
+    public void GameWithoutAssetsExplainsWhatIsMissing()
+    {
+        using var s = Create();
+        WpfHost.Run(() =>
+        {
+            var (window, _) = CreateWindow(s);
+            window.GameAssetsDirectory = s.Dir.File("yok");
+            window.OpenGame();
+            Assert.Equal(Visibility.Visible, window.Game!.MissingText.Visibility);
+        });
+    }
+
+    [Fact]
     public void Mp3EncoderWritesPlayableMp3From24kHzSpeech()
     {
         using var dir = new TempDir();
