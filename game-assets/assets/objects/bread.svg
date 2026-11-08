@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="bread">
+<rect x="54" y="128" width="148" height="102" rx="44" fill="#8D5A3B"/>
+<polygon points="84,168 98,142 110,146 96,172" fill="#F4A261"/>
+<polygon points="120,168 134,142 146,146 132,172" fill="#F4A261"/>
+<polygon points="156,168 170,142 182,146 168,172" fill="#F4A261"/>
+</g>
+</svg>

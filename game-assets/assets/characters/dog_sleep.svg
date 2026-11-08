@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="dog_sleep">
+<path d="M52 205 Q30 205 34 230 L56 230 Z" fill="#8D5A3B"/>
+<ellipse cx="110" cy="202" rx="60" ry="28" fill="#8D5A3B"/>
+<ellipse cx="110" cy="222" rx="30" ry="7" fill="#F4A261"/>
+<rect x="146" y="188" width="9" height="34" rx="4" fill="#E63946"/>
+<rect x="156" y="218" width="52" height="12" rx="6" fill="#F4A261"/>
+<circle cx="178" cy="204" r="24" fill="#8D5A3B"/>
+<rect x="184" y="206" width="30" height="14" rx="7" fill="#F4A261"/>
+<circle cx="212" cy="209" r="5" fill="#2B2D42"/>
+<path d="M170 200 Q176 205 182 201" stroke="#2B2D42" stroke-width="4" stroke-linecap="round" fill="none"/>
+<path d="M162 188 Q146 194 150 218 Q166 216 170 196 Z" fill="#F4A261"/>
+</g>
+</svg>

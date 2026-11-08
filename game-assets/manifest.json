@@ -1,0 +1,1101 @@
+{
+  "version": 1,
+  "style_lock": "style-lock.md",
+  "palette": {
+    "ink": "#2B2D42",
+    "paper": "#F1FAEE",
+    "skin": "#F2C6A0",
+    "brown": "#8D5A3B",
+    "red": "#E63946",
+    "orange": "#F4A261",
+    "yellow": "#E9C46A",
+    "green": "#2A9D8F",
+    "blue": "#457B9D",
+    "sky": "#A8DADC"
+  },
+  "colors": {
+    "red": {
+      "hex": "#E63946",
+      "en": "red",
+      "tr": "kırmızı"
+    },
+    "green": {
+      "hex": "#2A9D8F",
+      "en": "green",
+      "tr": "yeşil"
+    },
+    "yellow": {
+      "hex": "#E9C46A",
+      "en": "yellow",
+      "tr": "sarı"
+    },
+    "blue": {
+      "hex": "#457B9D",
+      "en": "blue",
+      "tr": "mavi"
+    },
+    "orange": {
+      "hex": "#F4A261",
+      "en": "orange",
+      "tr": "turuncu"
+    }
+  },
+  "numbers": {
+    "1": {
+      "en": "a",
+      "tr": "bir"
+    },
+    "2": {
+      "en": "two",
+      "tr": "iki"
+    },
+    "3": {
+      "en": "three",
+      "tr": "üç"
+    }
+  },
+  "characters": [
+    {
+      "id": "tom",
+      "en": "Tom",
+      "tr": "Tom",
+      "pronoun_en": "he",
+      "kind": "boy",
+      "place_exclude": [],
+      "aliases": [
+        {
+          "en": "He",
+          "tr": "O"
+        },
+        {
+          "en": "The boy",
+          "tr": "Erkek çocuk"
+        }
+      ]
+    },
+    {
+      "id": "mary",
+      "en": "Mary",
+      "tr": "Mary",
+      "pronoun_en": "she",
+      "kind": "girl",
+      "place_exclude": [],
+      "aliases": [
+        {
+          "en": "She",
+          "tr": "O"
+        },
+        {
+          "en": "The girl",
+          "tr": "Kız"
+        }
+      ]
+    },
+    {
+      "id": "dog",
+      "en": "The dog",
+      "tr": "Köpek",
+      "pronoun_en": "it",
+      "kind": "animal",
+      "place_exclude": [
+        "school",
+        "pool"
+      ],
+      "aliases": []
+    },
+    {
+      "id": "cat",
+      "en": "The cat",
+      "tr": "Kedi",
+      "pronoun_en": "it",
+      "kind": "animal",
+      "place_exclude": [
+        "school",
+        "pool"
+      ],
+      "aliases": []
+    },
+    {
+      "id": "man",
+      "en": "The man",
+      "tr": "Adam",
+      "pronoun_en": "he",
+      "kind": "adult",
+      "place_exclude": [],
+      "aliases": [
+        {
+          "en": "He",
+          "tr": "O"
+        },
+        {
+          "en": "My father",
+          "tr": "Babam"
+        }
+      ]
+    },
+    {
+      "id": "woman",
+      "en": "The woman",
+      "tr": "Kadın",
+      "pronoun_en": "she",
+      "kind": "adult",
+      "place_exclude": [],
+      "aliases": [
+        {
+          "en": "She",
+          "tr": "O"
+        },
+        {
+          "en": "My mother",
+          "tr": "Annem"
+        },
+        {
+          "en": "The teacher",
+          "tr": "Öğretmen",
+          "places_only": [
+            "school"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "horse",
+      "en": "The horse",
+      "tr": "At",
+      "pronoun_en": "it",
+      "kind": "animal",
+      "place_exclude": [
+        "school",
+        "pool",
+        "room"
+      ],
+      "aliases": []
+    },
+    {
+      "id": "bird",
+      "en": "The bird",
+      "tr": "Kuş",
+      "pronoun_en": "it",
+      "kind": "animal",
+      "place_exclude": [
+        "school",
+        "pool",
+        "room"
+      ],
+      "aliases": []
+    }
+  ],
+  "poses": [
+    {
+      "id": "stand",
+      "verb_en": "holding",
+      "verb_tr": "tutuyor",
+      "requires": "any",
+      "anchor": [
+        176,
+        160
+      ],
+      "scale": 0.3,
+      "allow_count": true,
+      "places": [
+        "park",
+        "room",
+        "school",
+        "beach"
+      ]
+    },
+    {
+      "id": "eat",
+      "verb_en": "eating",
+      "verb_tr": "yiyor",
+      "requires": "food",
+      "anchor": [
+        150,
+        100
+      ],
+      "scale": 0.26,
+      "allow_count": false,
+      "places": [
+        "park",
+        "room",
+        "school",
+        "beach"
+      ]
+    },
+    {
+      "id": "drink",
+      "verb_en": "drinking",
+      "verb_tr": "içiyor",
+      "requires": "drink",
+      "anchor": [
+        150,
+        100
+      ],
+      "scale": 0.26,
+      "allow_count": false,
+      "places": [
+        "park",
+        "room",
+        "school",
+        "beach"
+      ]
+    },
+    {
+      "id": "read",
+      "verb_en": "reading",
+      "verb_tr": "okuyor",
+      "requires": "text",
+      "anchor": [
+        128,
+        160
+      ],
+      "scale": 0.4,
+      "allow_count": false,
+      "places": [
+        "park",
+        "room",
+        "school",
+        "beach"
+      ]
+    },
+    {
+      "id": "run",
+      "verb_en": "running",
+      "verb_tr": "koşuyor",
+      "requires": "none",
+      "places": [
+        "park",
+        "school",
+        "beach"
+      ],
+      "group_layout": {
+        "scale": 0.6,
+        "centers_x": [
+          72,
+          184
+        ]
+      }
+    },
+    {
+      "id": "swim",
+      "verb_en": "swimming",
+      "verb_tr": "yüzüyor",
+      "requires": "none",
+      "places": [
+        "pool",
+        "beach"
+      ]
+    },
+    {
+      "id": "sit",
+      "verb_en": "sitting",
+      "verb_tr": "oturuyor",
+      "requires": "none",
+      "places": [
+        "park",
+        "room",
+        "school",
+        "beach"
+      ]
+    },
+    {
+      "id": "sleep",
+      "verb_en": "sleeping",
+      "verb_tr": "uyuyor",
+      "requires": "none",
+      "places": [
+        "room",
+        "park"
+      ],
+      "group_layout": {
+        "scale": 0.6,
+        "centers_x": [
+          72,
+          184
+        ]
+      }
+    },
+    {
+      "id": "play",
+      "verb_en": "playing with",
+      "verb_tr": "oynuyor",
+      "requires": "toy",
+      "tr_case": "with",
+      "anchor": [
+        198,
+        230
+      ],
+      "scale": 0.22,
+      "allow_count": false,
+      "places": [
+        "room",
+        "park",
+        "beach"
+      ]
+    },
+    {
+      "id": "drink_bowl",
+      "verb_en": "drinking",
+      "verb_tr": "içiyor",
+      "requires": "pet_drink",
+      "anchor": [
+        198,
+        230
+      ],
+      "scale": 0.3,
+      "allow_count": false,
+      "places": [
+        "room",
+        "park"
+      ]
+    },
+    {
+      "id": "fly",
+      "verb_en": "flying",
+      "verb_tr": "uçuyor",
+      "requires": "none",
+      "places": [
+        "park",
+        "beach"
+      ]
+    },
+    {
+      "id": "eat_ground",
+      "verb_en": "eating",
+      "verb_tr": "yiyor",
+      "requires": "horse_food",
+      "anchor": [
+        188,
+        230
+      ],
+      "scale": 0.22,
+      "allow_count": false,
+      "places": [
+        "park"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "tom_stand",
+      "file": "assets/characters/tom_stand.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "stand",
+      "en": "Tom is standing.",
+      "tr": "Tom ayakta duruyor."
+    },
+    {
+      "id": "tom_eat",
+      "file": "assets/characters/tom_eat.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "eat",
+      "en": "Tom is eating.",
+      "tr": "Tom yemek yiyor."
+    },
+    {
+      "id": "tom_drink",
+      "file": "assets/characters/tom_drink.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "drink",
+      "en": "Tom is drinking.",
+      "tr": "Tom bir şey içiyor."
+    },
+    {
+      "id": "tom_read",
+      "file": "assets/characters/tom_read.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "read",
+      "en": "Tom is reading.",
+      "tr": "Tom okuyor."
+    },
+    {
+      "id": "mary_stand",
+      "file": "assets/characters/mary_stand.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "stand",
+      "en": "Mary is standing.",
+      "tr": "Mary ayakta duruyor."
+    },
+    {
+      "id": "mary_eat",
+      "file": "assets/characters/mary_eat.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "eat",
+      "en": "Mary is eating.",
+      "tr": "Mary yemek yiyor."
+    },
+    {
+      "id": "mary_drink",
+      "file": "assets/characters/mary_drink.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "drink",
+      "en": "Mary is drinking.",
+      "tr": "Mary bir şey içiyor."
+    },
+    {
+      "id": "mary_read",
+      "file": "assets/characters/mary_read.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "read",
+      "en": "Mary is reading.",
+      "tr": "Mary okuyor."
+    },
+    {
+      "id": "tom_run",
+      "file": "assets/characters/tom_run.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "run",
+      "en": "Tom is running.",
+      "tr": "Tom koşuyor."
+    },
+    {
+      "id": "tom_swim",
+      "file": "assets/characters/tom_swim.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "swim",
+      "en": "Tom is swimming.",
+      "tr": "Tom yüzüyor."
+    },
+    {
+      "id": "tom_sit",
+      "file": "assets/characters/tom_sit.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "sit",
+      "en": "Tom is sitting.",
+      "tr": "Tom oturuyor."
+    },
+    {
+      "id": "mary_run",
+      "file": "assets/characters/mary_run.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "run",
+      "en": "Mary is running.",
+      "tr": "Mary koşuyor."
+    },
+    {
+      "id": "mary_swim",
+      "file": "assets/characters/mary_swim.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "swim",
+      "en": "Mary is swimming.",
+      "tr": "Mary yüzüyor."
+    },
+    {
+      "id": "mary_sit",
+      "file": "assets/characters/mary_sit.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "sit",
+      "en": "Mary is sitting.",
+      "tr": "Mary oturuyor."
+    },
+    {
+      "id": "dog_sit",
+      "file": "assets/characters/dog_sit.svg",
+      "category": "character",
+      "character": "dog",
+      "pose": "sit",
+      "en": "The dog is sitting.",
+      "tr": "Köpek oturuyor."
+    },
+    {
+      "id": "dog_run",
+      "file": "assets/characters/dog_run.svg",
+      "category": "character",
+      "character": "dog",
+      "pose": "run",
+      "en": "The dog is running.",
+      "tr": "Köpek koşuyor."
+    },
+    {
+      "id": "dog_sleep",
+      "file": "assets/characters/dog_sleep.svg",
+      "category": "character",
+      "character": "dog",
+      "pose": "sleep",
+      "en": "The dog is sleeping.",
+      "tr": "Köpek uyuyor."
+    },
+    {
+      "id": "dog_play",
+      "file": "assets/characters/dog_play.svg",
+      "category": "character",
+      "character": "dog",
+      "pose": "play",
+      "en": "The dog is playing.",
+      "tr": "Köpek oynuyor."
+    },
+    {
+      "id": "dog_drink",
+      "file": "assets/characters/dog_drink.svg",
+      "category": "character",
+      "character": "dog",
+      "pose": "drink_bowl",
+      "en": "The dog is drinking.",
+      "tr": "Köpek bir şey içiyor."
+    },
+    {
+      "id": "cat_sit",
+      "file": "assets/characters/cat_sit.svg",
+      "category": "character",
+      "character": "cat",
+      "pose": "sit",
+      "en": "The cat is sitting.",
+      "tr": "Kedi oturuyor."
+    },
+    {
+      "id": "cat_run",
+      "file": "assets/characters/cat_run.svg",
+      "category": "character",
+      "character": "cat",
+      "pose": "run",
+      "en": "The cat is running.",
+      "tr": "Kedi koşuyor."
+    },
+    {
+      "id": "cat_sleep",
+      "file": "assets/characters/cat_sleep.svg",
+      "category": "character",
+      "character": "cat",
+      "pose": "sleep",
+      "en": "The cat is sleeping.",
+      "tr": "Kedi uyuyor."
+    },
+    {
+      "id": "cat_play",
+      "file": "assets/characters/cat_play.svg",
+      "category": "character",
+      "character": "cat",
+      "pose": "play",
+      "en": "The cat is playing.",
+      "tr": "Kedi oynuyor."
+    },
+    {
+      "id": "cat_drink",
+      "file": "assets/characters/cat_drink.svg",
+      "category": "character",
+      "character": "cat",
+      "pose": "drink_bowl",
+      "en": "The cat is drinking.",
+      "tr": "Kedi bir şey içiyor."
+    },
+    {
+      "id": "man_stand",
+      "file": "assets/characters/man_stand.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "stand",
+      "en": "The man is standing.",
+      "tr": "Adam ayakta duruyor."
+    },
+    {
+      "id": "man_eat",
+      "file": "assets/characters/man_eat.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "eat",
+      "en": "The man is eating.",
+      "tr": "Adam yemek yiyor."
+    },
+    {
+      "id": "man_drink",
+      "file": "assets/characters/man_drink.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "drink",
+      "en": "The man is drinking.",
+      "tr": "Adam bir şey içiyor."
+    },
+    {
+      "id": "man_read",
+      "file": "assets/characters/man_read.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "read",
+      "en": "The man is reading.",
+      "tr": "Adam okuyor."
+    },
+    {
+      "id": "man_run",
+      "file": "assets/characters/man_run.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "run",
+      "en": "The man is running.",
+      "tr": "Adam koşuyor."
+    },
+    {
+      "id": "man_sit",
+      "file": "assets/characters/man_sit.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "sit",
+      "en": "The man is sitting.",
+      "tr": "Adam oturuyor."
+    },
+    {
+      "id": "woman_stand",
+      "file": "assets/characters/woman_stand.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "stand",
+      "en": "The woman is standing.",
+      "tr": "Kadın ayakta duruyor."
+    },
+    {
+      "id": "woman_eat",
+      "file": "assets/characters/woman_eat.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "eat",
+      "en": "The woman is eating.",
+      "tr": "Kadın yemek yiyor."
+    },
+    {
+      "id": "woman_drink",
+      "file": "assets/characters/woman_drink.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "drink",
+      "en": "The woman is drinking.",
+      "tr": "Kadın bir şey içiyor."
+    },
+    {
+      "id": "woman_read",
+      "file": "assets/characters/woman_read.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "read",
+      "en": "The woman is reading.",
+      "tr": "Kadın okuyor."
+    },
+    {
+      "id": "woman_run",
+      "file": "assets/characters/woman_run.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "run",
+      "en": "The woman is running.",
+      "tr": "Kadın koşuyor."
+    },
+    {
+      "id": "woman_sit",
+      "file": "assets/characters/woman_sit.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "sit",
+      "en": "The woman is sitting.",
+      "tr": "Kadın oturuyor."
+    },
+    {
+      "id": "horse_run",
+      "file": "assets/characters/horse_run.svg",
+      "category": "character",
+      "character": "horse",
+      "pose": "run",
+      "en": "The horse is running.",
+      "tr": "At koşuyor."
+    },
+    {
+      "id": "horse_eat",
+      "file": "assets/characters/horse_eat.svg",
+      "category": "character",
+      "character": "horse",
+      "pose": "eat_ground",
+      "en": "The horse is eating.",
+      "tr": "At yemek yiyor."
+    },
+    {
+      "id": "bird_fly",
+      "file": "assets/characters/bird_fly.svg",
+      "category": "character",
+      "character": "bird",
+      "pose": "fly",
+      "en": "The bird is flying.",
+      "tr": "Kuş uçuyor."
+    },
+    {
+      "id": "apple",
+      "file": "assets/objects/apple.svg",
+      "category": "object",
+      "classes": [
+        "food",
+        "horse_food"
+      ],
+      "countable": true,
+      "en": "apple",
+      "en_plural": "apples",
+      "tr": "elma",
+      "article_en": "an",
+      "default_tint": "red",
+      "tints": [
+        "red",
+        "green",
+        "yellow"
+      ]
+    },
+    {
+      "id": "bread",
+      "file": "assets/objects/bread.svg",
+      "category": "object",
+      "classes": [
+        "food"
+      ],
+      "countable": false,
+      "en": "bread",
+      "tr": "ekmek",
+      "tints": [],
+      "measure": {
+        "en": "a loaf of",
+        "tr": "bir somun"
+      }
+    },
+    {
+      "id": "cake",
+      "file": "assets/objects/cake.svg",
+      "category": "object",
+      "classes": [
+        "food"
+      ],
+      "countable": false,
+      "en": "cake",
+      "tr": "pasta",
+      "tints": [],
+      "measure": {
+        "en": "a piece of",
+        "tr": "bir dilim"
+      }
+    },
+    {
+      "id": "glass",
+      "file": "assets/objects/glass.svg",
+      "category": "object",
+      "classes": [
+        "drink"
+      ],
+      "countable": false,
+      "en": "glass",
+      "tr": "bardak",
+      "tint_role": "contents",
+      "contents": [
+        {
+          "id": "milk",
+          "tint": "#F1FAEE",
+          "en": "milk",
+          "tr": "süt"
+        },
+        {
+          "id": "water",
+          "tint": "#A8DADC",
+          "en": "water",
+          "tr": "su"
+        },
+        {
+          "id": "orange_juice",
+          "tint": "#F4A261",
+          "en": "orange juice",
+          "tr": "portakal suyu"
+        }
+      ],
+      "measure": {
+        "en": "a glass of",
+        "tr": "bir bardak"
+      }
+    },
+    {
+      "id": "cup",
+      "file": "assets/objects/cup.svg",
+      "category": "object",
+      "classes": [
+        "drink"
+      ],
+      "countable": false,
+      "en": "cup",
+      "tr": "fincan",
+      "tint_role": "contents",
+      "contents": [
+        {
+          "id": "tea",
+          "tint": "#8D5A3B",
+          "en": "tea",
+          "tr": "çay"
+        },
+        {
+          "id": "coffee",
+          "tint": "#2B2D42",
+          "en": "coffee",
+          "tr": "kahve"
+        }
+      ],
+      "measure": {
+        "en": "a cup of",
+        "tr": "bir fincan"
+      }
+    },
+    {
+      "id": "book",
+      "file": "assets/objects/book.svg",
+      "category": "object",
+      "classes": [
+        "text"
+      ],
+      "countable": true,
+      "en": "book",
+      "en_plural": "books",
+      "tr": "kitap",
+      "article_en": "a",
+      "default_tint": "blue",
+      "tints": [
+        "red",
+        "blue",
+        "green",
+        "yellow"
+      ]
+    },
+    {
+      "id": "letter",
+      "file": "assets/objects/letter.svg",
+      "category": "object",
+      "classes": [
+        "text"
+      ],
+      "countable": true,
+      "en": "letter",
+      "en_plural": "letters",
+      "tr": "mektup",
+      "article_en": "a",
+      "tints": []
+    },
+    {
+      "id": "ball",
+      "file": "assets/objects/ball.svg",
+      "category": "object",
+      "classes": [
+        "toy"
+      ],
+      "countable": true,
+      "en": "ball",
+      "en_plural": "balls",
+      "tr": "top",
+      "article_en": "a",
+      "default_tint": "red",
+      "tints": [
+        "red",
+        "blue",
+        "yellow",
+        "green",
+        "orange"
+      ],
+      "tr_with": "topla"
+    },
+    {
+      "id": "bowl",
+      "file": "assets/objects/bowl.svg",
+      "category": "object",
+      "classes": [
+        "pet_drink"
+      ],
+      "countable": false,
+      "holdable": false,
+      "en": "bowl",
+      "tr": "kâse",
+      "tint_role": "contents",
+      "contents": [
+        {
+          "id": "milk",
+          "tint": "#F1FAEE",
+          "en": "milk",
+          "tr": "süt"
+        },
+        {
+          "id": "water",
+          "tint": "#A8DADC",
+          "en": "water",
+          "tr": "su"
+        }
+      ]
+    },
+    {
+      "id": "fish",
+      "file": "assets/objects/fish.svg",
+      "category": "object",
+      "classes": [
+        "food"
+      ],
+      "countable": true,
+      "en": "fish",
+      "en_plural": "fish",
+      "tr": "balık",
+      "article_en": "a",
+      "tints": []
+    },
+    {
+      "id": "park",
+      "file": "assets/backgrounds/park.svg",
+      "category": "background",
+      "en": "in the park",
+      "tr_loc": "parkta",
+      "en_noun": "park",
+      "tr": "park"
+    },
+    {
+      "id": "room",
+      "file": "assets/backgrounds/room.svg",
+      "category": "background",
+      "en": "at home",
+      "tr_loc": "evde",
+      "en_noun": "room",
+      "tr": "oda"
+    },
+    {
+      "id": "school",
+      "file": "assets/backgrounds/school.svg",
+      "category": "background",
+      "en": "at school",
+      "tr_loc": "okulda",
+      "en_noun": "school",
+      "tr": "okul"
+    },
+    {
+      "id": "pool",
+      "file": "assets/backgrounds/pool.svg",
+      "category": "background",
+      "en": "in the pool",
+      "tr_loc": "havuzda",
+      "en_noun": "pool",
+      "tr": "havuz"
+    },
+    {
+      "id": "beach",
+      "file": "assets/backgrounds/beach.svg",
+      "category": "background",
+      "en": "at the beach",
+      "tr_loc": "sahilde",
+      "en_noun": "beach",
+      "tr": "sahil",
+      "pose_overrides": {
+        "swim": {
+          "en": "in the sea",
+          "tr_loc": "denizde"
+        }
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "kids",
+      "members": [
+        "tom",
+        "mary"
+      ],
+      "subjects": [
+        {
+          "en": "Tom and Mary",
+          "tr": "Tom ve Mary",
+          "tr_plural": true
+        },
+        {
+          "en": "They",
+          "tr": "Onlar",
+          "tr_plural": true
+        },
+        {
+          "en": "The children",
+          "tr": "Çocuklar",
+          "tr_plural": true
+        }
+      ]
+    },
+    {
+      "id": "parents",
+      "members": [
+        "man",
+        "woman"
+      ],
+      "subjects": [
+        {
+          "en": "My parents",
+          "tr": "Annem ve babam",
+          "tr_plural": true
+        },
+        {
+          "en": "They",
+          "tr": "Onlar",
+          "tr_plural": true
+        }
+      ]
+    },
+    {
+      "id": "pets",
+      "members": [
+        "dog",
+        "cat"
+      ],
+      "subjects": [
+        {
+          "en": "The dog and the cat",
+          "tr": "Köpek ve kedi",
+          "tr_plural": true
+        }
+      ]
+    },
+    {
+      "id": "two_dogs",
+      "members": [
+        "dog",
+        "dog"
+      ],
+      "subjects": [
+        {
+          "en": "Two dogs",
+          "tr": "İki köpek",
+          "tr_plural": false
+        },
+        {
+          "en": "The dogs",
+          "tr": "Köpekler",
+          "tr_plural": true
+        }
+      ]
+    },
+    {
+      "id": "two_birds",
+      "members": [
+        "bird",
+        "bird"
+      ],
+      "subjects": [
+        {
+          "en": "Two birds",
+          "tr": "İki kuş",
+          "tr_plural": false
+        },
+        {
+          "en": "The birds",
+          "tr": "Kuşlar",
+          "tr_plural": true
+        }
+      ]
+    }
+  ],
+  "group_layout": {
+    "scale": 0.8,
+    "centers_x": [
+      80,
+      176
+    ]
+  }
+}

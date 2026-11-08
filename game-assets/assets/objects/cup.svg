@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="cup">
+<ellipse cx="121" cy="224" rx="66" ry="6" fill="#A8DADC"/>
+<path d="M171 130H181A20 20 0 0 1 181 170H171Z M171 140H181A10 10 0 0 1 181 160H171Z" fill="#F1FAEE" fill-rule="evenodd"/>
+<path d="M63 110H179L171 196Q169 218 147 218H95Q73 218 71 196Z" fill="#F1FAEE"/>
+<ellipse cx="121" cy="110" rx="58" ry="10" fill="#F1FAEE"/>
+<ellipse cx="121" cy="110" rx="50" ry="7" fill="#8D5A3B" data-tint="primary"/>
+</g>
+</svg>

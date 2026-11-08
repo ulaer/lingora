@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="bowl">
+<polygon points="48,172 208,172 188,230 68,230" fill="#E63946"/>
+<rect x="48" y="168" width="160" height="8" rx="4" fill="#457B9D"/>
+<ellipse cx="128" cy="178" rx="72" ry="5" fill="#F1FAEE" data-tint="primary"/>
+</g>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="cake">
+<rect x="58" y="170" width="140" height="60" rx="8" fill="#F4A261"/>
+<rect x="58" y="150" width="140" height="24" rx="10" fill="#F1FAEE"/>
+<circle cx="86" cy="172" r="6" fill="#F1FAEE"/>
+<circle cx="128" cy="174" r="6" fill="#F1FAEE"/>
+<circle cx="170" cy="172" r="6" fill="#F1FAEE"/>
+<rect x="127" y="116" width="3" height="14" fill="#8D5A3B"/>
+<circle cx="128" cy="138" r="12" fill="#E63946"/>
+</g>
+</svg>

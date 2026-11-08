@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lingora Asset Önizleme</title>
+<style>
+  body { margin: 0; padding: 16px; background: #fff; font: 13px/1.3 system-ui, sans-serif; color: #2B2D42; }
+  h2 { margin: 16px 0 8px; font-size: 15px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  figure { margin: 0; width: 180px; }
+  .tile { width: 180px; height: 180px; background: repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0/16px 16px; border: 1px solid #ddd; }
+  .tile svg { width: 100%; height: 100%; display: block; }
+  figcaption { font-size: 11px; margin-top: 2px; }
+</style>
+</head>
+<body>
+<div id="out"></div>
+<script>
+// Kullanım: preview.html?mode=assets  |  ?mode=scenes&n=12  |  ?mode=assets&cat=character
+const q = new URLSearchParams(location.search);
+const cache = {};
+async function load(file) {
+  if (!cache[file]) cache[file] = fetch(file).then(r => r.text()).then(t => {
+    const doc = new DOMParser().parseFromString(t, "image/svg+xml");
+    return doc.documentElement.querySelector("g");
+  });
+  return (await cache[file]).cloneNode(true);
+}
+function svg(children) {
+  const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  s.setAttribute("viewBox", "0 0 256 256");
+  children.forEach(c => s.appendChild(c));
+  return s;
+}
+function tile(el, caption) {
+  const f = document.createElement("figure");
+  f.innerHTML = `<div class="tile"></div><figcaption></figcaption>`;
+  f.firstChild.appendChild(el); f.lastChild.textContent = caption; return f;
+}
+// Sahne kompozisyonu: uygulamanın yapacağı dönüşümün referans uygulaması
+async function compose(scene, byId) {
+  const parts = [];
+  if (scene.background) parts.push(await load(byId[scene.background].file));
+  if (scene.group) {  // grup: karakterler küçültülüp yan yana, taban çizgisi korunur
+    for (const g of scene.group) {
+      const c = await load(byId[g.character].file);
+      c.setAttribute("transform", `translate(${g.x - 128 * g.scale} ${230 - 230 * g.scale}) scale(${g.scale})`);
+      parts.push(c);
+    }
+  } else parts.push(await load(byId[scene.character].file));
+  const { tint, count = 0, anchor: [ax, ay] = [0, 0], scale: s = 1 } = scene.transform;
+  for (let i = 0; i < count; i++) {
+    const o = await load(byId[scene.object].file);
+    if (tint) o.querySelectorAll('[data-tint="primary"]').forEach(e => e.setAttribute("fill", tint));
+    const dx = ax - 128 * s + (i - (count - 1) / 2) * 256 * s * 0.55;  // çoğaltma: yan yana
+    o.setAttribute("transform", `translate(${dx} ${ay - 230 * s}) scale(${s})`);
+    parts.push(o);
+  }
+  return svg(parts);
+}
+(async () => {
+  const m = await fetch("manifest.json").then(r => r.json());
+  const byId = Object.fromEntries(m.assets.map(a => [a.id, a]));
+  const out = document.getElementById("out");
+  if (q.get("mode") === "scenes") {
+    let { scenes } = await fetch("scenes.json").then(r => r.json());
+    if (q.get("ids")) { const want = q.get("ids").split(","); scenes = scenes.filter(s => want.includes(s.id)); }
+    const n = +(q.get("n") || 12), step = Math.max(1, Math.floor(scenes.length / n));
+    const grid = document.createElement("div"); grid.className = "grid"; out.appendChild(grid);
+    for (let i = 0; i < scenes.length && grid.childElementCount < n; i += step)
+      grid.appendChild(tile(await compose(scenes[i], byId), scenes[i].en));
+  } else {
+    const cat = q.get("cat");
+    for (const c of ["character", "object", "background"]) {
+      if (cat && cat !== c) continue;
+      out.insertAdjacentHTML("beforeend", `<h2>${c}</h2>`);
+      const grid = document.createElement("div"); grid.className = "grid"; out.appendChild(grid);
+      for (const a of m.assets.filter(a => a.category === c)) {
+        try { grid.appendChild(tile(svg([await load(a.file)]), a.id)); }
+        catch { grid.appendChild(tile(svg([]), a.id + " (yok)")); }
+      }
+    }
+  }
+  document.body.dataset.ready = "1";
+})();
+</script>
+</body>
+</html>

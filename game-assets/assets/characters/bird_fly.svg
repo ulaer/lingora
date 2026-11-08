@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="bird_fly">
+<path d="M88 108 L52 98 L56 126 L90 120 Z" fill="#457B9D"/>
+<ellipse cx="128" cy="112" rx="45" ry="24" fill="#457B9D"/>
+<ellipse cx="132" cy="124" rx="26" ry="8" fill="#F1FAEE"/>
+<circle cx="168" cy="98" r="16" fill="#457B9D"/>
+<path d="M181 94 L204 100 L181 107 Z" fill="#E9C46A"/>
+<circle cx="172" cy="95" r="3.5" fill="#2B2D42"/>
+<path d="M108 106 Q98 58 140 38 Q148 80 146 108 Z" fill="#A8DADC"/>
+</g>
+</svg>

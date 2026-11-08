@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="horse_eat">
+<path d="M39 100 Q9 120 15 176 Q29 150 43 128 Z" fill="#2B2D42"/>
+<rect x="41" y="140" width="16" height="90" rx="7" fill="#8D5A3B"/>
+<rect x="59" y="140" width="16" height="90" rx="7" fill="#8D5A3B"/>
+<rect x="37" y="222" width="40" height="8" rx="3" fill="#2B2D42"/>
+<rect x="105" y="140" width="16" height="90" rx="7" fill="#8D5A3B"/>
+<rect x="123" y="140" width="16" height="90" rx="7" fill="#8D5A3B"/>
+<rect x="101" y="222" width="42" height="8" rx="3" fill="#2B2D42"/>
+<rect x="35" y="96" width="96" height="56" rx="26" fill="#8D5A3B"/>
+<path d="M115 98 L143 100 L179 166 L151 182 Z" fill="#8D5A3B"/>
+<path d="M157 164 L187 170 L185 203 L169 203 L151 186 Z" fill="#8D5A3B"/>
+<path d="M119 90 L103 108 L143 182 L155 178 Z" fill="#2B2D42"/>
+<path d="M157 164 L153 150 L169 160 Z" fill="#2B2D42"/>
+<path d="M173 172 L181 174 L179 198 L173 196 Z" fill="#F1FAEE"/>
+<circle cx="166" cy="178" r="3.5" fill="#2B2D42"/>
+<circle cx="180" cy="200" r="2.5" fill="#2B2D42"/>
+</g>
+</svg>

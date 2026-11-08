@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="ball">
+<circle cx="128" cy="160" r="70" fill="#E63946" data-tint="primary"/>
+<path d="M74 122Q128 152 182 122V134Q128 164 74 134Z" fill="#F1FAEE"/>
+<path d="M74 186Q128 206 182 186V194Q128 214 74 194Z" fill="#F1FAEE"/>
+</g>
+</svg>

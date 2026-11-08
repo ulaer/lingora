@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="dog_run">
+<path d="M72 150 Q40 130 30 108 Q56 118 82 142 Z" fill="#8D5A3B"/>
+<path d="M70 170 L88 178 L40 214 L30 204 Z" fill="#8D5A3B"/>
+<path d="M78 168 L98 176 L62 226 L46 226 Z" fill="#8D5A3B"/>
+<rect x="40" y="224" width="26" height="6" rx="3" fill="#F4A261"/>
+<path d="M140 172 L156 176 L190 212 L178 220 Z" fill="#8D5A3B"/>
+<path d="M150 168 L168 166 L208 190 L198 202 Z" fill="#8D5A3B"/>
+<rect x="70" y="140" width="100" height="44" rx="20" fill="#8D5A3B"/>
+<ellipse cx="125" cy="178" rx="26" ry="7" fill="#F4A261"/>
+<rect x="164" y="128" width="10" height="30" rx="4" fill="#E63946"/>
+<circle cx="186" cy="130" r="24" fill="#8D5A3B"/>
+<rect x="196" y="126" width="32" height="20" rx="10" fill="#F4A261"/>
+<circle cx="226" cy="131" r="5" fill="#2B2D42"/>
+<circle cx="192" cy="122" r="3.5" fill="#2B2D42"/>
+<path d="M172 112 Q154 120 158 144 Q176 140 180 118 Z" fill="#F4A261"/>
+</g>
+</svg>

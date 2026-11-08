@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="cat_sit">
+<path d="M70 222 Q34 226 32 190 Q32 170 48 164 Q44 192 62 206 L92 210 Z" fill="#F4A261"/>
+<rect x="100" y="140" width="44" height="85" rx="20" fill="#F4A261"/>
+<ellipse cx="92" cy="205" rx="30" ry="24" fill="#F4A261"/>
+<rect x="86" y="222" width="44" height="8" rx="4" fill="#F4A261"/>
+<ellipse cx="136" cy="182" rx="10" ry="28" fill="#F1FAEE"/>
+<rect x="126" y="178" width="14" height="50" rx="7" fill="#F4A261"/>
+<rect x="124" y="222" width="22" height="8" rx="4" fill="#F1FAEE"/>
+<polygon points="110,98 112,70 128,90" fill="#F4A261"/>
+<polygon points="134,90 150,72 152,100" fill="#F4A261"/>
+<polygon points="114,94 115,80 124,90" fill="#E9C46A"/>
+<circle cx="130" cy="112" r="24" fill="#F4A261"/>
+<circle cx="140" cy="108" r="3.5" fill="#2B2D42"/>
+<circle cx="151" cy="116" r="3" fill="#2B2D42"/>
+</g>
+</svg>

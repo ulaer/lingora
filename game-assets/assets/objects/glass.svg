@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="glass">
+<polygon points="66,70 190,70 178,230 78,230" fill="#A8DADC"/>
+<polygon points="72,114 184,114 176,226 80,226" fill="#F1FAEE" data-tint="primary"/>
+</g>
+</svg>
