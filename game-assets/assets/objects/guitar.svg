@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="guitar">
+<g transform="translate(118 164) scale(0.85) rotate(45)">
+<ellipse cx="0" cy="48" rx="44" ry="44" fill="#F4A261"/>
+<ellipse cx="0" cy="-8" rx="34" ry="34" fill="#F4A261"/>
+<rect x="-7" y="-112" width="14" height="80" fill="#8D5A3B"/>
+<rect x="-10" y="-132" width="20" height="22" rx="3" fill="#8D5A3B"/>
+<rect x="-4" y="-112" width="8" height="80" fill="#2B2D42"/>
+<circle cx="0" cy="40" r="14" fill="#2B2D42"/>
+<rect x="-14" y="66" width="28" height="6" rx="2" fill="#8D5A3B"/>
+</g>
+</g>
+</svg>

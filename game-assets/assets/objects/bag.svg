@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="bag">
+<path d="M100 130V120A28 28 0 0 1 156 120V130H144V120A16 16 0 0 0 112 120V130Z" fill="#8D5A3B"/>
+<rect x="58" y="130" width="140" height="100" rx="14" fill="#8D5A3B"/>
+<rect x="116" y="150" width="24" height="14" rx="4" fill="#E9C46A"/>
+</g>
+</svg>

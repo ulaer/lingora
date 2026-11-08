@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="rain">
+<g data-frame="1" fill="#457B9D">
+<path transform="translate(30 20) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(80 30) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(140 14) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(200 28) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(56 70) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(116 64) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(176 72) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(230 60) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(20 120) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(96 116) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(150 112) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(214 128) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(40 176) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(110 170) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(170 184) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(236 196) rotate(-20)" d="M0 0H4V14H0Z"/>
+</g>
+<g data-frame="2" fill="#457B9D" transform="translate(0 12)">
+<path transform="translate(30 20) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(80 30) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(140 14) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(200 28) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(56 70) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(116 64) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(176 72) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(230 60) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(20 120) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(96 116) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(150 112) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(214 128) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(40 176) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(110 170) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(170 184) rotate(-20)" d="M0 0H4V14H0Z"/>
+<path transform="translate(236 196) rotate(-20)" d="M0 0H4V14H0Z"/>
+</g>
+</g>
+</svg>

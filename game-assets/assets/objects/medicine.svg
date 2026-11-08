@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="medicine">
+<rect x="78" y="110" width="100" height="120" rx="12" fill="#F4A261"/>
+<rect x="74" y="80" width="108" height="34" rx="6" fill="#E63946"/>
+<rect x="90" y="142" width="76" height="52" rx="4" fill="#F1FAEE"/>
+<path d="M102 162H154M102 176H140" stroke="#2B2D42" stroke-width="4" stroke-linecap="round" fill="none"/>
+<rect x="52" y="214" width="26" height="16" rx="8" fill="#A8DADC"/>
+<rect x="178" y="214" width="26" height="16" rx="8" fill="#E63946"/>
+</g>
+</svg>
