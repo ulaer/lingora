@@ -91,3 +91,16 @@ Uygulama ve `tools/` bu işaretleri SVG'den okur; koordinatlar her zaman 256×25
 - `single`: karakter olduğu gibi. `bubble`: karakter 0.78 ölçekle sola kayar, balon sağ üstte.
 - `pair`: iki karakter 0.8 ölçekle x=80 / x=176. `prop`: karakter 0.9 ölçekle x≈96, prop sağda.
 - Yan görünüşlü hayvanlarda karşıya bakma gerekirse uygulama yatay aynalar (`scale(-1,1)`); yeni asset gerekmez.
+
+---
+
+# v3 eklentileri
+
+- Rozetler sol üstte **dikey** yığılır (`layouts.badge`: x=4, y=4, s=0.2, dy=54); yatay yığın başa biner.
+- Balonlu ve çift sahnelerde aktör konum/ölçeği her zaman `layouts.<yerleşim>.actors`'tan gelir.
+- Gece gökyüzü `#457B9D` (mürekkep `#2B2D42` saç ve pantolonla karışıyordu).
+- Elde birden çok nesne: kopyalar arası 0.3 × nesne genişliği (avuçta toplu).
+- 200 px'ten geniş sahne nesnesi kendi `prop_scale` değerini taşır (tren 0.45).
+- Hava overlay'i aktörlerin arkasında çizilir.
+- `fill`/`stroke` grup üzerinde olabilir; çiziciler SVG mirasına uyar.
+- Her `combine.py` çalışması `tools/lint.py` kapısından geçer; kurallar dosyanın başında.

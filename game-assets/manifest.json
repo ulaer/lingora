@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "style_lock": "style-lock.md",
   "palette": {
     "ink": "#2B2D42",
@@ -334,8 +334,8 @@
       "verb_tr": "yiyor",
       "requires": "food",
       "anchor": [
-        150,
-        100
+        156,
+        106
       ],
       "scale": 0.26,
       "allow_count": false,
@@ -356,8 +356,8 @@
       "verb_tr": "içiyor",
       "requires": "drink",
       "anchor": [
-        150,
-        100
+        156,
+        106
       ],
       "scale": 0.26,
       "allow_count": false,
@@ -428,7 +428,14 @@
         "pool",
         "beach"
       ],
-      "verb": "swim"
+      "verb": "swim",
+      "group_layout": {
+        "scale": 0.7,
+        "centers_x": [
+          70,
+          186
+        ]
+      }
     },
     {
       "id": "sit",
@@ -578,7 +585,14 @@
         "beach",
         "street",
         "station"
-      ]
+      ],
+      "group_layout": {
+        "scale": 0.7,
+        "centers_x": [
+          70,
+          186
+        ]
+      }
     },
     {
       "id": "call",
@@ -1398,7 +1412,8 @@
       "en_plural": "fish",
       "tr": "balık",
       "article_en": "a",
-      "tints": []
+      "tints": [],
+      "holdable": false
     },
     {
       "id": "phone",
@@ -1651,7 +1666,8 @@
       "role": "prop",
       "holdable": false,
       "en_def": "the train",
-      "tr_acc": "treni"
+      "tr_acc": "treni",
+      "prop_scale": 0.45
     },
     {
       "id": "bicycle",
@@ -1731,7 +1747,7 @@
       "id": "beach",
       "file": "assets/backgrounds/beach.svg",
       "category": "background",
-      "en": "at the beach",
+      "en": "on the beach",
       "tr_loc": "sahilde",
       "en_noun": "beach",
       "tr": "sahil",
@@ -2410,10 +2426,10 @@
       },
       "tr": {
         "prog": "istiyor",
-        "past": "istiyordu",
+        "past": "istedi",
         "fut": "isteyecek",
         "prog_neg": "istemiyor",
-        "past_neg": "istemiyordu",
+        "past_neg": "istemedi",
         "fut_neg": "istemeyecek"
       }
     },
@@ -2564,7 +2580,7 @@
     {
       "id": "bored",
       "en": "bored",
-      "tr": "sıkılmış",
+      "tr": "canı sıkkın",
       "mouth": "mouth_flat",
       "eyes": "eyes_half",
       "brows": null,
@@ -2582,7 +2598,7 @@
     {
       "id": "surprised",
       "en": "surprised",
-      "tr": "şaşırmış",
+      "tr": "şaşkın",
       "mouth": "mouth_o",
       "eyes": null,
       "brows": null,
@@ -2692,7 +2708,7 @@
       "id": "night",
       "en": "at night",
       "tr": "gece",
-      "sky": "#2B2D42",
+      "sky": "#457B9D",
       "overlay": "moon"
     }
   ],
@@ -2959,10 +2975,10 @@
       }
     },
     "badge": {
-      "x": 6,
-      "y": 6,
-      "s": 0.24,
-      "dx": 62
+      "x": 4,
+      "y": 4,
+      "s": 0.2,
+      "dy": 54
     },
     "mark": {
       "dx": 36,
@@ -2973,6 +2989,22 @@
       "x": 196,
       "y": 4,
       "s": 0.22
+    },
+    "pair_wave": {
+      "actors": [
+        {
+          "x": 70,
+          "s": 0.7
+        },
+        {
+          "x": 186,
+          "s": 0.7
+        }
+      ]
     }
+  },
+  "sampling": {
+    "exponent": 0.62,
+    "note": "weight = count(pose)^exponent / count(pose); tutma pozunun payını ~%69'dan düşürür"
   }
 }

@@ -48,6 +48,9 @@ public sealed record GameScene(
     string Tr,
     string Subject)
 {
+    /// <summary>Örnekleme ağırlığı (scenes.json "weight"; yoksa 1). Kalabalık poz ailelerini (tutma) seyreltir.</summary>
+    public double Weight { get; init; } = 1;
+
     /// <summary>Hedef dildeki kanonik cümle.</summary>
     public string Sentence(TranslationDirection direction) =>
         direction == TranslationDirection.TurkishToEnglish ? En : Tr;
@@ -210,13 +213,41 @@ public sealed class GameLibrary
                 t.TryGetProperty("scale", out var scale) && scale.ValueKind == JsonValueKind.Number ? scale.GetDouble() : 1,
                 Str(s, "en"),
                 Str(s, "tr"),
-                Str(s, "subject")));
+                Str(s, "subject"))
+            {
+                Weight = s.TryGetProperty("weight", out var w) && w.ValueKind == JsonValueKind.Number && w.GetDouble() > 0
+                    ? w.GetDouble()
+                    : 1,
+            });
         }
 
         return new GameLibrary(directory, assets, characters, poses, colors, groupSubjects, scenes);
     }
 
-    public GameScene Pick(Random random) => Scenes[random.Next(Scenes.Count)];
+    /// <summary>Sahne seçer; ağırlıklı (Weight). Tümü 1 ise tekdüze seçimle aynıdır.</summary>
+    public GameScene Pick(Random random)
+    {
+        _cumulative ??= Cumulative(Scenes);
+        var target = random.NextDouble() * _cumulative[^1];
+        var index = Array.BinarySearch(_cumulative, target);
+        index = index < 0 ? ~index : index + 1;
+        return Scenes[Math.Min(index, Scenes.Count - 1)];
+    }
+
+    private double[]? _cumulative;
+
+    private static double[] Cumulative(IReadOnlyList<GameScene> scenes)
+    {
+        var sums = new double[scenes.Count];
+        double total = 0;
+        for (var i = 0; i < scenes.Count; i++)
+        {
+            total += scenes[i].Weight;
+            sums[i] = total;
+        }
+
+        return sums;
+    }
 
     /// <summary>Öznenin hedef dildeki hali (kullanıcıya ipucu olarak gösterilir).</summary>
     public string SubjectIn(GameScene scene, TranslationDirection direction)

@@ -52,7 +52,7 @@ async function buildActor(a) {
     for (let i = 0; i < n; i++) {
       const o = await load(BY[a.hold.obj].file);
       if (a.hold.tint) o.querySelectorAll('[data-tint="primary"]').forEach(e => e.setAttribute("fill", a.hold.tint));
-      root.appendChild(place(o, ax - 128 * s + (i - (n - 1) / 2) * 256 * s * 0.55, ay - 230 * s, s));
+      root.appendChild(place(o, ax - 128 * s + (i - (n - 1) / 2) * 256 * s * 0.3, ay - 230 * s, s));  // v3: avuçta toplu
     }
   }
   if (a.expr) {
@@ -84,9 +84,14 @@ async function buildPanel(r, sentence) {
   }
   if (r.sky_overlay) { const L = LAY.sky_overlay; parts.push(place(await load(BY[r.sky_overlay].file), L.x, L.y, L.s)); }
   if (r.prop) {
-    const L = LAY.prop.prop, p = await load(BY[r.prop.obj].file);
+    const L = LAY.prop.prop, ps = r.prop.s || L.s, p = await load(BY[r.prop.obj].file);
     if (r.prop.states) p.dataset.states = r.prop.states.join(",");
-    parts.push(place(p, L.x - 128 * L.s, 230 - 230 * L.s, L.s));
+    parts.push(place(p, L.x - 128 * ps, 230 - 230 * ps, ps));
+  }
+  if (r.weather) {  // v3: hava aktörlerin arkasında (yağmur/kar yüzü örtmesin)
+    const w = M.weather.find(x => x.id === r.weather);
+    const el = await load(BY[w.overlay].file);
+    parts.push(w.kind === "adj" && w.overlay === "sun" ? place(el, 190, 2, 0.25) : el);
   }
   for (const a of r.actors || []) parts.push(await buildActor(a));
   if (r.bubble) {
@@ -97,13 +102,8 @@ async function buildPanel(r, sentence) {
       parts.push(place(await load(BY[id].file), C.x - 128 * C.s, C.y - 150 * C.s, C.s));
     }
   }
-  if (r.weather) {
-    const w = M.weather.find(x => x.id === r.weather);
-    const el = await load(BY[w.overlay].file);
-    parts.push(w.kind === "adj" && w.overlay === "sun" ? place(el, 190, 2, 0.25) : el);
-  }
-  for (const [i, b] of ((sentence && sentence.badges) || []).entries()) {
-    const L = LAY.badge; parts.push(place(await load(BY[b].file), L.x + i * L.dx, L.y, L.s));
+  for (const [i, b] of ((sentence && sentence.badges) || []).entries()) {  // v3: sol üstte dikey yığın
+    const L = LAY.badge; parts.push(place(await load(BY[b].file), L.x + i * (L.dx || 0), L.y + i * (L.dy || 0), L.s));
   }
   return svg(parts);
 }

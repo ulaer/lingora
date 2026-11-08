@@ -21,6 +21,8 @@ gökyüzü rengi, durum ve animasyon dönüşümleri).
 | `coverage.md` | Kapsam özeti |
 | `tools/combine.py` | `manifest.json` + SVG işaretleri → `scenes/*.jsonl` + `coverage.md` (kural tabanlı, model kullanmaz) |
 | `tools/grammar.py` | EN/TR çekim: zaman, olumsuz, soru, ünlü uyumu, -ydı/-lar ekleri |
+| `tools/lint.py` | v3 kalite kapısı: belirsizlik, dil, yerleşim; `combine.py --strict` hata varsa durur |
+| `REVIEW-v3.md` | v3'ü belirleyen üç ajanlı test ve çapraz puanlama kaydı |
 | `tools/validate.py` | Tüm SVG'leri stil kilidine göre denetler (kareler, durumlar, yüz parçaları dahil) |
 | `preview.html` | Kompozisyonun referans uygulaması ve önizleme |
 
@@ -28,7 +30,7 @@ gökyüzü rengi, durum ve animasyon dönüşümleri).
 
 ```powershell
 python tools/validate.py      # stil denetimi
-python tools/combine.py       # sahneleri ve coverage.md'yi yeniden üret
+python tools/combine.py       # sahneleri, coverage.md'yi üret + kalite kapısı (--strict: hata varsa dur)
 python -m http.server 8765    # sonra: http://localhost:8765/preview.html?level=B1&n=12
 ```
 
@@ -48,7 +50,9 @@ python -m http.server 8765    # sonra: http://localhost:8765/preview.html?level=
  "sentences": [{"form": "past_q", "subject": "Tom", "en": "...", "tr": "...", "badges": ["cal_yesterday", "badge_question"]}]}
 ```
 
-Aynı görsel birden çok cümle taşır (takma ad özneler, zaman/olumsuz/soru biçimleri). `badges`
+Aynı görsel birden çok cümle taşır (takma ad özneler, zaman/olumsuz/soru biçimleri). v3: aynı resmi
+veren kayıtlar birleşir (`merged_ids`); `sentences` o resmin **kabul kümesidir** — hepsi doğrudur.
+`scenes.json` sahnelerindeki `weight`, oyunun ağırlıklı seçimi içindir. `badges`
 cümleye özeldir: oyun hangi cümleyi soruyorsa onun rozetlerini gösterir.
 
 ## Kompozisyon kuralları

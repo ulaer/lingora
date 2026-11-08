@@ -636,6 +636,9 @@ public class DesktopUiTests
                 Assert.True(Opaque(Rasterize(renderer.RenderAsset(a.Id))) > 0, a.Id);
             }
 
+            // fill grup üzerinde (SVG mirası): güneş siyah değil sarı çizilir.
+            Assert.Equal(Color.FromRgb(0xE9, 0xC4, 0x6A), Pixel(Rasterize(renderer.RenderAsset("sun")), 128, 128));
+
             // Yeşil elma: alt-orta noktası (176,160) tutma noktasında, gövdesi ~ (176,145).
             var green = Rasterize(renderer.Render(GameFixture.Scene("tom_stand__apple__green")));
             Assert.Equal(Color.FromRgb(0x2A, 0x9D, 0x8F), Pixel(green, 176, 145));
