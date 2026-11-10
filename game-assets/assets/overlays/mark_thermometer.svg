@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="mark_thermometer">
+<rect x="112" y="36" width="32" height="124" rx="16" fill="#F1FAEE"/>
+<circle cx="128" cy="176" r="34" fill="#F1FAEE"/>
+<rect x="121" y="76" width="14" height="90" rx="7" fill="#E63946"/>
+<circle cx="128" cy="176" r="24" fill="#E63946"/>
+<rect x="150" y="56" width="16" height="4" rx="2" fill="#2B2D42"/>
+<rect x="150" y="76" width="16" height="4" rx="2" fill="#2B2D42"/>
+<rect x="150" y="96" width="16" height="4" rx="2" fill="#2B2D42"/>
+<rect x="150" y="116" width="16" height="4" rx="2" fill="#2B2D42"/>
+
+</g>
+</svg>

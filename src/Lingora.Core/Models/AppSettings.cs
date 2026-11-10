@@ -41,6 +41,9 @@ public sealed class AppSettings
     /// <summary>Oyunda resmin hangi dilde anlatılacağı (hedef dil). Çalışma ekranındaki moddan bağımsızdır.</summary>
     public TranslationDirection GameDirection { get; set; } = TranslationDirection.TurkishToEnglish;
 
+    /// <summary>Oyunun seviyesi (A1, A2, B1). Kalıcıdır.</summary>
+    public Lingora.Core.Game.GameLevel GameLevel { get; set; } = Lingora.Core.Game.GameLevel.A1;
+
     /// <summary>Sesli ders seslendirme modeli.</summary>
     public string TtsModel { get; set; } = DefaultTtsModel;
 
@@ -69,6 +72,11 @@ public sealed class AppSettings
         if (!Enum.IsDefined(GameDirection))
         {
             GameDirection = TranslationDirection.TurkishToEnglish;
+        }
+
+        if (!Enum.IsDefined(GameLevel))
+        {
+            GameLevel = Lingora.Core.Game.GameLevel.A1;
         }
 
         if (!Enum.IsDefined(Difficulty))

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="lamp">
+<ellipse cx="128" cy="224" rx="86" ry="6" fill="#8D5A3B"/>
+<rect x="124" y="100" width="8" height="124" fill="#8D5A3B"/>
+<g data-state="on">
+<path d="M96 40H160L192 104H64Z" fill="#E9C46A"/>
+<path d="M60 60L50 48M196 60L206 48M40 84L26 84M216 84L230 84" stroke="#E9C46A" stroke-width="6" stroke-linecap="round" fill="none"/>
+</g>
+<g data-state="off">
+<path d="M96 40H160L192 104H64Z" fill="#F1FAEE"/>
+</g>
+</g>
+</svg>

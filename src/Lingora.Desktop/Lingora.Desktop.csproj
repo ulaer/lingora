@@ -28,6 +28,9 @@
     <Content Include="..\..\game-assets\manifest.json;..\..\game-assets\scenes.json"
              Link="game-assets\%(Filename)%(Extension)"
              CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\game-assets\scenes\*.jsonl"
+             Link="game-assets\scenes\%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\game-assets\assets\**\*.svg"
              Link="game-assets\assets\%(RecursiveDir)%(Filename)%(Extension)"
              CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

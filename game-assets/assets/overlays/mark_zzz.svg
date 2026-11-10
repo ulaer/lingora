@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="mark_zzz" fill="#2B2D42">
+<g data-frame="1">
+<polygon transform="translate(150 150) scale(2)" points="0,0 20,0 20,4 8,16 20,16 20,20 0,20 0,16 12,4 0,4"/>
+<polygon transform="translate(112 108) scale(1.6)" points="0,0 20,0 20,4 8,16 20,16 20,20 0,20 0,16 12,4 0,4"/>
+<polygon transform="translate(84 68) scale(1.2)" points="0,0 20,0 20,4 8,16 20,16 20,20 0,20 0,16 12,4 0,4"/>
+</g>
+<g data-frame="2" transform="translate(0 -12)">
+<polygon transform="translate(150 150) scale(2)" points="0,0 20,0 20,4 8,16 20,16 20,20 0,20 0,16 12,4 0,4"/>
+<polygon transform="translate(112 108) scale(1.6)" points="0,0 20,0 20,4 8,16 20,16 20,20 0,20 0,16 12,4 0,4"/>
+<polygon transform="translate(84 68) scale(1.2)" points="0,0 20,0 20,4 8,16 20,16 20,20 0,20 0,16 12,4 0,4"/>
+</g>
+</g>
+</svg>

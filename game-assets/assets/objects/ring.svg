@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="ring">
+<path d="M68 170A60 60 0 1 0 188 170A60 60 0 1 0 68 170ZM86 170A42 42 0 1 0 170 170A42 42 0 1 0 86 170Z" fill="#E9C46A" fill-rule="evenodd"/>
+<path d="M128 70L150 92L128 116L106 92Z" fill="#A8DADC"/>
+<path d="M106 92H150" stroke="#2B2D42" stroke-width="4" stroke-linecap="round" fill="none"/>
+</g>
+</svg>

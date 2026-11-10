@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="eyes_half">
+<circle cx="113" cy="129" r="4" fill="#2B2D42"/><circle cx="143" cy="129" r="4" fill="#2B2D42"/><path d="M106 123 L120 123" stroke="#2B2D42" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M136 123 L150 123" stroke="#2B2D42" stroke-width="4" stroke-linecap="round" fill="none"/>
+</g>
+</svg>

@@ -624,10 +624,20 @@ public class DesktopUiTests
         {
             var library = GameFixture.Library;
             var renderer = new SvgScene(library);
-            foreach (var id in library.Assets.Keys)
+            // Sahne asset'leri tek başına dolu bir resimdir; overlay ve yüz parçaları (v2) küçük eklerdir, ayrıca bakılır.
+            var sceneCategories = new HashSet<string> { "character", "object", "background" };
+            foreach (var a in library.Assets.Values.Where(a => sceneCategories.Contains(a.Category)))
             {
-                Assert.True(Opaque(Rasterize(renderer.RenderAsset(id))) > 300, id);
+                Assert.True(Opaque(Rasterize(renderer.RenderAsset(a.Id))) > 300, a.Id);
             }
+
+            foreach (var a in library.Assets.Values.Where(a => !sceneCategories.Contains(a.Category)))
+            {
+                Assert.True(Opaque(Rasterize(renderer.RenderAsset(a.Id))) > 0, a.Id);
+            }
+
+            // fill grup üzerinde (SVG mirası): güneş siyah değil sarı çizilir.
+            Assert.Equal(Color.FromRgb(0xE9, 0xC4, 0x6A), Pixel(Rasterize(renderer.RenderAsset("sun")), 128, 128));
 
             // Yeşil elma: alt-orta noktası (176,160) tutma noktasında, gövdesi ~ (176,145).
             var green = Rasterize(renderer.Render(GameFixture.Scene("tom_stand__apple__green")));
@@ -658,15 +668,29 @@ public class DesktopUiTests
             Assert.True(renderer.ObjectVisibility(redOnBlue) > 0.9);
             Assert.Equal(1, renderer.ObjectVisibility(GameFixture.Scene("tom_run")));
 
-            // Oyun bu sahneleri göstermez.
+            // Kayıt turları (v5): sarı elma, kadının sarı üstünde kaybolur; kırmızı elma mavi üstünde görünür.
+            Lingora.Core.Game.GameRound RoundOf(string tint, string character) =>
+                library.Records(Lingora.Core.Game.GameLevel.A1)
+                    .Where(r => r.Actors.Count == 1 && r.Actors[0].Char == character && r.Actors[0].Hold is { Obj: "apple" } h
+                                && string.Equals(h.Tint, tint, StringComparison.OrdinalIgnoreCase))
+                    .Select(r => new Lingora.Core.Game.GameRound(r, r.Sentences[0])).First();
+            var camouflaged = RoundOf("#E9C46A", "woman_stand");
+            Assert.True(renderer.ObjectVisibility(camouflaged) < GamePage.MinObjectVisibility);
+            Assert.True(renderer.ObjectVisibility(RoundOf("#E63946", "tom_stand")) > 0.9);
+
+            // Oyun hiçbir seviyede gizlenen nesneli tur göstermez.
             var (window, _) = CreateWindow(s);
             window.GameRandom = new Random(2);
             window.OpenGame();
             var game = window.Game!;
-            for (var i = 0; i < 40; i++)
+            foreach (var level in new[] { Lingora.Core.Game.GameLevel.A1, Lingora.Core.Game.GameLevel.A2, Lingora.Core.Game.GameLevel.B1 })
             {
-                Assert.True(renderer.ObjectVisibility(game.Scene!) >= GamePage.MinObjectVisibility, game.Scene!.Id);
-                game.NextScene();
+                game.SetLevel(level);
+                for (var i = 0; i < 30; i++)
+                {
+                    Assert.True(renderer.ObjectVisibility(game.Round!) >= GamePage.MinObjectVisibility, game.Round!.Id);
+                    game.NextScene();
+                }
             }
         });
     }
@@ -724,8 +748,12 @@ public class DesktopUiTests
             window.GameRandom = new Random(11);
             window.GameButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
             Assert.Equal(["Oyun"], opened);
-            Assert.NotNull(window.Game!.Scene);
+            Assert.NotNull(window.Game!.Round);
             Assert.NotNull(window.Game.SceneImage.Source);
+            Assert.True(window.Game.LegendVisible);
+            Assert.Contains("dün", window.Game.LegendText.Text);
+            window.Game.SetLegendVisible(false);
+            Assert.False(window.Game.LegendVisible);
         });
     }
 
@@ -758,7 +786,7 @@ public class DesktopUiTests
 
             var call = Assert.Single(s.Evaluator.Calls);
             Assert.NotNull(call.Item.ImageFacts);
-            Assert.Equal(game.Scene!.En, call.Item.References[0]);
+            Assert.Equal(game.Round!.Sentence.En, call.Item.References[0]);
             Assert.Equal(Visibility.Visible, game.ResultPanel.Visibility);
             Assert.Equal("74 / 100   ·   Düzeltilmeli", game.ResultHeadline.Text);
             Assert.Equal("Sonraki resim", game.SendButton.Content);
@@ -766,9 +794,9 @@ public class DesktopUiTests
             Assert.Contains("1 resim", game.ScoreText.Text);
             WpfHost.ScreenshotPage(game, "23-oyun-sonuc", 1080, 1000);
 
-            var first = game.Scene;
+            var first = game.Round;
             await game.SendAsync();
-            Assert.NotSame(first, game.Scene);
+            Assert.NotSame(first, game.Round);
             Assert.Equal(Visibility.Collapsed, game.ResultPanel.Visibility);
             Assert.Equal(string.Empty, game.InputBox.Text);
         });
@@ -801,16 +829,16 @@ public class DesktopUiTests
             Assert.Equal(TranslationDirection.TurkishToEnglish, s.Session.Settings.Direction);
             Assert.Equal("RESMİ TÜRKÇE BİR CÜMLEYLE ANLAT", game.DescribeCaption.Text);
             Assert.Contains("Türkçe yaz", game.Placeholder.Text);
-            Assert.Equal(game.Scene!.Tr, game.Question!.Correct);
-            Assert.Contains(game.Library!.SubjectIn(game.Scene, TranslationDirection.EnglishToTurkish), game.HintText.Text);
+            Assert.Equal(game.Round!.Sentence.Tr, game.Question!.Correct);
+            Assert.Contains(game.Library!.SubjectIn(game.Round!, TranslationDirection.EnglishToTurkish), game.HintText.Text);
             WpfHost.ScreenshotPage(game, "26-oyun-turkce", 1080, 780);
 
             game.InputBox.Text = "Resimdeki kişi bir şey tutuyor";
             await game.SendAsync();
             var call = Assert.Single(s.Evaluator.Calls);
             Assert.Equal(TranslationDirection.EnglishToTurkish, call.Item.Direction);
-            Assert.Equal(game.Scene.Tr, call.Item.References[0]);
-            Assert.Contains(game.Scene.Tr, AllText(game.ResultBody));
+            Assert.Equal(game.Round!.Sentence.Tr, call.Item.References[0]);
+            Assert.Contains(game.Round!.Sentence.Tr, AllText(game.ResultBody));
 
             game.ModeChoose.IsChecked = true;
             Assert.Contains("DOĞRU TÜRKÇE CÜMLE", game.ChooseCaption.Text);
@@ -819,7 +847,7 @@ public class DesktopUiTests
             // Geri İngilizceye.
             game.LangEnglish.IsChecked = true;
             Assert.Equal(TranslationDirection.TurkishToEnglish, s.Session.Settings.GameDirection);
-            Assert.Equal(game.Scene!.En, game.Question!.Correct);
+            Assert.Equal(game.Round!.Sentence.En, game.Question!.Correct);
         });
     }
 

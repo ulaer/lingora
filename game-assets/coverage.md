@@ -1,70 +1,49 @@
-# Coverage raporu (v1)
+# Coverage raporu (v2)
 
-| ölçü | değer |
-|---|---|
-| SVG asset | 54 (karakter-poz 39, nesne 10, arka plan 5) |
-| kanonik sahne (`scenes.json`) | **4948** |
-| yerli sahne / yersiz | 3954 / 994 |
-| renk/içerik dönüşümlü sahne | 3972 |
-| çoğaltmalı sahne (iki/üç) | 2074 |
-| takma adlı özne sahnesi (He, The boy, My mother…) | 3202 |
-| grup sahnesi (Tom and Mary, They, Two dogs…) | 90 |
-| farklı özne | 24 |
-| farklı İngilizce kelime | 74 |
-| farklı Türkçe kelime | 68 |
-| sahne / asset oranı | 91.6 |
+SVG: **159** — background 14, character 81, face 10, object 27, overlay 27
 
-## Poz başına sahne
+| seviye | sahne (görsel) | cümle | farklı EN kelime | farklı TR kelime | özne |
+|---|---|---|---|---|---|
+| A1 | 3,517 | 9,622 | 110 | 164 | 29 |  <!-- 3049 KB -->
+| A2 | 3,019 | 16,391 | 179 | 645 | 19 |  <!-- 4472 KB -->
+| B1 | 1,040 | 3,978 | 109 | 129 | 13 |  <!-- 1229 KB -->
+| **toplam** | **7,576** | **29,991** | 246 | 747 | |
 
-- drink: 317
-- eat: 435
-- fly: 9
-- play: 48
-- read: 366
-- run: 87
-- sit: 106
-- sleep: 15
-- stand: 3538
-- swim: 27
+## A2/B1 özellik başına sahne
 
-## Çalışma anı dönüşümleriyle tahmini kapsam
+- zaman/olumsuz/soru: 1,432
+- günün vakti: 1,085
+- sıralı panel: 544
+- duygu: 458
+- etkileşim: 328
+- nesne durumu / prop: 120
+- istemek (balon): 48
+- hava: 44
 
-## Özne başına sahne
+## Örnek cümleler
 
-- He: 781
-- She: 781
-- Tom: 392
-- Mary: 392
-- The boy: 392
-- The girl: 392
-- The man: 389
-- The woman: 389
-- My father: 389
-- My mother: 389
-- The teacher: 78
-- The dog: 40
-- The cat: 40
-- They: 21
-- Tom and Mary: 12
-- The children: 12
-- The horse: 11
-- The dog and the cat: 10
-- Two dogs: 10
-- The dogs: 10
-- My parents: 9
-- The bird: 3
-- Two birds: 3
-- The birds: 3
+- A1 `tom_stand__apple` — He is holding an apple. / O bir elma tutuyor.
+- A1 `mary_stand__book__x3__school` — She is holding three books at school. / O okulda üç kitap tutuyor.
+- A1 `man_stand__apple__bedroom` — He is holding an apple in the bedroom. / O yatak odasında bir elma tutuyor.
+- A1 `woman_eat__fish__room` — She is eating a fish at home. / O evde bir balık yiyor.
+- A1 `give__mary__man__apple` — She is giving the man an apple. / O adama bir elma veriyor.
+- A2 `tom_stand__apple__tense` — Is Tom holding an apple? / Tom bir elma tutuyor mu?
+- A2 `man_drink__cup__coffee__beach__tense` — Is the man drinking coffee on the beach? / Adam sahilde kahve içiyor mu?
+- A2 `give__woman__man__book__school__tense` — Is the woman giving the man a book at school? / Kadın okulda adama bir kitap veriyor mu?
+- A2 `mary_read__letter__room__night` — Mary is reading a letter at home at night. / Mary gece evde bir mektup okuyor.
+- A2 `man_walk__office__evening` — The man is walking at the office in the evening. / Adam akşam ofiste yürüyor.
+- B1 `talk_to__tom__mary` — Tom talked to Mary yesterday. / Tom dün Mary'yle konuştu.
+- B1 `call__mary__tom__park` — Mary called Tom in the park yesterday. / Mary dün parkta Tom'u aradı.
+- B1 `open_door__tom__room` — Tom isn't opening the door at home. / Tom evde kapıyı açmıyor.
+- B1 `seq__tom_call__street__then__read` — On the street, Tom first talked on the phone, then he read a book. / Tom sokakta önce telefonla konuştu, sonra bir kitap okudu.
+- B1 `seq__man_eat__apple__office__then__talk` — At the office, the man first ate an apple, then he talked. / Adam ofiste önce bir elma yedi, sonra konuştu.
 
-Aynı görselle üretilebilecek kalıplar (olumsuz, soru): ×4 → **≈19,792 cümle**, yeni asset çizmeden.
+## Kalite kapısı (tools/lint.py)
 
-## Örnek sahneler
+Birleştirilen aynı-resim kaydı: A1 211, A2 0, B1 0 (cümleleri tek kabul kümesinde).
 
-- `tom_stand__apple` — Tom is holding an apple. / Tom bir elma tutuyor.
-- `mary_stand__ball__yellow__x2__school` — Mary is holding two yellow balls at school. / Mary okulda iki sarı top tutuyor.
-- `woman_stand__apple__green__x2__park` — The woman is holding two green apples in the park. / Kadın parkta iki yeşil elma tutuyor.
-- `tom_stand__book__beach__as_he` — He is holding a book at the beach. / O sahilde bir kitap tutuyor.
-- `mary_stand__apple__red__x3__school__as_she` — She is holding three red apples at school. / O okulda üç kırmızı elma tutuyor.
-- `mary_drink__glass__orange_juice__room__as_she` — She is drinking orange juice at home. / O evde portakal suyu içiyor.
-- `man_stand__ball__orange__x2__park__as_he` — He is holding two orange balls in the park. / O parkta iki turuncu top tutuyor.
-- `woman_stand__letter__x2__room__as_my_mother` — My mother is holding two letters at home. / Annem evde iki mektup tutuyor.
+Oyun örneklemesi (scenes.json `weight`): tutma pozu payı tekdüze %59 → ağırlıklı %37.
+
+| seviye | kural | sayı | örnek |
+|---|---|---|---|
+| — | sorun yok | 0 | |

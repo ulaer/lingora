@@ -578,6 +578,35 @@ public sealed class PracticeSession
         return await EvaluateAndRecordAsync(SceneItem(library, scene), text, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>Oyun – resmi anlat (A1/A2/B1 turu): sorulan cümlenin rozetleri ve olgularıyla değerlendirilir.</summary>
+    public async Task<SubmitOutcome> SubmitSceneAsync(GameLibrary library, GameRound round, string userSentence, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(library);
+        ArgumentNullException.ThrowIfNull(round);
+        var text = (userSentence ?? string.Empty).Trim();
+        if (text.Length == 0)
+        {
+            return new SubmitOutcome(false, "Lütfen önce resmi anlatan cümleni yaz.");
+        }
+
+        return await EvaluateAndRecordAsync(SceneItem(library, round), text, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Oyunun seviyesi (A1, A2, B1). Kalıcıdır.</summary>
+    public void SetGameLevel(GameLevel level)
+    {
+        Settings.GameLevel = level;
+        SaveSettings();
+    }
+
+    /// <summary>Tur için değerlendirme öğesi: kaynak resim etiketi, referans sorulan cümle, olgular rozetlerle.</summary>
+    public PracticeItem SceneItem(GameLibrary library, GameRound round)
+    {
+        var direction = Settings.GameDirection;
+        var sourceSentence = round.Text(direction == TranslationDirection.TurkishToEnglish ? TranslationDirection.EnglishToTurkish : TranslationDirection.TurkishToEnglish);
+        return new PracticeItem(direction, "Resim: " + sourceSentence, [round.Text(direction)], -1, library.DescribeFacts(round, direction));
+    }
+
     /// <summary>Oyunda resmin anlatılacağı dil (TurkishToEnglish = İngilizce yaz). Kalıcıdır.</summary>
     public void SetGameDirection(TranslationDirection direction)
     {
@@ -604,7 +633,7 @@ public sealed class PracticeSession
         var chosen = chosenIndex >= 0 && chosenIndex < question.Options.Count ? question.Options[chosenIndex] : string.Empty;
         var now = _time.GetLocalNow();
         var direction = question.Direction;
-        var source = "Resim (seçmeli): " + (direction == TranslationDirection.TurkishToEnglish ? question.Scene.Tr : question.Scene.En);
+        var source = "Resim (seçmeli): " + question.SourceSentence;
 
         var record = new AttemptRecord
         {

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="cal_everyday">
+<rect x="56" y="60" width="144" height="150" rx="12" fill="#F1FAEE"/>
+<path d="M56 100V72A12 12 0 0 1 68 60H188A12 12 0 0 1 200 72V100Z" fill="#E63946"/>
+<rect x="82" y="48" width="10" height="28" rx="5" fill="#2B2D42"/>
+<rect x="164" y="48" width="10" height="28" rx="5" fill="#2B2D42"/>
+<path d="M150 139A26 26 0 1 1 128 126" stroke="#2B2D42" stroke-width="8" stroke-linecap="round" fill="none"/>
+<polygon points="124,114 146,126 124,138" fill="#2B2D42"/>
+</g>
+</svg>

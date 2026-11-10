@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="mary_sleep" data-head="74,118.5">
+<rect x="30" y="150" width="10" height="62" rx="4" fill="#8D5A3B"/><rect x="216" y="170" width="10" height="42" rx="4" fill="#8D5A3B"/><rect x="30" y="196" width="196" height="16" rx="4" fill="#8D5A3B"/><rect x="32" y="212" width="10" height="18" fill="#8D5A3B"/><rect x="214" y="212" width="10" height="18" fill="#8D5A3B"/><rect x="38" y="180" width="180" height="18" rx="6" fill="#F1FAEE"/>
+<rect x="42" y="166" width="58" height="20" rx="10" fill="#F1FAEE"/><path d="M50 178 L62 178" stroke="#2B2D42" stroke-width="4" stroke-linecap="round" fill="none"/>
+<ellipse cx="70" cy="174" rx="30" ry="10" fill="#8D5A3B"/>
+<rect x="98" y="166" width="30" height="30" rx="10" fill="#E63946"/>
+<circle cx="64.5" cy="153" r="4.5" fill="#F2C6A0"/><circle cx="83.5" cy="153" r="4.5" fill="#F2C6A0"/><circle cx="74" cy="150" r="31.5" fill="#F2C6A0"/><path d="M42.5 148.5 Q41 118.5 74 118.5 Q107 118.5 105.5 148.5 Q98 135 74 133.5 Q50 135 42.5 148.5 Z" fill="#8D5A3B"/><g data-part="eyes" data-cx="74" data-cy="153"><path d="M58 153 Q63 158 68 153" stroke="#2B2D42" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M80 153 Q85 158 90 153" stroke="#2B2D42" stroke-width="4" stroke-linecap="round" fill="none"/></g><g data-part="mouth" data-cx="74" data-cy="167"><path d="M69 166 Q74 170 79 166" stroke="#2B2D42" stroke-width="4" stroke-linecap="round" fill="none"/></g>
+<rect x="114" y="162" width="102" height="36" rx="12" fill="#E63946"/><rect x="114" y="162" width="12" height="36" rx="6" fill="#F1FAEE"/>
+</g>
+</svg>

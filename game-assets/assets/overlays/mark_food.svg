@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="mark_food">
+<circle cx="96" cy="140" r="46" fill="#F1FAEE"/>
+<circle cx="96" cy="140" r="32" fill="#A8DADC"/>
+<circle cx="96" cy="140" r="12" fill="#F4A261"/>
+<rect x="157" y="76" width="6" height="32" rx="3" fill="#2B2D42"/>
+<rect x="168" y="76" width="6" height="32" rx="3" fill="#2B2D42"/>
+<rect x="179" y="76" width="6" height="32" rx="3" fill="#2B2D42"/>
+<rect x="157" y="100" width="28" height="14" rx="6" fill="#2B2D42"/>
+<rect x="167" y="108" width="8" height="84" rx="4" fill="#2B2D42"/>
+</g>
+</svg>
