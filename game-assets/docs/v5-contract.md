@@ -29,6 +29,12 @@ v4 sözleşmesi (`v4-contract.md`) geçerli; bu belge onu genişletir. İki iş 
   Fiili `hold` olan cümle için doğruluk: cümlenin nesnesi `facts.holds` içinde mi (fiil eşitliği aranmaz).
   ("She is holding a ball." vermek resmi için doğrudur → çeldirici olamaz.)
 
+- `role` (cümle alanı): `"role": "other"` olan cümlenin öznesi resmin `facts.other`'ıdır, nesnesi resmin `facts.subject`'idir
+  ("Mary is listening to Tom." — Tom konuşuyor, Mary dinliyor). Doğruluk: `subject` boyutu `R.other ∈ subject_ok` ile,
+  `other` boyutu `R.subject == C.subject` ile sınanır; fiil eşitliği normaldir (kaynak fiil `talk_to`), yani listen_to
+  yalnızca talk_to resmini sağlar, başka fiilli resimler sağlamaz. mentions: subject, verb, other (+ place).
+  Biçimler: prog, past, fut, prog_q.
+
 ## 3. Kendi-cümlesi kapısı (lint)
 
 Her kaydın her cümlesi, yukarıdaki kuralla **kendi resmi için doğru** olmalı (`lint.py`, ERROR). Python kuralı ile

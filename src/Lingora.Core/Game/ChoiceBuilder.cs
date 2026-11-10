@@ -48,7 +48,7 @@ public static class ChoiceBuilder
                     continue;
                 }
 
-                if (IsTrueFor(picture, sentence, record))
+                if (IsTrueFor(picture, sentence, record, library.PlaceParents))
                 {
                     continue;
                 }
@@ -95,6 +95,7 @@ public static class ChoiceBuilder
             ["time"] = r.Time ?? r.Sky,
             ["weather"] = r.Weather,
             ["state"] = a?.Expr,
+            ["person"] = null,
             ["other"] = r.Actors.Count > 1 ? r.Actors[1].Char : null,
         };
         return new GameFacts(values);
@@ -109,32 +110,97 @@ public static class ChoiceBuilder
     }
 
     /// <summary>
-    /// v4 doğruluk kuralı: cümle, resim için doğrudur ⇔ cümlenin söylediği (mentions) her boyutta kaynak sahnesinin
-    /// olgusu resmin olgusuna eşittir (özne: resmin öznesi subject_ok içinde ya da eşit). mentions yoksa tüm boyutlar sayılır.
+    /// Doğruluk kuralı (v4 + v5): cümle, resim için doğrudur ⇔ cümlenin olumlu çekirdeğinin söylediği (mentions) her
+    /// boyutta kaynak sahnesinin olgusu resmin olgusuna uyar. Olumsuzlukta ters çevirme YOK (rozet/kutupluluk yok sayılır).
+    /// Özne: resmin öznesi subject_ok içinde ya da eşit. Kişi: aynı kişi. Yer: eşit ya da resmin yeri söylenen yerin
+    /// çocuğu (kitchen → room). Fiili "hold" olan cümle: nesnesi resmin facts.holds listesinde (fiil eşitliği aranmaz).
+    /// mentions yoksa tüm boyutlar sayılır.
     /// </summary>
-    internal static bool IsTrueFor(GameRecord picture, GameSentence sentence, GameRecord source)
+    internal static bool IsTrueFor(GameRecord picture, GameSentence sentence, GameRecord source, IReadOnlyDictionary<string, string>? placeParents = null)
     {
         var pf = EffectiveFacts(picture);
         var sf = EffectiveFacts(source);
         IReadOnlyList<string> dims = sentence.Mentions.Count > 0 ? sentence.Mentions : GameFacts.Dimensions;
-        foreach (var d in dims)
+        var holdSentence = sf.Verb == "hold" && dims.Contains("object");
+        var objectOnlyInHolds = false;
+        if (holdSentence)
         {
-            if (d == "subject")
-            {
-                var ok = sentence.SubjectOk.Contains(pf.Get("subject") ?? string.Empty, StringComparer.Ordinal)
-                         || pf.Get("subject") == sf.Get("subject");
-                if (!ok)
-                {
-                    return false;
-                }
-            }
-            else if (pf.Get(d) != sf.Get(d))
+            var wanted = sf.Object;
+            var inMain = wanted is not null && pf.Object == wanted;
+            objectOnlyInHolds = !inMain && wanted is not null && pf.Holds.Contains(wanted);
+            if (!inMain && !objectOnlyInHolds)
             {
                 return false;
             }
         }
 
+        foreach (var d in dims)
+        {
+            switch (d)
+            {
+                case "subject" when sentence.Role == "other":
+                    if (!sentence.SubjectOk.Contains(pf.Other ?? string.Empty, StringComparer.Ordinal))
+                    {
+                        return false;
+                    }
+
+                    break;
+                case "other" when sentence.Role == "other":
+                    if (pf.Subject != sf.Subject)
+                    {
+                        return false;
+                    }
+
+                    break;
+                case "subject":
+                    if (!(sentence.SubjectOk.Contains(pf.Get("subject") ?? string.Empty, StringComparer.Ordinal) || pf.Get("subject") == sf.Get("subject")))
+                    {
+                        return false;
+                    }
+
+                    break;
+                case "person":
+                    var said = sentence.Person ?? sf.Person;
+                    if (pf.Person is not null && said is not null && said != pf.Person)
+                    {
+                        return false;
+                    }
+
+                    break;
+                case "place":
+                    if (!PlaceMatches(pf.Place, sf.Place, placeParents))
+                    {
+                        return false;
+                    }
+
+                    break;
+                case "verb" when holdSentence:
+                case "object" when holdSentence:
+                    break;
+                case "variant" or "count" when objectOnlyInHolds:
+                    break;
+                default:
+                    if (pf.Get(d) != sf.Get(d))
+                    {
+                        return false;
+                    }
+
+                    break;
+            }
+        }
+
         return true;
+    }
+
+    /// <summary>Resmin yeri, cümlenin söylediği yerle aynı ya da onun çocuğu mu (kitchen → room).</summary>
+    internal static bool PlaceMatches(string? picturePlace, string? saidPlace, IReadOnlyDictionary<string, string>? parents)
+    {
+        if (picturePlace == saidPlace)
+        {
+            return true;
+        }
+
+        return picturePlace is not null && parents is not null && parents.TryGetValue(picturePlace, out var parent) && parent == saidPlace;
     }
 
     public static ChoiceQuestion Build(GameLibrary library, GameScene scene, TranslationDirection direction, Random random, int optionCount = 4)

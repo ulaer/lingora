@@ -167,6 +167,9 @@ public sealed class GameLibrary
     /// <summary>Kompozisyon yerleşimleri (manifest "layouts").</summary>
     public GameLayouts Layouts { get; private set; } = GameLayouts.Default;
 
+    /// <summary>manifest "place_parents": alt yer → üst yer (kitchen → room); "at home" üst yeri söyler.</summary>
+    public IReadOnlyDictionary<string, string> PlaceParents { get; private set; } = new Dictionary<string, string>();
+
     public IReadOnlyDictionary<string, GameEmotion> Emotions { get; private set; } = new Dictionary<string, GameEmotion>();
 
     public IReadOnlyDictionary<string, GameWeather> Weathers { get; private set; } = new Dictionary<string, GameWeather>();
@@ -218,7 +221,8 @@ public sealed class GameLibrary
     /// </summary>
     public GameRound PickRound(GameLevel level, Random random)
     {
-        if (level == GameLevel.A1 && Scenes.Count > 0)
+        // v5: A1 de kayıt yolundan (işaret, ifade, facts kuralı); scenes.json yalnızca A1.jsonl yoksa.
+        if (level == GameLevel.A1 && Scenes.Count > 0 && Records(level).Count == 0)
         {
             return GameRound.FromScene(Pick(random));
         }
@@ -391,6 +395,13 @@ public sealed class GameLibrary
                 .ToDictionary(w => Str(w, "id"), w => new GameWeather(Str(w, "id"), Str(w, "kind"), Str(w, "overlay")), StringComparer.Ordinal);
         }
 
+        if (root.TryGetProperty("place_parents", out var parents) && parents.ValueKind == JsonValueKind.Object)
+        {
+            library.PlaceParents = parents.EnumerateObject()
+                .Where(p => p.Value.ValueKind == JsonValueKind.String)
+                .ToDictionary(p => p.Name, p => p.Value.GetString()!, StringComparer.Ordinal);
+        }
+
         if (root.TryGetProperty("verbs", out var verbs) && verbs.ValueKind == JsonValueKind.Object)
         {
             var map = new Dictionary<string, (string, string)>(StringComparer.Ordinal);
@@ -518,6 +529,19 @@ public sealed class GameLibrary
 
         return b.ToString().TrimEnd();
     }
+
+    /// <summary>Oyundaki rozet/işaret açıklaması: (kimlik, kısa etiket, anlam).</summary>
+    public static IReadOnlyList<(string Id, string Label, string Meaning)> BadgeLegend { get; } =
+    [
+        ("cal_yesterday", "dün", "geçmiş zaman"),
+        ("cal_tomorrow", "yarın", "gelecek zaman"),
+        ("badge_not", "değil", "olumsuz (çarpı: inkâr edilen şey)"),
+        ("badge_question", "soru", "soru cümlesi"),
+        ("cal_everyday", "her gün", "geniş zaman / alışkanlık"),
+        ("badge_can", "-ebilir", "yetenek (can)"),
+        ("marker_me", "ben", "konuşan kişi (ben / biz)"),
+        ("marker_you", "sen", "karşıdaki kişi (sen / siz)"),
+    ];
 
     private static readonly Dictionary<string, string> BadgeMeaning = new(StringComparer.Ordinal)
     {

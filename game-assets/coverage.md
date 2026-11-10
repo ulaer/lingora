@@ -4,10 +4,10 @@ SVG: **159** — background 14, character 81, face 10, object 27, overlay 27
 
 | seviye | sahne (görsel) | cümle | farklı EN kelime | farklı TR kelime | özne |
 |---|---|---|---|---|---|
-| A1 | 3,517 | 9,622 | 110 | 164 | 29 |  <!-- 2921 KB -->
-| A2 | 3,019 | 16,753 | 179 | 662 | 19 |  <!-- 4458 KB -->
-| B1 | 1,040 | 3,978 | 109 | 124 | 13 |  <!-- 1182 KB -->
-| **toplam** | **7,576** | **30,353** | 246 | 759 | |
+| A1 | 3,517 | 9,622 | 110 | 164 | 29 |  <!-- 3049 KB -->
+| A2 | 3,019 | 16,391 | 179 | 645 | 19 |  <!-- 4472 KB -->
+| B1 | 1,040 | 3,978 | 109 | 129 | 13 |  <!-- 1229 KB -->
+| **toplam** | **7,576** | **29,991** | 246 | 747 | |
 
 ## A2/B1 özellik başına sahne
 
@@ -32,7 +32,7 @@ SVG: **159** — background 14, character 81, face 10, object 27, overlay 27
 - A2 `give__woman__man__book__school__tense` — Is the woman giving the man a book at school? / Kadın okulda adama bir kitap veriyor mu?
 - A2 `mary_read__letter__room__night` — Mary is reading a letter at home at night. / Mary gece evde bir mektup okuyor.
 - A2 `man_walk__office__evening` — The man is walking at the office in the evening. / Adam akşam ofiste yürüyor.
-- B1 `talk_to__tom__mary` — Tom talked to Mary yesterday. / Tom dün Mary ile konuştu.
+- B1 `talk_to__tom__mary` — Tom talked to Mary yesterday. / Tom dün Mary'yle konuştu.
 - B1 `call__mary__tom__park` — Mary called Tom in the park yesterday. / Mary dün parkta Tom'u aradı.
 - B1 `open_door__tom__room` — Tom isn't opening the door at home. / Tom evde kapıyı açmıyor.
 - B1 `seq__tom_call__street__then__read` — On the street, Tom first talked on the phone, then he read a book. / Tom sokakta önce telefonla konuştu, sonra bir kitap okudu.

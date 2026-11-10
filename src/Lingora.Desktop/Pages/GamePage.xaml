@@ -79,7 +79,11 @@
                                 Background="{StaticResource GlassBrush}">
                             <Image x:Name="SceneImage" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
                         </Border>
-                        <TextBlock x:Name="HintText" Style="{StaticResource Muted}" FontSize="13" Margin="4,10,0,0" />
+                        <TextBlock x:Name="HintText" Style="{StaticResource Muted}" FontSize="13" Margin="4,10,0,0" TextWrapping="Wrap" MaxWidth="340" />
+                        <Button x:Name="LegendToggle" Style="{StaticResource LinkButton}" Content="Rozet açıklaması ▴"
+                                HorizontalAlignment="Left" Margin="0,6,0,0" Click="OnLegendToggle" />
+                        <TextBlock x:Name="LegendText" Style="{StaticResource Muted}" FontSize="12" Margin="4,4,0,0"
+                                   TextWrapping="Wrap" MaxWidth="340" />
                     </StackPanel>
 
                     <!-- Resmi anlat -->

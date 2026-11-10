@@ -14,9 +14,13 @@
   .tile svg { height: 100%; aspect-ratio: 1; display: block; }
   figcaption { font-size: 11px; margin-top: 3px; }
   figcaption b { font-weight: 600; }
+  #legend { margin-bottom: 8px; gap: 8px; }
+  #legend figure { width: 64px; text-align: center; }
+  #legend .tile { height: 56px; }
 </style>
 </head>
 <body>
+<div id="legend" class="grid"></div>
 <div id="out"></div>
 <script>
 // Kullanım:
@@ -43,7 +47,7 @@ function svg(children) {
 }
 
 // Aktör = karakter + elindeki nesne(ler) + yüz ifadesi + duygu işareti, karakter koordinatlarında
-async function buildActor(a) {
+async function buildActor(a, denied) {
   const root = g();
   const ch = await load(BY[a.char].file);
   root.appendChild(ch);
@@ -72,9 +76,19 @@ async function buildActor(a) {
       root.appendChild(place(await load(BY[emo.mark].file), hx + L.dx - 128 * L.s, hy + L.dy - 128 * L.s, L.s));
     }
   }
-  if (a.marker && BY[a.marker]) {  // v4: ben/sen işareti başın üstünde
+  if (a.marker && BY[a.marker]) {
+    // v5 §4 işaret kuralı: önce başın üstü (data-head + (0, dy)); işaretin tuvaldeki üst kenarı < 4 ise
+    // başın yanı (data-head + (52, 24)). (Aynı kural SvgScene'de.)
     const [hx, hy] = pt(ch.getAttribute("data-head")) || [128, 40], L = LAY.marker || { dy: -34, s: 0.22 };
-    root.appendChild(place(await load(BY[a.marker].file), hx - 128 * L.s, hy + L.dy - 128 * L.s, L.s));
+    const topCanvas = 230 - 230 * a.s + (hy + L.dy - 60 * L.s) * a.s;
+    const [mx, my] = topCanvas < 4 ? [hx + 52, hy + 24] : [hx, hy + L.dy];
+    root.appendChild(place(await load(BY[a.marker].file), mx - 128 * L.s, my - 128 * L.s, L.s));
+  }
+  if (denied && BY.badge_not) {
+    // v5 §1: badge_not varsa inkâr edilen şeyin üstüne çarpı: elde nesne varsa tutma noktası, yoksa göğüs (head + (0, 70)).
+    const [hx, hy] = pt(ch.getAttribute("data-head")) || [128, 40];
+    const [cx, cy] = a.hold && a.hold.anchor ? a.hold.anchor : [hx, hy + 70], ls = 0.12 / a.s;
+    root.appendChild(place(await load(BY.badge_not.file), cx - 128 * ls, cy - 128 * ls, ls));
   }
   return place(root, a.x - 128 * a.s, 230 - 230 * a.s, a.s);
 }
@@ -97,7 +111,8 @@ async function buildPanel(r, sentence) {
     const el = await load(BY[w.overlay].file);
     parts.push(w.kind === "adj" && w.overlay === "sun" ? place(el, 190, 2, 0.25) : el);
   }
-  for (const a of r.actors || []) parts.push(await buildActor(a));
+  const denied = !!(sentence && (sentence.badges || []).includes("badge_not"));
+  for (const [i, a] of (r.actors || []).entries()) parts.push(await buildActor(a, denied && i === 0));
   if (r.bubble) {
     const L = (LAY[r.layout] || LAY.bubble).bubble;
     parts.push(place(await load(BY[r.bubble.type + "_bubble"].file), L.x, L.y, L.s));
@@ -147,6 +162,12 @@ setInterval(() => {
   BY = Object.fromEntries(M.assets.map(a => [a.id, a]));
   LAY = M.layouts;
   const out = document.getElementById("out");
+  // v5 §1: rozet / işaret açıklaması (Türkçe etiketler)
+  const LEGEND = [["cal_yesterday", "dün"], ["cal_tomorrow", "yarın"], ["badge_not", "değil"], ["badge_question", "soru"],
+                  ["cal_everyday", "her gün"], ["badge_can", "-ebilir"], ["marker_me", "ben"], ["marker_you", "sen"]];
+  for (const [id, label] of LEGEND) {
+    if (BY[id]) document.getElementById("legend").appendChild(tile([svg([await load(BY[id].file)])], esc(label)));
+  }
   if (q.get("mode") === "assets") {
     const cat = q.get("cat");
     for (const c of ["character", "object", "background", "overlay", "face"]) {

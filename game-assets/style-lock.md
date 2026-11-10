@@ -116,3 +116,11 @@ Ayrıntı: `docs/v4-contract.md`. Stil kuralları (palet, tek kök `<g id>`, yas
 - Kişi işareti: `actors[].marker`, `data-head` noktasının üstüne `layouts.marker` (`dy` -34, `s` 0.22) ile çizilir; "We/You (çoğul)" sahnelerinde iki aktörde birden.
 - Yeni durumlar (`emotions`): hungry, sick, sleepy. İfade fiilleri (crying, laughing, smiling) `kind: expression` — `stand` pozu + yüz parçası, yeni SVG yok.
 
+---
+
+# v5 eklentileri
+
+- `pair_give`: veren x=64, alan x=192, ikisi s=0.7 (nesne alıcının gövdesine girmez).
+- Ben/sen işareti: başın üstü; tuvaldeki üst kenarı < 4 ise `data-head` + (52, 24).
+- `badge_not` sorulan cümlede varsa inkâr edilen şeyin üstüne ölçek 0.12 çarpı olarak da çizilir (tutma noktası ya da `data-head` + (0, 70)).
+

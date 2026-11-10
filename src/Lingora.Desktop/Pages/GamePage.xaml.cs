@@ -63,11 +63,24 @@ public partial class GamePage : UserControl
             _session.SetGameLevel(GameLevel.A1);
         }
 
+        SetLegendVisible(true);
         UpdateLanguageButtons();
         UpdateLevelButtons();
         UpdateScore();
         NextScene();
     }
+
+    /// <summary>Rozet/işaret açıklaması görünür mü (düğmeyle açılıp kapanır).</summary>
+    internal bool LegendVisible => LegendText.Visibility == Visibility.Visible;
+
+    internal void SetLegendVisible(bool visible)
+    {
+        LegendText.Text = string.Join(" · ", GameLibrary.BadgeLegend.Select(b => $"{b.Label}: {b.Meaning}"));
+        LegendText.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        LegendToggle.Content = visible ? "Rozet açıklaması ▴" : "Rozet açıklaması ▾";
+    }
+
+    private void OnLegendToggle(object sender, RoutedEventArgs e) => SetLegendVisible(!LegendVisible);
 
     /// <summary>Animasyon adımı süresi (kare değişimi ve durum geçişleri).</summary>
     internal const int AnimationIntervalMs = 300;
@@ -259,7 +272,7 @@ public partial class GamePage : UserControl
     private GameRound PickVisibleRound()
     {
         var round = _library!.PickRound(Level, _random);
-        for (var attempt = 0; attempt < 25 && round.Legacy is { } scene && _renderer!.ObjectVisibility(scene) < MinObjectVisibility; attempt++)
+        for (var attempt = 0; attempt < 25 && _renderer!.ObjectVisibility(round) < MinObjectVisibility; attempt++)
         {
             round = _library.PickRound(Level, _random);
         }

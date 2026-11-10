@@ -71,6 +71,20 @@ cümleye özeldir: oyun hangi cümleyi soruyorsa onun rozetlerini gösterir.
   zamanlar yalnızca `tom`/`woman`; `give` A2'de elma/kitap × (yersiz, park, okul). `scenes/*.jsonl` toplamı ≈ 8,8 MB.
 - `bored` ("canı sıkkın") kişi eki alamadığı için kişi cümlelerinden dışlanır (`no_person`).
 
+### v5 (bkz. `docs/v5-contract.md`)
+
+- **Doğruluk kuralı** tek yerde: `tools/lint.py` → `sentence_true()` (docstring'deki tablo C# `ChoiceBuilder` ile aynı yazılır).
+  Olumsuzlukta ters çevirme yok: `badge_not` resimdeki önermenin inkârıdır, doğruluk olumlu çekirdeğe bakar; çeldirici
+  sorulan cümleyle aynı `form` + `badges` taşır.
+- **Kendi-cümlesi kapısı** (`OWN-1`, ERROR): her cümle kendi resmi için doğru olmalı (kural + metinden çıkan özne/yer/vakit/kişi
+  iddiaları). v4 çıktısında 464 cümle (hepsi B1 "Mary listens to Tom" ters yön cümleleri) yakalanıyordu; artık üretilmiyor.
+- `facts.person` (resmin kişisi: marker + grup) ve `facts.holds` (öznenin elindeki nesneler: give/eat/read/drink/stand/call);
+  I/You/We/He/She/They cümleleri `mentions`'a `person` ekler. `manifest.place_parents`: mutfak/yatak odası/banyo ⊂ "at home".
+- `pair_give` yerleşimi (veren x 64, alan x 192, ölçek 0,7); lint LAY-5: verilen nesnenin tuval x'i < alan.x − 30.
+  `scenes.json` vermek girişlerinde `transform.anchor/scale` TUVAL koordinatıdır.
+- Dil: "ile" nesnesi `tr_ins` ("Tom adamla konuşuyor."), 1. kişi (1s/1p) soru biçimleri üretilmez, "aç" 1p geçmişi ("açtık") yok.
+- `preview.html`: işaret yerleşimi (üst kenar < 4 ise başın yanı), `badge_not` varsa inkâr edilen şeyin üstüne çarpı, rozet/işaret açıklama satırı.
+
 ## Kompozisyon kuralları
 
 - Aktör: `translate(x - 128*s, 230 - 230*s) scale(s)`; elindeki nesne aktörün içinde

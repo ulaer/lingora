@@ -95,7 +95,7 @@ public class GameLevelCoreTests
             var round = library.PickRound(level, random);
             Assert.Equal(level, round.Level);
             Assert.Contains(round.Sentence, round.Record.Sentences);
-            Assert.Equal(level == GameLevel.A1, round.Legacy is not null);
+            Assert.Null(round.Legacy); // v5: A1 de kayıt yolundan
 
             var question = ChoiceBuilder.Build(library, round, TranslationDirection.TurkishToEnglish, random);
             Assert.Equal(4, question.Options.Count);
@@ -124,15 +124,13 @@ public class GameLevelCoreTests
     }
 
     [Fact]
-    public void A1KeepsTheScenesJsonWeights()
+    public void LegacyScenesJsonPickStillWorks()
     {
         var library = GameFixture.Library;
-        var random = new Random(7);
-        bool Holding(GameScene s) => library.Assets[s.Character].Pose == "stand";
-        var picks = Enumerable.Range(0, 3000).Select(_ => library.PickRound(GameLevel.A1, random)).ToList();
-
-        Assert.All(picks, p => Assert.NotNull(p.Legacy));
-        Assert.InRange(picks.Count(p => Holding(p.Legacy!)) / 3000.0, 0.3, 0.5);
+        var scene = library.Pick(new Random(7));
+        var round = GameRound.FromScene(scene);
+        Assert.Equal(scene.En, round.Sentence.En);
+        Assert.NotNull(round.Legacy);
     }
 
     [Fact]
@@ -242,6 +240,120 @@ public class GameLevelCoreTests
         Assert.Equal(sentence.En, Assert.Single(item.References));
         Assert.Contains("geçmiş zaman (dün) + soru cümlesi", item.ImageFacts);
         Assert.Contains("Kim:", item.ImageFacts);
+    }
+}
+
+
+public class GameV5TruthRuleTests
+{
+    private static GameRecord Rec(string id, Dictionary<string, string?> facts, string? bg = null) =>
+        new(id, GameLevel.A2, "single", bg, null, null, null, null, [], null, null, [], new GameFacts(facts), []);
+
+    private static GameSentence Sent(string[] mentions, string[]? ok = null, string? person = null, string form = "prog", string[]? badges = null) =>
+        new(form, "X", "x", "y", badges ?? [], mentions, ok ?? [], person);
+
+    [Fact]
+    public void HoldingAnObjectIsTrueForPicturesWhereItIsOnlyHeld()
+    {
+        var give = Rec("give", new() { ["subject"] = "mary", ["verb"] = "give", ["object"] = "ball", ["holds"] = "ball", ["count"] = "1" });
+        var holdBall = Rec("hold", new() { ["subject"] = "mary", ["verb"] = "hold", ["object"] = "ball", ["count"] = "1" });
+        var holdApple = Rec("hold2", new() { ["subject"] = "mary", ["verb"] = "hold", ["object"] = "apple", ["count"] = "1" });
+        var sentence = Sent(["subject", "verb", "object", "count"], ["mary", "woman"]);
+
+        Assert.True(ChoiceBuilder.IsTrueFor(give, sentence, holdBall));
+        Assert.False(ChoiceBuilder.IsTrueFor(give, sentence, holdApple));
+    }
+
+    [Fact]
+    public void PersonSeparatesIFromHe()
+    {
+        var iPicture = Rec("i", new() { ["subject"] = "tom", ["person"] = "1s", ["verb"] = "run" });
+        var hePicture = Rec("he", new() { ["subject"] = "tom", ["person"] = "3s", ["verb"] = "run" });
+        var heSentence = Sent(["subject", "person", "verb"], ["tom"], "3s");
+
+        Assert.False(ChoiceBuilder.IsTrueFor(iPicture, heSentence, hePicture));
+        Assert.True(ChoiceBuilder.IsTrueFor(hePicture, heSentence, hePicture));
+    }
+
+    [Fact]
+    public void AtHomeIsTrueForKitchenButNotTheOtherWayAround()
+    {
+        var parents = new Dictionary<string, string> { ["kitchen"] = "room" };
+        var kitchen = Rec("k", new() { ["subject"] = "tom", ["verb"] = "run", ["place"] = "kitchen" });
+        var room = Rec("r", new() { ["subject"] = "tom", ["verb"] = "run", ["place"] = "room" });
+        var atHome = Sent(["subject", "verb", "place"], ["tom"]);
+
+        Assert.True(ChoiceBuilder.IsTrueFor(kitchen, atHome, room, parents));
+        Assert.False(ChoiceBuilder.IsTrueFor(kitchen, atHome, room));
+        Assert.False(ChoiceBuilder.IsTrueFor(room, Sent(["subject", "verb", "place"], ["tom"]), kitchen, parents));
+    }
+
+    [Fact]
+    public void NegationIsNotInvertedAndDistractorsKeepTheAskedPolarity()
+    {
+        object Snt(string subject, string en, string form, string[] badges, string[] ok) =>
+            MiniGameDir.Sentence(subject, en, en, ["subject", "verb"], ok, form, badges);
+        var records = new[]
+        {
+            MiniGameDir.Record("a", "tom_run", null, MiniGameDir.Facts("tom", "run", null),
+                Snt("Tom", "Tom isn't running.", "prog_neg", ["badge_not"], ["tom"]),
+                Snt("Tom", "Tom is running.", "prog", [], ["tom"])),
+            MiniGameDir.Record("b", "man_run", null, MiniGameDir.Facts("man", "run", null),
+                Snt("He", "He isn't running.", "prog_neg", ["badge_not"], ["tom", "man"]),
+                Snt("The man", "The man isn't running.", "prog_neg", ["badge_not"], ["man"]),
+                Snt("The man", "The man is running.", "prog", [], ["man"])),
+            MiniGameDir.Record("c", "mary_run", null, MiniGameDir.Facts("mary", "run", null),
+                Snt("Mary", "Mary isn't running.", "prog_neg", ["badge_not"], ["mary"]),
+                Snt("Mary", "Mary is running.", "prog", [], ["mary"])),
+            MiniGameDir.Record("d", "tom_swim", null, MiniGameDir.Facts("tom", "swim", null),
+                Snt("Tom", "Tom isn't swimming.", "prog_neg", ["badge_not"], ["tom"])),
+        };
+        using var mini = new MiniGameDir("A2", records);
+        var library = mini.Load();
+        var first = library.Records(GameLevel.A2)[0];
+        var seen = new HashSet<string>();
+        for (var seed = 0; seed < 30; seed++)
+        {
+            var q = ChoiceBuilder.Build(library, new GameRound(first, first.Sentences[0]), TranslationDirection.TurkishToEnglish, new Random(seed));
+            Assert.All(q.Options, o => Assert.Contains("n't", o));
+            Assert.DoesNotContain("He isn't running.", q.Options);
+            seen.UnionWith(q.Options);
+        }
+
+        Assert.Contains("The man isn't running.", seen);
+        Assert.Contains("Mary isn't running.", seen);
+        Assert.Contains("Tom isn't swimming.", seen);
+    }
+
+    [Fact]
+    public void ListeningToIsTrueOnlyForTheMatchingTalkToPicture()
+    {
+        var tomTalksToMary = Rec("t", new() { ["subject"] = "tom", ["verb"] = "talk_to", ["other"] = "mary" });
+        var maryTalksToTom = Rec("m", new() { ["subject"] = "mary", ["verb"] = "talk_to", ["other"] = "tom" });
+        var tomWaves = Rec("w", new() { ["subject"] = "tom", ["verb"] = "wave_at", ["other"] = "mary" });
+        var tomRuns = Rec("r", new() { ["subject"] = "tom", ["verb"] = "run" });
+        var listening = Sent(["subject", "verb", "other"], ["mary"], "3s") with { Role = "other" };
+
+        Assert.True(ChoiceBuilder.IsTrueFor(tomTalksToMary, listening, tomTalksToMary));
+        Assert.False(ChoiceBuilder.IsTrueFor(maryTalksToTom, listening, tomTalksToMary));
+        Assert.False(ChoiceBuilder.IsTrueFor(tomWaves, listening, tomTalksToMary));
+        Assert.False(ChoiceBuilder.IsTrueFor(tomRuns, listening, tomTalksToMary));
+    }
+
+    [Fact]
+    public void LegendHasAllTurkishLabels()
+    {
+        var labels = GameLibrary.BadgeLegend.Select(b => b.Label).ToList();
+        Assert.Equal(["dün", "yarın", "değil", "soru", "her gün", "-ebilir", "ben", "sen"], labels);
+    }
+
+    [Fact]
+    public void A1RoundsComeFromRecordsAndGoThroughTheFactsRule()
+    {
+        var library = GameFixture.Library;
+        var round = library.PickRound(GameLevel.A1, new Random(4));
+        Assert.Null(round.Legacy);
+        Assert.Contains(round.Sentence, round.Record.Sentences);
     }
 }
 
@@ -405,6 +517,54 @@ public class GameV4RenderingTests
                 .ToHashSet();
             var running = library.Records(GameLevel.A2).First(r => r.Actors.Count == 1 && framed.Contains(r.Actors[0].Char) && r.Actors[0].Expr is null && r.Actors[0].Hold is null);
             Assert.True(Differing(Rasterize(renderer.Render(running, null, 0)), Rasterize(renderer.Render(running, null, 1)), 256, 256) > 20);
+        });
+    }
+
+    [Fact]
+    public void MarkerMovesBesideTheHeadWhenItWouldLeaveTheCanvas()
+    {
+        var marker = new GamePlacement(0, -34, 0.22);
+        var tall = SvgScene.MarkerCenter(new System.Windows.Point(146, 44), marker, 1);
+        var low = SvgScene.MarkerCenter(new System.Windows.Point(128, 120), marker, 1);
+        var smallActor = SvgScene.MarkerCenter(new System.Windows.Point(128, 120), marker, 0.7);
+
+        Assert.Equal(new System.Windows.Point(146 + 52, 44 + 24), tall);
+        Assert.Equal(new System.Windows.Point(128, 120 - 34), low);
+        Assert.Equal(new System.Windows.Point(128, 86), smallActor);
+    }
+
+    [Fact]
+    public void NegatedSentenceDrawsACrossOnTheHeldObject()
+    {
+        WpfHost.Run(() =>
+        {
+            var library = GameFixture.Library;
+            var renderer = new SvgScene(library);
+            var record = library.Records(GameLevel.A1).First(r => r.Actors.Count == 1 && r.Actors[0].Hold is { Obj: "apple" } && r.Actors[0].Char == "tom_stand");
+            var hold = record.Actors[0].Hold!;
+            var plain = new GameSentence("prog", "Tom", "x", "y", [], [], [], null);
+            var negative = plain with { Badges = ["badge_not"] };
+
+            var a = Rasterize(renderer.Render(record, plain));
+            var b = Rasterize(renderer.Render(record, negative));
+            var left = (int)hold.AnchorX - 20;
+            var top = (int)hold.AnchorY - 20;
+            var pa = Pixels(a);
+            var pb = Pixels(b);
+            var diff = 0;
+            for (var y = top; y < top + 40; y++)
+            {
+                for (var x = left; x < left + 40; x++)
+                {
+                    var i = ((y * 256) + x) * 4;
+                    if (pa[i] != pb[i] || pa[i + 1] != pb[i + 1] || pa[i + 2] != pb[i + 2])
+                    {
+                        diff++;
+                    }
+                }
+            }
+
+            Assert.True(diff > 20, "çarpı tutma noktasında görünmeli");
         });
     }
 }

@@ -72,7 +72,7 @@ public sealed record GamePanel(
 public sealed class GameFacts
 {
     public static readonly IReadOnlyList<string> Dimensions =
-        ["subject", "verb", "object", "variant", "count", "place", "time", "weather", "state", "other"];
+        ["subject", "person", "verb", "object", "variant", "count", "place", "time", "weather", "state", "other"];
 
     private readonly Dictionary<string, string?> _values;
 
@@ -100,6 +100,11 @@ public sealed class GameFacts
 
     public string? Variant => Get("variant");
 
+    public string? Person => Get("person");
+
+    /// <summary>Resimde öznenin elinde görünen nesneler (facts.holds); yoksa boş.</summary>
+    public IReadOnlyList<string> Holds => Get("holds") is { Length: > 0 } h ? h.Split(',') : [];
+
     public string? Count => Get("count");
 
     internal static GameFacts? Parse(JsonElement e)
@@ -116,6 +121,7 @@ public sealed class GameFacts
             {
                 JsonValueKind.String => p.Value.GetString(),
                 JsonValueKind.Number => p.Value.GetRawText(),
+                JsonValueKind.Array => string.Join(",", p.Value.EnumerateArray().Where(x => x.ValueKind == JsonValueKind.String).Select(x => x.GetString())),
                 _ => null,
             };
         }
@@ -135,6 +141,9 @@ public sealed record GameSentence(
     IReadOnlyList<string> SubjectOk,
     string? Person)
 {
+    /// <summary>"other": cümlenin öznesi resmin facts.other'ıdır, nesnesi facts.subject ("Mary is listening to Tom").</summary>
+    public string? Role { get; init; }
+
     public string Text(TranslationDirection direction) =>
         direction == TranslationDirection.TurkishToEnglish ? En : Tr;
 }
@@ -178,7 +187,10 @@ public sealed record GameRecord(
                     Strings(s, "badges"),
                     Strings(s, "mentions"),
                     Strings(s, "subject_ok"),
-                    Str(s, "person")));
+                    Str(s, "person"))
+                {
+                    Role = Str(s, "role"),
+                });
             }
         }
 

@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "style_lock": "style-lock.md",
   "palette": {
     "ink": "#2B2D42",
@@ -76,7 +76,8 @@
       ],
       "tr_acc": "Tom'u",
       "tr_dat": "Tom'a",
-      "proper": true
+      "proper": true,
+      "tr_ins": "Tom'la"
     },
     {
       "id": "mary",
@@ -99,7 +100,8 @@
       ],
       "tr_acc": "Mary'yi",
       "tr_dat": "Mary'ye",
-      "proper": true
+      "proper": true,
+      "tr_ins": "Mary'yle"
     },
     {
       "id": "dog",
@@ -123,7 +125,8 @@
       "aliases": [],
       "tr_acc": "köpeği",
       "tr_dat": "köpeğe",
-      "proper": false
+      "proper": false,
+      "tr_ins": "köpekle"
     },
     {
       "id": "cat",
@@ -147,7 +150,8 @@
       "aliases": [],
       "tr_acc": "kediyi",
       "tr_dat": "kediye",
-      "proper": false
+      "proper": false,
+      "tr_ins": "kediyle"
     },
     {
       "id": "man",
@@ -165,12 +169,14 @@
         },
         {
           "en": "My father",
-          "tr": "Babam"
+          "tr": "Babam",
+          "tr_ins": "babamla"
         }
       ],
       "tr_acc": "adamı",
       "tr_dat": "adama",
-      "proper": false
+      "proper": false,
+      "tr_ins": "adamla"
     },
     {
       "id": "woman",
@@ -188,19 +194,22 @@
         },
         {
           "en": "My mother",
-          "tr": "Annem"
+          "tr": "Annem",
+          "tr_ins": "annemle"
         },
         {
           "en": "The teacher",
           "tr": "Öğretmen",
           "places_only": [
             "school"
-          ]
+          ],
+          "tr_ins": "öğretmenle"
         }
       ],
       "tr_acc": "kadını",
       "tr_dat": "kadına",
-      "proper": false
+      "proper": false,
+      "tr_ins": "kadınla"
     },
     {
       "id": "horse",
@@ -225,7 +234,8 @@
       "aliases": [],
       "tr_acc": "atı",
       "tr_dat": "ata",
-      "proper": false
+      "proper": false,
+      "tr_ins": "atla"
     },
     {
       "id": "bird",
@@ -250,7 +260,8 @@
       "aliases": [],
       "tr_acc": "kuşu",
       "tr_dat": "kuşa",
-      "proper": false
+      "proper": false,
+      "tr_ins": "kuşla"
     },
     {
       "id": "doctor",
@@ -274,7 +285,8 @@
         "park",
         "room",
         "station"
-      ]
+      ],
+      "tr_ins": "doktorla"
     },
     {
       "id": "police",
@@ -297,7 +309,8 @@
         "office",
         "hospital",
         "room"
-      ]
+      ],
+      "tr_ins": "polisle"
     }
   ],
   "poses": [
@@ -3403,6 +3416,18 @@
     "marker": {
       "dy": -34,
       "s": 0.22
+    },
+    "pair_give": {
+      "actors": [
+        {
+          "x": 64,
+          "s": 0.7
+        },
+        {
+          "x": 192,
+          "s": 0.7
+        }
+      ]
     }
   },
   "sampling": {
@@ -3467,5 +3492,18 @@
       "verb": "smile",
       "expr": "smiling"
     }
+  ],
+  "place_parents": {
+    "kitchen": "room",
+    "bedroom": "room",
+    "bathroom": "room"
+  },
+  "holds_poses": [
+    "give",
+    "eat",
+    "read",
+    "drink",
+    "stand",
+    "call"
   ]
 }

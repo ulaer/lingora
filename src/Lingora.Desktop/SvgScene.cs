@@ -58,6 +58,88 @@ internal sealed class SvgScene
         return total == 0 ? 0 : 1 - ((double)hidden / total);
     }
 
+    private enum HoldMode
+    {
+        All,
+        NoHolds,
+        HoldsOnly,
+    }
+
+    private HoldMode _holdMode;
+
+    /// <summary>Turun görünür oranı: legacy sahne eski yolla, kayıtta her aktörün elindeki nesnenin en düşüğü.</summary>
+    public double ObjectVisibility(GameRound round)
+    {
+        if (round.Legacy is { } legacy)
+        {
+            return ObjectVisibility(legacy);
+        }
+
+        var record = round.Record;
+        var worst = 1.0;
+        for (var p = -1; p < record.Panels.Count; p++)
+        {
+            var actors = p < 0 ? record.Actors : record.Panels[p].Actors;
+            for (var a = 0; a < actors.Count; a++)
+            {
+                if (actors[a].Hold is null || !HasAsset(actors[a].Hold!.Obj))
+                {
+                    continue;
+                }
+
+                GameActor[] Only() => actors.Select((x, i) => i == a ? x : x with { Hold = null }).ToArray();
+                var variant = p < 0
+                    ? record with { Actors = Only() }
+                    : record with { Panels = record.Panels.Select((pn, i) => i == p ? pn with { Actors = Only() } : pn with { Actors = pn.Actors.Select(x => x with { Hold = null }).ToArray() }).ToArray() };
+                worst = Math.Min(worst, HoldVisibility(variant));
+            }
+        }
+
+        return worst;
+    }
+
+    private double HoldVisibility(GameRecord variant)
+    {
+        var width = (int)WidthOf(variant);
+        _holdMode = HoldMode.NoHolds;
+        var under = PixelsOf(Render(variant), width);
+        _holdMode = HoldMode.HoldsOnly;
+        var obj = PixelsOf(Render(variant), width);
+        _holdMode = HoldMode.All;
+        int total = 0, hidden = 0;
+        for (var i = 0; i < obj.Length; i += 4)
+        {
+            if (obj[i + 3] < 250)
+            {
+                continue;
+            }
+
+            total++;
+            var same = Math.Abs(obj[i] - under[i]) + Math.Abs(obj[i + 1] - under[i + 1]) + Math.Abs(obj[i + 2] - under[i + 2]) < 24;
+            if (same && under[i + 3] > 250)
+            {
+                hidden++;
+            }
+        }
+
+        return total == 0 ? 1 : 1 - ((double)hidden / total);
+    }
+
+    private static byte[] PixelsOf(DrawingImage image, int width)
+    {
+        var visual = new DrawingVisual();
+        using (var dc = visual.RenderOpen())
+        {
+            dc.DrawImage(image, new Rect(0, 0, width, Size));
+        }
+
+        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(width, (int)Size, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(visual);
+        var pixels = new byte[width * (int)Size * 4];
+        bitmap.CopyPixels(pixels, width * 4, 0);
+        return pixels;
+    }
+
     private static byte[] Pixels(DrawingImage image)
     {
         var visual = new DrawingVisual();
@@ -157,6 +239,7 @@ internal sealed class SvgScene
     public DrawingImage Render(GameRecord record, GameSentence? sentence = null, int frame = 0)
     {
         var width = WidthOf(record);
+        var negate = sentence?.Badges.Contains("badge_not") == true;
         var root = new DrawingGroup { ClipGeometry = new RectangleGeometry(new Rect(0, 0, width, Size)) };
         root.Children.Add(new GeometryDrawing(Brushes.Transparent, null, new RectangleGeometry(new Rect(0, 0, width, Size))));
 
@@ -164,7 +247,7 @@ internal sealed class SvgScene
         {
             for (var i = 0; i < record.Panels.Count; i++)
             {
-                var panel = Panel(record.Panels[i], record.Bg, frame);
+                var panel = Panel(record.Panels[i], record.Bg, frame, i == 0 && negate);
                 var m = Matrix.Identity;
                 m.Translate(i * (Size + PanelGap), 0);
                 panel.Transform = new MatrixTransform(m);
@@ -173,7 +256,7 @@ internal sealed class SvgScene
         }
         else
         {
-            root.Children.Add(Panel(record, record.Bg, frame));
+            root.Children.Add(Panel(record, record.Bg, frame, negate));
         }
 
         var badge = _library.Layouts.Badge;
@@ -203,42 +286,45 @@ internal sealed class SvgScene
         return m;
     }
 
-    private DrawingGroup Panel(IGameVisual v, string? bg, int frame)
+    private DrawingGroup Panel(IGameVisual v, string? bg, int frame, bool negate = false)
     {
         var L = _library.Layouts;
         var g = new DrawingGroup { ClipGeometry = new RectangleGeometry(new Rect(0, 0, Size, Size)) };
         g.Children.Add(new GeometryDrawing(Brushes.Transparent, null, new RectangleGeometry(new Rect(0, 0, Size, Size))));
         var plain = new Style(null, v.Sky, frame);
 
-        if (HasAsset(bg))
+        var holdsOnly = _holdMode == HoldMode.HoldsOnly;
+        if (!holdsOnly && HasAsset(bg))
         {
             g.Children.Add(Asset(bg!, Matrix.Identity, plain));
         }
 
-        if (HasAsset(v.SkyOverlay))
+        if (!holdsOnly && HasAsset(v.SkyOverlay))
         {
             g.Children.Add(Asset(v.SkyOverlay!, Place(L.SkyOverlay.X, L.SkyOverlay.Y, L.SkyOverlay.S), plain));
         }
 
-        if (v.Prop is { } prop && HasAsset(prop.Obj))
+        if (!holdsOnly && v.Prop is { } prop && HasAsset(prop.Obj))
         {
             var ps = prop.Scale ?? L.Prop.S;
             g.Children.Add(Asset(prop.Obj, Place(L.Prop.X - (128 * ps), 230 - (230 * ps), ps), new Style(null, null, frame, prop.States)));
         }
 
         // Hava aktörlerin arkasında (yağmur/kar yüzü örtmesin).
-        if (v.Weather is { } weatherId && _library.Weathers.TryGetValue(weatherId, out var weather) && HasAsset(weather.Overlay))
+        if (!holdsOnly && v.Weather is { } weatherId && _library.Weathers.TryGetValue(weatherId, out var weather) && HasAsset(weather.Overlay))
         {
             var placement = weather.Kind == "adj" && weather.Overlay == "sun" ? Place(190, 2, 0.25) : Matrix.Identity;
             g.Children.Add(Asset(weather.Overlay, placement, plain));
         }
 
+        // Olumsuz cümle: çarpı, elinde nesne olan ilk aktörde (yoksa ilk aktörde).
+        var crossActor = v.Actors.FirstOrDefault(a => a.Hold is not null) ?? v.Actors.FirstOrDefault();
         foreach (var actor in v.Actors)
         {
-            g.Children.Add(Actor(actor, frame));
+            g.Children.Add(Actor(actor, frame, negate && ReferenceEquals(actor, crossActor)));
         }
 
-        if (v.Bubble is { } bubble && HasAsset(bubble.Type + "_bubble"))
+        if (!holdsOnly && v.Bubble is { } bubble && HasAsset(bubble.Type + "_bubble"))
         {
             var b = v.Layout == "pair_bubble" ? L.PairBubble : L.Bubble;
             g.Children.Add(Asset(bubble.Type + "_bubble", Place(b.X, b.Y, b.S), plain));
@@ -254,7 +340,7 @@ internal sealed class SvgScene
     }
 
     /// <summary>Aktör = karakter + elindeki nesne(ler) + yüz ifadesi + duygu işareti + ben/sen işareti (karakter koordinatlarında).</summary>
-    private DrawingGroup Actor(GameActor a, int frame)
+    private DrawingGroup Actor(GameActor a, int frame, bool negate = false)
     {
         var L = _library.Layouts;
         var group = new DrawingGroup { Transform = new MatrixTransform(Place(a.X - (128 * a.Scale), 230 - (230 * a.Scale), a.Scale)) };
@@ -272,9 +358,12 @@ internal sealed class SvgScene
 
         var hideEyes = emotion?.Eyes is not null && parsed.Parts.ContainsKey("eyes");
         var hideMouth = emotion?.Mouth is not null && parsed.Parts.ContainsKey("mouth");
-        group.Children.Add(Asset(a.Char, Matrix.Identity, new Style(null, null, frame, null, hideEyes, hideMouth)));
+        if (_holdMode != HoldMode.HoldsOnly)
+        {
+            group.Children.Add(Asset(a.Char, Matrix.Identity, new Style(null, null, frame, null, hideEyes, hideMouth)));
+        }
 
-        if (a.Hold is { } hold && HasAsset(hold.Obj))
+        if (_holdMode != HoldMode.NoHolds && a.Hold is { } hold && HasAsset(hold.Obj))
         {
             var s = hold.Scale;
             for (var i = 0; i < hold.Count; i++)
@@ -282,6 +371,11 @@ internal sealed class SvgScene
                 var dx = hold.AnchorX - (128 * s) + ((i - ((hold.Count - 1) / 2.0)) * 256 * s * MultiSpacing);
                 group.Children.Add(Asset(hold.Obj, Place(dx, hold.AnchorY - (230 * s), s), new Style(hold.Tint, null, frame)));
             }
+        }
+
+        if (_holdMode == HoldMode.HoldsOnly)
+        {
+            return group;
         }
 
         if (emotion is not null)
@@ -311,10 +405,36 @@ internal sealed class SvgScene
         {
             var head = parsed.Head ?? new Point(128, 40);
             var m = L.Marker; // Y = dy: işaret merkezi (head.x, head.y + dy)
-            group.Children.Add(Asset(a.Marker!, Place(head.X - (128 * m.S), head.Y + m.Y - (128 * m.S), m.S), new Style(null, null, frame)));
+            var center = MarkerCenter(head, m, a.Scale);
+            group.Children.Add(Asset(a.Marker!, Place(center.X - (128 * m.S), center.Y - (128 * m.S), m.S), new Style(null, null, frame)));
+        }
+
+        if (negate && HasAsset("badge_not"))
+        {
+            // Çarpı: elde nesne varsa tutma noktasında, yoksa göğüste (data-head + (0, 70)).
+            var head = parsed.Head ?? new Point(128, 40);
+            var at = a.Hold is { } h ? new Point(h.AnchorX, h.AnchorY) : new Point(head.X, head.Y + 70);
+            group.Children.Add(Asset("badge_not", Place(at.X - (128 * CrossScale), at.Y - (128 * CrossScale), CrossScale), new Style(null, null, frame)));
         }
 
         return group;
+    }
+
+    /// <summary>Olumsuz cümlede inkâr edilen şeyin üstündeki çarpının ölçeği.</summary>
+    internal const double CrossScale = 0.12;
+
+    /// <summary>Ben/sen işaretinin yarı yüksekliği (≈120 px'lik şekil / 256 kutu).</summary>
+    private const double MarkerHalfHeight = 60;
+
+    /// <summary>
+    /// İşaret merkezi (aktör koordinatlarında): önce başın üstü (head + (0, dy)); tuvaldeki üst kenarı 4'ün altına
+    /// düşüyorsa başın yanına (head + (52, 24)).
+    /// </summary>
+    internal static Point MarkerCenter(Point head, GamePlacement marker, double actorScale)
+    {
+        var above = new Point(head.X, head.Y + marker.Y);
+        var canvasTop = 230 - (230 * actorScale) + (actorScale * (above.Y - (MarkerHalfHeight * marker.S)));
+        return canvasTop < 4 ? new Point(head.X + 52, head.Y + 24) : above;
     }
 
     private Parsed Load(string assetId)
