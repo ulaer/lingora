@@ -16,10 +16,13 @@ namespace Lingora.Desktop;
 internal sealed class SvgScene
 {
     private const double Size = 256;
+
+    /// <summary>Elde birden çok nesne: kopyalar arası mesafe (nesne genişliğinin oranı). v3: 0.55 → 0.3, kopyalar avuçta toplanır.</summary>
+    internal const double MultiSpacing = 0.3;
     private static readonly Regex TransformPart = new(@"(\w+)\s*\(([^)]*)\)", RegexOptions.Compiled);
     private static readonly Regex Number = new(@"-?\d*\.?\d+(?:[eE][-+]?\d+)?", RegexOptions.Compiled);
     private readonly GameLibrary _library;
-    private readonly Dictionary<string, List<Shape>> _cache = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Parsed> _cache = new(StringComparer.Ordinal);
 
     public SvgScene(GameLibrary library) => _library = library;
 
@@ -34,8 +37,8 @@ internal sealed class SvgScene
             return 1;
         }
 
-        var under = Pixels(Render(scene, includeBase: true, includeObject: false));
-        var obj = Pixels(Render(scene, includeBase: false, includeObject: true));
+        var under = Pixels(Render(scene, includeBase: true, includeObject: false, frame: 0));
+        var obj = Pixels(Render(scene, includeBase: false, includeObject: true, frame: 0));
         int total = 0, hidden = 0;
         for (var i = 0; i < obj.Length; i += 4)
         {
@@ -71,9 +74,12 @@ internal sealed class SvgScene
     }
 
     /// <summary>Sahneyi 256×256 birimlik, kırpılmış bir çizim olarak döner.</summary>
-    public DrawingImage Render(GameScene scene) => Render(scene, includeBase: true, includeObject: true);
+    public DrawingImage Render(GameScene scene) => Render(scene, includeBase: true, includeObject: true, frame: 0);
 
-    private DrawingImage Render(GameScene scene, bool includeBase, bool includeObject)
+    /// <summary>Sahneyi animasyonun <paramref name="frame"/>. adımında çizer (0 = statik, 1. kare).</summary>
+    public DrawingImage Render(GameScene scene, int frame) => Render(scene, includeBase: true, includeObject: true, frame);
+
+    private DrawingImage Render(GameScene scene, bool includeBase, bool includeObject, int frame)
     {
         var root = new DrawingGroup { ClipGeometry = new RectangleGeometry(new Rect(0, 0, Size, Size)) };
 
@@ -82,7 +88,7 @@ internal sealed class SvgScene
 
         if (includeBase && scene.Background is { } background)
         {
-            root.Children.Add(Asset(background, null, Matrix.Identity));
+            root.Children.Add(Asset(background, Matrix.Identity, new Style(null, null, frame)));
         }
 
         if (includeBase && scene.Group is { Count: > 0 } group)
@@ -92,12 +98,12 @@ internal sealed class SvgScene
                 var m = Matrix.Identity;
                 m.Scale(member.Scale, member.Scale);
                 m.Translate(member.X - (128 * member.Scale), 230 - (230 * member.Scale));
-                root.Children.Add(Asset(member.Character, null, m));
+                root.Children.Add(Asset(member.Character, m, new Style(null, null, frame)));
             }
         }
         else if (includeBase)
         {
-            root.Children.Add(Asset(scene.Character, null, Matrix.Identity));
+            root.Children.Add(Asset(scene.Character, Matrix.Identity, new Style(null, null, frame)));
         }
 
         if (includeObject && scene.Object is { } objectId)
@@ -106,11 +112,11 @@ internal sealed class SvgScene
             for (var i = 0; i < scene.Count; i++)
             {
                 // Nesnenin alt-orta noktası anchor'a oturur; çoğaltmada yan yana dizilir.
-                var dx = scene.AnchorX - (128 * s) + ((i - ((scene.Count - 1) / 2.0)) * 256 * s * 0.55);
+                var dx = scene.AnchorX - (128 * s) + ((i - ((scene.Count - 1) / 2.0)) * 256 * s * MultiSpacing);
                 var m = Matrix.Identity;
                 m.Scale(s, s);
                 m.Translate(dx, scene.AnchorY - (230 * s));
-                root.Children.Add(Asset(objectId, scene.Tint, m));
+                root.Children.Add(Asset(objectId, m, new Style(scene.Tint, null, frame)));
             }
         }
 
@@ -125,24 +131,245 @@ internal sealed class SvgScene
     {
         var group = new DrawingGroup();
         group.Children.Add(new GeometryDrawing(Brushes.Transparent, null, new RectangleGeometry(new Rect(0, 0, Size, Size))));
-        group.Children.Add(Asset(assetId, null, Matrix.Identity));
+        group.Children.Add(Asset(assetId, Matrix.Identity, new Style(null, null, 0)));
         group.Freeze();
         return new DrawingImage(group);
     }
 
-    private DrawingGroup Asset(string assetId, string? tint, Matrix placement)
+    /// <summary>Panel kareleri arası boşluk (birim).</summary>
+    internal const double PanelGap = 8;
+
+    /// <summary>Kayıt (A2/B1/A1.jsonl) görselinin genişliği: panelli sahnede kare sayısına göre.</summary>
+    internal static double WidthOf(GameRecord record) =>
+        record.Layout == "panels" && record.Panels.Count > 0
+            ? (record.Panels.Count * Size) + ((record.Panels.Count - 1) * PanelGap)
+            : Size;
+
+    /// <summary>Turun görselini çizer (A1 için scenes.json sahnesi, diğerleri jsonl kaydı).</summary>
+    public DrawingImage Render(GameRound round, int frame = 0) =>
+        round.Legacy is { } legacy ? Render(legacy, frame) : Render(round.Record, round.Sentence, frame);
+
+    /// <summary>
+    /// jsonl kaydını preview.html'deki kurala göre birleştirir: arka plan (gökyüzü tonu), gökyüzü işareti, durumlu nesne,
+    /// hava, aktörler (nesne, ifade, işaret), balon, panelli sahnede kareler yan yana, sorulan cümlenin rozetleri.
+    /// <paramref name="frame"/>: animasyon adımı (0 = statik).
+    /// </summary>
+    public DrawingImage Render(GameRecord record, GameSentence? sentence = null, int frame = 0)
     {
-        if (!_cache.TryGetValue(assetId, out var shapes))
+        var width = WidthOf(record);
+        var root = new DrawingGroup { ClipGeometry = new RectangleGeometry(new Rect(0, 0, width, Size)) };
+        root.Children.Add(new GeometryDrawing(Brushes.Transparent, null, new RectangleGeometry(new Rect(0, 0, width, Size))));
+
+        if (record.Layout == "panels" && record.Panels.Count > 0)
         {
-            shapes = Parse(_library.AssetPath(assetId));
-            _cache[assetId] = shapes;
+            for (var i = 0; i < record.Panels.Count; i++)
+            {
+                var panel = Panel(record.Panels[i], record.Bg, frame);
+                var m = Matrix.Identity;
+                m.Translate(i * (Size + PanelGap), 0);
+                panel.Transform = new MatrixTransform(m);
+                root.Children.Add(panel);
+            }
+        }
+        else
+        {
+            root.Children.Add(Panel(record, record.Bg, frame));
         }
 
+        var badge = _library.Layouts.Badge;
+        var badges = sentence?.Badges ?? [];
+        for (var i = 0; i < badges.Count; i++)
+        {
+            if (HasAsset(badges[i]))
+            {
+                root.Children.Add(Asset(badges[i], Place(badge.X + (i * badge.Dx), badge.Y + (i * badge.Dy), badge.S), new Style(null, null, frame)));
+            }
+        }
+
+        root.Freeze();
+        var image = new DrawingImage(root);
+        image.Freeze();
+        return image;
+    }
+
+    private bool HasAsset(string? id) =>
+        id is not null && _library.Assets.TryGetValue(id, out var a) && File.Exists(_library.AssetPath(a.Id));
+
+    private static Matrix Place(double x, double y, double s)
+    {
+        var m = Matrix.Identity;
+        m.Scale(s, s);
+        m.Translate(x, y);
+        return m;
+    }
+
+    private DrawingGroup Panel(IGameVisual v, string? bg, int frame)
+    {
+        var L = _library.Layouts;
+        var g = new DrawingGroup { ClipGeometry = new RectangleGeometry(new Rect(0, 0, Size, Size)) };
+        g.Children.Add(new GeometryDrawing(Brushes.Transparent, null, new RectangleGeometry(new Rect(0, 0, Size, Size))));
+        var plain = new Style(null, v.Sky, frame);
+
+        if (HasAsset(bg))
+        {
+            g.Children.Add(Asset(bg!, Matrix.Identity, plain));
+        }
+
+        if (HasAsset(v.SkyOverlay))
+        {
+            g.Children.Add(Asset(v.SkyOverlay!, Place(L.SkyOverlay.X, L.SkyOverlay.Y, L.SkyOverlay.S), plain));
+        }
+
+        if (v.Prop is { } prop && HasAsset(prop.Obj))
+        {
+            var ps = prop.Scale ?? L.Prop.S;
+            g.Children.Add(Asset(prop.Obj, Place(L.Prop.X - (128 * ps), 230 - (230 * ps), ps), new Style(null, null, frame, prop.States)));
+        }
+
+        // Hava aktörlerin arkasında (yağmur/kar yüzü örtmesin).
+        if (v.Weather is { } weatherId && _library.Weathers.TryGetValue(weatherId, out var weather) && HasAsset(weather.Overlay))
+        {
+            var placement = weather.Kind == "adj" && weather.Overlay == "sun" ? Place(190, 2, 0.25) : Matrix.Identity;
+            g.Children.Add(Asset(weather.Overlay, placement, plain));
+        }
+
+        foreach (var actor in v.Actors)
+        {
+            g.Children.Add(Actor(actor, frame));
+        }
+
+        if (v.Bubble is { } bubble && HasAsset(bubble.Type + "_bubble"))
+        {
+            var b = v.Layout == "pair_bubble" ? L.PairBubble : L.Bubble;
+            g.Children.Add(Asset(bubble.Type + "_bubble", Place(b.X, b.Y, b.S), plain));
+            var inside = bubble.ContentChar ?? bubble.ContentObj;
+            if (HasAsset(inside))
+            {
+                var c = L.BubbleContent;
+                g.Children.Add(Asset(inside!, Place(c.X - (128 * c.S), c.Y - (150 * c.S), c.S), plain));
+            }
+        }
+
+        return g;
+    }
+
+    /// <summary>Aktör = karakter + elindeki nesne(ler) + yüz ifadesi + duygu işareti + ben/sen işareti (karakter koordinatlarında).</summary>
+    private DrawingGroup Actor(GameActor a, int frame)
+    {
+        var L = _library.Layouts;
+        var group = new DrawingGroup { Transform = new MatrixTransform(Place(a.X - (128 * a.Scale), 230 - (230 * a.Scale), a.Scale)) };
+        if (!HasAsset(a.Char))
+        {
+            return group;
+        }
+
+        var parsed = Load(a.Char);
+        GameEmotion? emotion = null;
+        if (a.Expr is not null)
+        {
+            _library.Emotions.TryGetValue(a.Expr, out emotion);
+        }
+
+        var hideEyes = emotion?.Eyes is not null && parsed.Parts.ContainsKey("eyes");
+        var hideMouth = emotion?.Mouth is not null && parsed.Parts.ContainsKey("mouth");
+        group.Children.Add(Asset(a.Char, Matrix.Identity, new Style(null, null, frame, null, hideEyes, hideMouth)));
+
+        if (a.Hold is { } hold && HasAsset(hold.Obj))
+        {
+            var s = hold.Scale;
+            for (var i = 0; i < hold.Count; i++)
+            {
+                var dx = hold.AnchorX - (128 * s) + ((i - ((hold.Count - 1) / 2.0)) * 256 * s * MultiSpacing);
+                group.Children.Add(Asset(hold.Obj, Place(dx, hold.AnchorY - (230 * s), s), new Style(hold.Tint, null, frame)));
+            }
+        }
+
+        if (emotion is not null)
+        {
+            void Swap(string part, string? faceId)
+            {
+                if (faceId is null || !parsed.Parts.TryGetValue(part, out var p) || !HasAsset(faceId))
+                {
+                    return;
+                }
+
+                group.Children.Add(Asset(faceId, Place(p.X - 128, p.Y - 128, 1), new Style(null, null, frame)));
+            }
+
+            Swap("mouth", emotion.Mouth);
+            Swap("eyes", emotion.Eyes);
+            Swap("eyes", emotion.Brows);
+            var head = parsed.Head ?? new Point(128, 40);
+            if (HasAsset(emotion.Mark))
+            {
+                var m = L.Mark; // X/Y = baş noktasına göre kayma (dx, dy)
+                group.Children.Add(Asset(emotion.Mark!, Place(head.X + m.X - (128 * m.S), head.Y + m.Y - (128 * m.S), m.S), new Style(null, null, frame)));
+            }
+        }
+
+        if (HasAsset(a.Marker))
+        {
+            var head = parsed.Head ?? new Point(128, 40);
+            var m = L.Marker; // Y = dy: işaret merkezi (head.x, head.y + dy)
+            group.Children.Add(Asset(a.Marker!, Place(head.X - (128 * m.S), head.Y + m.Y - (128 * m.S), m.S), new Style(null, null, frame)));
+        }
+
+        return group;
+    }
+
+    private Parsed Load(string assetId)
+    {
+        if (!_cache.TryGetValue(assetId, out var parsed))
+        {
+            parsed = Parse(_library.AssetPath(assetId));
+            _cache[assetId] = parsed;
+        }
+
+        return parsed;
+    }
+
+    private static bool Visible(Shape shape, Style style)
+    {
+        foreach (var f in shape.Frames)
+        {
+            if (f.Index != style.Frame % f.Count)
+            {
+                return false;
+            }
+        }
+
+        foreach (var c in shape.States)
+        {
+            // Durum listesi yalnızca nesnenin kök grubundaki durumları sürer; diğerleri ilk durumda kalır.
+            var current = style.States is { Count: > 0 } list && c.OnRoot ? list[style.Frame / 3 % list.Count] : c.First;
+            if (c.State != current)
+            {
+                return false;
+            }
+        }
+
+        return !((style.HideEyes && shape.Part == "eyes") || (style.HideMouth && shape.Part == "mouth"));
+    }
+
+    private DrawingGroup Asset(string assetId, Matrix placement, Style style)
+    {
+        var shapes = Load(assetId).Shapes;
         var group = new DrawingGroup { Transform = new MatrixTransform(placement) };
-        Brush? tintBrush = tint is null ? null : Brush(tint);
+        Brush? primary = style.Primary is null ? null : Brush(style.Primary);
+        Brush? sky = style.Sky is null ? null : Brush(style.Sky);
         foreach (var shape in shapes)
         {
-            var fill = shape.Tint && tintBrush is not null ? tintBrush : shape.Fill;
+            if (!Visible(shape, style))
+            {
+                continue;
+            }
+
+            var fill = shape.Tint switch
+            {
+                TintKind.Primary when primary is not null => primary,
+                TintKind.Sky when sky is not null => sky,
+                _ => shape.Fill,
+            };
             var drawing = new GeometryDrawing(fill, shape.Pen, shape.Geometry);
             if (shape.Transform.IsIdentity)
             {
@@ -159,25 +386,73 @@ internal sealed class SvgScene
         return group;
     }
 
-    /// <summary>SVG dosyasını düz bir şekil listesine çevirir (iç içe g transformları birleştirilir).</summary>
-    internal static List<Shape> Parse(string path)
+    /// <summary>
+    /// SVG dosyasını düz bir şekil listesine çevirir (iç içe g transformları birleştirilir). Her şekil hangi
+    /// animasyon karesine / duruma / yüz parçasına ait olduğunu taşır; hangisinin çizileceği çizim anında seçilir.
+    /// </summary>
+    internal static Parsed Parse(string path)
     {
         var doc = XDocument.Load(path);
         var shapes = new List<Shape>();
-        Walk(doc.Root!, Matrix.Identity, shapes);
-        return shapes;
+        var rootG = doc.Root!.Elements().FirstOrDefault(e => e.Name.LocalName == "g");
+        var parts = new Dictionary<string, Point>(StringComparer.Ordinal);
+        Point? head = null;
+        if (rootG is not null && (string?)rootG.Attribute("data-head") is { } headText)
+        {
+            var n = Number.Matches(headText).Select(m => double.Parse(m.Value, CultureInfo.InvariantCulture)).ToArray();
+            if (n.Length >= 2)
+            {
+                head = new Point(n[0], n[1]);
+            }
+        }
+
+        Walk(doc.Root!, Matrix.Identity, shapes, [], [], null, rootG, parts);
+        return new Parsed(shapes, head, parts);
     }
 
-    private static void Walk(XElement element, Matrix parent, List<Shape> shapes)
+    private static string? Inherited(XElement element, string attribute) =>
+        element.AncestorsAndSelf().Select(a => (string?)a.Attribute(attribute)).FirstOrDefault(v => v is not null);
+
+    private static void Walk(
+        XElement element,
+        Matrix parent,
+        List<Shape> shapes,
+        FrameCond[] frames,
+        StateCond[] states,
+        string? part,
+        XElement? rootG,
+        Dictionary<string, Point> parts)
     {
         foreach (var child in element.Elements())
         {
             var local = ParseTransform((string?)child.Attribute("transform"));
             var matrix = Matrix.Multiply(local, parent);
             var name = child.Name.LocalName;
+            var childPart = (string?)child.Attribute("data-part") ?? part;
             if (name == "g")
             {
-                Walk(child, matrix, shapes);
+                var childFrames = frames;
+                if (int.TryParse((string?)child.Attribute("data-frame"), out var frameNo))
+                {
+                    var count = element.Elements().Count(e => e.Attribute("data-frame") is not null);
+                    childFrames = [.. frames, new FrameCond(element, frameNo - 1, count)];
+                }
+
+                var childStates = states;
+                if ((string?)child.Attribute("data-state") is { } state)
+                {
+                    var first = (string?)element.Elements().First(e => e.Attribute("data-state") is not null).Attribute("data-state") ?? state;
+                    childStates = [.. states, new StateCond(element, state, first, element == rootG)];
+                }
+
+                if ((string?)child.Attribute("data-part") is { } partName
+                    && double.TryParse((string?)child.Attribute("data-cx"), NumberStyles.Float, CultureInfo.InvariantCulture, out var cx)
+                    && double.TryParse((string?)child.Attribute("data-cy"), NumberStyles.Float, CultureInfo.InvariantCulture, out var cy))
+                {
+                    parts[partName] = new Point(cx, cy);
+                }
+
+                Walk(child, matrix, shapes, childFrames, childStates, childPart, rootG, parts);
                 continue;
             }
 
@@ -187,13 +462,17 @@ internal sealed class SvgScene
                 continue;
             }
 
-            var fillText = (string?)child.Attribute("fill");
+            // fill/stroke grup üzerinde de olabilir (SVG mirası); en yakın atadaki değer geçerli.
+            var fillText = Inherited(child, "fill");
             var fill = fillText is null ? Brushes.Black : fillText == "none" ? null : Brush(fillText);
             Pen? pen = null;
-            if ((string?)child.Attribute("stroke") is { } stroke && stroke != "none")
+            if (Inherited(child, "stroke") is { } stroke && stroke != "none")
             {
-                pen = new Pen(Brush(stroke), D(child, "stroke-width", 1));
-                if ((string?)child.Attribute("stroke-linecap") == "round")
+                var width = Inherited(child, "stroke-width") is { } w
+                    ? double.Parse(w, CultureInfo.InvariantCulture)
+                    : 1;
+                pen = new Pen(Brush(stroke), width);
+                if (Inherited(child, "stroke-linecap") == "round")
                 {
                     pen.StartLineCap = pen.EndLineCap = PenLineCap.Round;
                 }
@@ -202,7 +481,11 @@ internal sealed class SvgScene
                 pen.Freeze();
             }
 
-            shapes.Add(new Shape(geometry, fill, pen, (string?)child.Attribute("data-tint") == "primary", matrix));
+            // Tint: şeklin kendi data-tint'i ya da (kendi fill'i yoksa) atadaki grubun data-tint'i.
+            var tintText = (string?)child.Attribute("data-tint")
+                           ?? (child.Attribute("fill") is null ? child.Ancestors().Select(a => (string?)a.Attribute("data-tint")).FirstOrDefault(v => v is not null) : null);
+            var tint = tintText switch { "primary" => TintKind.Primary, "sky" => TintKind.Sky, _ => TintKind.None };
+            shapes.Add(new Shape(geometry, fill, pen, tint, matrix, childPart, frames, states));
         }
     }
 
@@ -307,5 +590,21 @@ internal sealed class SvgScene
         return brush;
     }
 
-    internal sealed record Shape(Geometry Geometry, Brush? Fill, Pen? Pen, bool Tint, Matrix Transform);
+    internal enum TintKind
+    {
+        None,
+        Primary,
+        Sky,
+    }
+
+    internal sealed record FrameCond(object Group, int Index, int Count);
+
+    internal sealed record StateCond(object Group, string State, string First, bool OnRoot);
+
+    internal sealed record Shape(Geometry Geometry, Brush? Fill, Pen? Pen, TintKind Tint, Matrix Transform, string? Part, FrameCond[] Frames, StateCond[] States);
+
+    internal sealed record Parsed(List<Shape> Shapes, Point? Head, Dictionary<string, Point> Parts);
+
+    /// <summary>Çizim bağlamı: tint renkleri, animasyon karesi, durum dizisi, gizlenecek yüz parçaları.</summary>
+    internal readonly record struct Style(string? Primary, string? Sky, int Frame, IReadOnlyList<string>? States = null, bool HideEyes = false, bool HideMouth = false);
 }

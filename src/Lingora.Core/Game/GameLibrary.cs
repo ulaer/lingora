@@ -32,6 +32,71 @@ public sealed record GameColor(string Key, string Hex, string En, string Tr);
 
 public sealed record GameGroupMember(string Character, double X, double Scale);
 
+public sealed record GameEmotion(string Id, string? Mouth, string? Eyes, string? Brows, string? Mark);
+
+public sealed record GameWeather(string Id, string Kind, string Overlay);
+
+/// <summary>manifest.json "layouts": konum (X, Y), ölçek (S) ve yığın aralığı (Dx, Dy).</summary>
+public sealed record GamePlacement(double X, double Y, double S, double Dx = 0, double Dy = 0);
+
+/// <summary>Kompozisyon yerleşimleri (manifest.json "layouts"; yoksa sözleşme varsayılanları).</summary>
+public sealed record GameLayouts(
+    GamePlacement Mark,
+    GamePlacement Marker,
+    GamePlacement Badge,
+    GamePlacement SkyOverlay,
+    GamePlacement Prop,
+    GamePlacement Bubble,
+    GamePlacement PairBubble,
+    GamePlacement BubbleContent)
+{
+    public static GameLayouts Default { get; } = new(
+        new GamePlacement(36, 6, 0.32),
+        new GamePlacement(0, -34, 0.22),
+        new GamePlacement(4, 4, 0.2, 0, 54),
+        new GamePlacement(196, 4, 0.22),
+        new GamePlacement(196, 0, 0.55),
+        new GamePlacement(136, 0, 0.46),
+        new GamePlacement(30, 0, 0.4),
+        new GamePlacement(194, 58, 0.2));
+
+    /// <summary>İşaret (duygu) yerleşimi: Dx/Dy = baş noktasına göre kayma.</summary>
+    public static GameLayouts Parse(JsonElement root)
+    {
+        var d = Default;
+        if (!root.TryGetProperty("layouts", out var l) || l.ValueKind != JsonValueKind.Object)
+        {
+            return d;
+        }
+
+        GamePlacement P(JsonElement? e, GamePlacement fallback)
+        {
+            if (e is not { ValueKind: JsonValueKind.Object } o)
+            {
+                return fallback;
+            }
+
+            double N(string n, double f) => o.TryGetProperty(n, out var v) && v.ValueKind == JsonValueKind.Number ? v.GetDouble() : f;
+            return new GamePlacement(N("x", fallback.X), N("y", fallback.Y), N("s", fallback.S), N("dx", fallback.Dx), N("dy", fallback.Dy));
+        }
+
+        JsonElement? Get(JsonElement e, string n) => e.TryGetProperty(n, out var v) ? v : null;
+        JsonElement? Sub(string a, string b) => Get(l, a) is { ValueKind: JsonValueKind.Object } x ? Get(x, b) : null;
+
+        var mark = P(Get(l, "mark"), d.Mark);
+        var marker = P(Get(l, "marker"), d.Marker);
+        return new GameLayouts(
+            mark with { X = Get(l, "mark") is { } m && m.TryGetProperty("dx", out var dx) ? dx.GetDouble() : d.Mark.X, Y = Get(l, "mark") is { } m2 && m2.TryGetProperty("dy", out var dy) ? dy.GetDouble() : d.Mark.Y },
+            marker with { Y = Get(l, "marker") is { } k && k.TryGetProperty("dy", out var mdy) ? mdy.GetDouble() : d.Marker.Y },
+            P(Get(l, "badge"), d.Badge),
+            P(Get(l, "sky_overlay"), d.SkyOverlay),
+            P(Sub("prop", "prop"), d.Prop),
+            P(Sub("bubble", "bubble"), d.Bubble),
+            P(Sub("pair_bubble", "bubble"), d.PairBubble),
+            P(Sub("bubble", "content"), d.BubbleContent));
+    }
+}
+
 /// <summary>scenes.json'daki bir sahne: yalnızca asset kimlikleri, dönüşüm ve kanonik EN/TR cümle.</summary>
 public sealed record GameScene(
     string Id,
@@ -48,6 +113,9 @@ public sealed record GameScene(
     string Tr,
     string Subject)
 {
+    /// <summary>Örnekleme ağırlığı (scenes.json "weight"; yoksa 1). Kalabalık poz ailelerini (tutma) seyreltir.</summary>
+    public double Weight { get; init; } = 1;
+
     /// <summary>Hedef dildeki kanonik cümle.</summary>
     public string Sentence(TranslationDirection direction) =>
         direction == TranslationDirection.TurkishToEnglish ? En : Tr;
@@ -74,6 +142,11 @@ public sealed class GameLibrary
         Colors = colors;
         GroupSubjects = groupSubjects;
         Scenes = scenes;
+        foreach (var level in Enum.GetValues<GameLevel>())
+        {
+            var l = level;
+            _records[l] = new Lazy<IReadOnlyList<GameRecord>>(() => LoadRecords(l));
+        }
     }
 
     public string Directory { get; }
@@ -90,6 +163,90 @@ public sealed class GameLibrary
     public IReadOnlyList<GameAlias> GroupSubjects { get; }
 
     public IReadOnlyList<GameScene> Scenes { get; }
+
+    /// <summary>Kompozisyon yerleşimleri (manifest "layouts").</summary>
+    public GameLayouts Layouts { get; private set; } = GameLayouts.Default;
+
+    public IReadOnlyDictionary<string, GameEmotion> Emotions { get; private set; } = new Dictionary<string, GameEmotion>();
+
+    public IReadOnlyDictionary<string, GameWeather> Weathers { get; private set; } = new Dictionary<string, GameWeather>();
+
+    /// <summary>Fiil kimliği → (İngilizce -ing, Türkçe şimdiki zaman) etiketi.</summary>
+    public IReadOnlyDictionary<string, (string En, string Tr)> Verbs { get; private set; } = new Dictionary<string, (string, string)>();
+
+    private readonly Dictionary<GameLevel, Lazy<IReadOnlyList<GameRecord>>> _records = new();
+    private readonly Dictionary<GameLevel, double[]> _recordCumulative = new();
+
+    /// <summary>scenes/A1|A2|B1.jsonl kayıtları (ilk erişimde okunur; dosya yoksa boş).</summary>
+    public IReadOnlyList<GameRecord> Records(GameLevel level) => _records[level].Value;
+
+    /// <summary>Seviyede oynanabilir görsel var mı (A1: scenes.json ya da A1.jsonl).</summary>
+    public bool HasLevel(GameLevel level) => level == GameLevel.A1 ? Scenes.Count > 0 || Records(level).Count > 0 : Records(level).Count > 0;
+
+    private IReadOnlyList<GameRecord> LoadRecords(GameLevel level)
+    {
+        var path = Path.Combine(Directory, "scenes", level + ".jsonl");
+        var list = new List<GameRecord>();
+        if (!File.Exists(path))
+        {
+            return list;
+        }
+
+        foreach (var line in File.ReadLines(path))
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
+            using var doc = JsonDocument.Parse(line);
+            var record = GameRecord.Parse(doc.RootElement, level);
+            if (record.Sentences.Count > 0)
+            {
+                list.Add(record);
+            }
+        }
+
+        // Aynı fiil/pozlu kayıtlar çoğunluğu ele geçirmesin: ağırlık 1/√(kümedeki kayıt sayısı).
+        var counts = list.GroupBy(r => r.WeightKey).ToDictionary(g => g.Key, g => g.Count());
+        return list.Select(r => r with { Weight = 1 / Math.Sqrt(counts[r.WeightKey]) }).ToList();
+    }
+
+    /// <summary>
+    /// Seviyeden ağırlıklı bir tur seçer. A1: scenes.json (Weight); A2/B1: jsonl kaydı (poz ağırlıklı) ve içinden
+    /// rastgele bir cümle. Seviyede görsel yoksa A1'e düşer.
+    /// </summary>
+    public GameRound PickRound(GameLevel level, Random random)
+    {
+        if (level == GameLevel.A1 && Scenes.Count > 0)
+        {
+            return GameRound.FromScene(Pick(random));
+        }
+
+        var records = Records(level);
+        if (records.Count == 0)
+        {
+            return level == GameLevel.A1 ? throw new InvalidOperationException("A1 sahnesi yok") : PickRound(GameLevel.A1, random);
+        }
+
+        if (!_recordCumulative.TryGetValue(level, out var sums))
+        {
+            sums = new double[records.Count];
+            double total = 0;
+            for (var i = 0; i < records.Count; i++)
+            {
+                total += records[i].Weight;
+                sums[i] = total;
+            }
+
+            _recordCumulative[level] = sums;
+        }
+
+        var index = Array.BinarySearch(sums, random.NextDouble() * sums[^1]);
+        index = index < 0 ? ~index : index + 1;
+        var record = records[Math.Min(index, records.Count - 1)];
+        return new GameRound(record, record.Sentences[random.Next(record.Sentences.Count)]);
+    }
 
     public string AssetPath(string assetId) =>
         Path.Combine(Directory, Assets[assetId].File.Replace('/', Path.DirectorySeparatorChar));
@@ -210,36 +367,112 @@ public sealed class GameLibrary
                 t.TryGetProperty("scale", out var scale) && scale.ValueKind == JsonValueKind.Number ? scale.GetDouble() : 1,
                 Str(s, "en"),
                 Str(s, "tr"),
-                Str(s, "subject")));
+                Str(s, "subject"))
+            {
+                Weight = s.TryGetProperty("weight", out var w) && w.ValueKind == JsonValueKind.Number && w.GetDouble() > 0
+                    ? w.GetDouble()
+                    : 1,
+            });
         }
 
-        return new GameLibrary(directory, assets, characters, poses, colors, groupSubjects, scenes);
+        var library = new GameLibrary(directory, assets, characters, poses, colors, groupSubjects, scenes)
+        {
+            Layouts = GameLayouts.Parse(root),
+        };
+        if (root.TryGetProperty("emotions", out var emotions) && emotions.ValueKind == JsonValueKind.Array)
+        {
+            library.Emotions = emotions.EnumerateArray()
+                .ToDictionary(e => Str(e, "id"), e => new GameEmotion(Str(e, "id"), Opt(e, "mouth"), Opt(e, "eyes"), Opt(e, "brows"), Opt(e, "mark")), StringComparer.Ordinal);
+        }
+
+        if (root.TryGetProperty("weather", out var weather) && weather.ValueKind == JsonValueKind.Array)
+        {
+            library.Weathers = weather.EnumerateArray()
+                .ToDictionary(w => Str(w, "id"), w => new GameWeather(Str(w, "id"), Str(w, "kind"), Str(w, "overlay")), StringComparer.Ordinal);
+        }
+
+        if (root.TryGetProperty("verbs", out var verbs) && verbs.ValueKind == JsonValueKind.Object)
+        {
+            var map = new Dictionary<string, (string, string)>(StringComparer.Ordinal);
+            foreach (var v in verbs.EnumerateObject())
+            {
+                var en = v.Value.TryGetProperty("en", out var e1) ? Str(e1, "ing") : string.Empty;
+                var tr = v.Value.TryGetProperty("tr", out var t1) ? Str(t1, "prog") : string.Empty;
+                map[v.Name] = (en, tr);
+            }
+
+            library.Verbs = map;
+        }
+
+        return library;
     }
 
-    public GameScene Pick(Random random) => Scenes[random.Next(Scenes.Count)];
+    /// <summary>Sahne seçer; ağırlıklı (Weight). Tümü 1 ise tekdüze seçimle aynıdır.</summary>
+    public GameScene Pick(Random random)
+    {
+        _cumulative ??= Cumulative(Scenes);
+        var target = random.NextDouble() * _cumulative[^1];
+        var index = Array.BinarySearch(_cumulative, target);
+        index = index < 0 ? ~index : index + 1;
+        return Scenes[Math.Min(index, Scenes.Count - 1)];
+    }
+
+    private double[]? _cumulative;
+
+    private static double[] Cumulative(IReadOnlyList<GameScene> scenes)
+    {
+        var sums = new double[scenes.Count];
+        double total = 0;
+        for (var i = 0; i < scenes.Count; i++)
+        {
+            total += scenes[i].Weight;
+            sums[i] = total;
+        }
+
+        return sums;
+    }
 
     /// <summary>Öznenin hedef dildeki hali (kullanıcıya ipucu olarak gösterilir).</summary>
-    public string SubjectIn(GameScene scene, TranslationDirection direction)
+    public string SubjectIn(GameScene scene, TranslationDirection direction) => SubjectIn(scene.Subject, direction, null);
+
+    /// <summary>Turun cümlesinin öznesi (hedef dilde).</summary>
+    public string SubjectIn(GameRound round, TranslationDirection direction) =>
+        SubjectIn(round.Sentence.Subject, direction, round.Sentence.Person);
+
+    /// <summary>İngilizce özne metninin hedef dildeki karşılığı (kişi zamirleri için <paramref name="person"/> kullanılır).</summary>
+    public string SubjectIn(string enSubject, TranslationDirection direction, string? person)
     {
         if (direction == TranslationDirection.TurkishToEnglish)
         {
-            return scene.Subject;
+            return enSubject;
         }
 
         foreach (var c in Characters.Values)
         {
-            if (c.En == scene.Subject)
+            if (c.En == enSubject)
             {
                 return c.Tr;
             }
 
-            if (c.Aliases.FirstOrDefault(a => a.En == scene.Subject) is { } alias)
+            if (c.Aliases.FirstOrDefault(a => a.En == enSubject) is { } alias)
             {
                 return alias.Tr;
             }
         }
 
-        return GroupSubjects.FirstOrDefault(g => g.En == scene.Subject)?.Tr ?? scene.Subject;
+        if (GroupSubjects.FirstOrDefault(g => g.En == enSubject) is { } group)
+        {
+            return group.Tr;
+        }
+
+        return enSubject switch
+        {
+            "I" => "Ben",
+            "You" => person is "2p" ? "Siz" : "Sen",
+            "We" => "Biz",
+            "They" => "Onlar",
+            _ => enSubject,
+        };
     }
 
     /// <summary>
@@ -286,6 +519,143 @@ public sealed class GameLibrary
         return b.ToString().TrimEnd();
     }
 
+    private static readonly Dictionary<string, string> BadgeMeaning = new(StringComparer.Ordinal)
+    {
+        ["cal_yesterday"] = "geçmiş zaman (dün)",
+        ["cal_tomorrow"] = "gelecek zaman (yarın)",
+        ["cal_everyday"] = "geniş zaman / alışkanlık (her gün)",
+        ["badge_not"] = "olumsuz cümle",
+        ["badge_question"] = "soru cümlesi",
+        ["badge_can"] = "yetenek (can / -ebilmek)",
+    };
+
+    /// <summary>Rozetin Türkçe anlamı (rozet yoksa kimliği).</summary>
+    public static string BadgeText(string badge) => BadgeMeaning.TryGetValue(badge, out var t) ? t : badge;
+
+    private string AssetLabel(string id) => Assets.TryGetValue(id, out var a) ? $"{a.Tr} ({a.En})" : id;
+
+    /// <summary>
+    /// Tur için resmin kesin olguları (Türkçe maddeler). A1'de scenes.json tarifi; A2/B1'de kaydın olguları
+    /// ve sorulan cümlenin rozetleri (zaman/olumsuz/soru) Gemini istemine konur.
+    /// </summary>
+    public string DescribeFacts(GameRound round, TranslationDirection direction = TranslationDirection.TurkishToEnglish)
+    {
+        if (round.Legacy is { } legacy)
+        {
+            return DescribeFacts(legacy, direction);
+        }
+
+        var record = round.Record;
+        var f = record.Facts;
+        var b = new StringBuilder();
+        var firstActor = record.Actors.FirstOrDefault() ?? record.Panels.FirstOrDefault()?.Actors.FirstOrDefault();
+
+        var subjectId = f?.Subject ?? (firstActor is not null && Assets.TryGetValue(firstActor.Char, out var ca) ? ca.Character : null);
+        var who = subjectId is null ? "belirsiz" : Characters.ContainsKey(subjectId) ? Who(subjectId) : subjectId;
+        b.Append("- Kim: ").Append(who).Append(". Resimde isim yazmaz; sorulan cümlenin öznesi \"")
+            .Append(SubjectIn(round, direction)).AppendLine("\".");
+        var accepted = round.Sentence.SubjectOk.Select(x => SubjectIn(x, direction, null)).Append(SubjectIn(round, direction)).Distinct().ToList();
+        b.Append("- Kabul edilebilir özne göndermeleri: ").Append(string.Join(", ", accepted.Select(a => $"\"{a}\"")))
+            .AppendLine(" (resimde isim görünmediği için resmi doğru anlatan her özne doğrudur).");
+        if (round.Sentence.Person is { } person)
+        {
+            b.Append("- Kişi: ").Append(person switch
+            {
+                "1s" => "ben (konuşan kişi işaretli)",
+                "2s" => "sen (karşıdaki kişi işaretli)",
+                "1p" => "biz",
+                "2p" => "siz",
+                "3p" => "onlar",
+                _ => "o",
+            }).AppendLine(".");
+        }
+
+        if (f?.Verb is { } verb)
+        {
+            b.Append("- Eylem: ").Append(Verbs.TryGetValue(verb, out var vl) ? $"{vl.Tr} / {vl.En}" : verb).AppendLine(".");
+        }
+
+        if (f?.Object is { } obj)
+        {
+            b.Append("- Nesne: ").Append(AssetLabel(obj));
+            if (f.Count is { } cnt && cnt != "0")
+            {
+                b.Append("; adet: ").Append(cnt);
+            }
+
+            b.AppendLine(".");
+        }
+        else
+        {
+            b.AppendLine("- Nesne: yok.");
+        }
+
+        var placeId = f?.Place ?? record.Bg;
+        if (placeId is not null)
+        {
+            b.Append("- Yer: ").Append(AssetLabel(placeId)).AppendLine(".");
+        }
+        else
+        {
+            b.AppendLine("- Yer: arka plan yok (boş zemin); yer belirtmek gerekmez, yer uydurmak hatadır.");
+        }
+
+        if ((f?.Time ?? record.Time) is { } time)
+        {
+            b.Append("- Günün vakti: ").Append(time).AppendLine(" (gökyüzü rengi ve güneş/ay).");
+        }
+
+        if ((f?.Weather ?? record.Weather) is { } weather)
+        {
+            b.Append("- Hava: ").Append(weather).AppendLine(".");
+        }
+
+        var state = f?.State ?? record.Actors.Select(a => a.Expr).FirstOrDefault(e => e is not null);
+        if (state is not null)
+        {
+            b.Append("- Durum/duygu: ").Append(state).AppendLine(" (yüz ifadesi ve işaret).");
+        }
+
+        if (f?.Other is { } other)
+        {
+            b.Append("- Etkileşimdeki diğer kişi: ").Append(Characters.TryGetValue(other, out var oc) ? $"{oc.Tr} ({oc.En})" : other).AppendLine(".");
+        }
+
+        if (record.Bubble is { } bubble)
+        {
+            b.Append("- Balon: ").Append(bubble.Type == "thought" ? "düşünce balonu" : "konuşma balonu");
+            if ((bubble.ContentObj ?? bubble.ContentChar) is { } inside)
+            {
+                b.Append(", içinde: ").Append(AssetLabel(inside));
+            }
+
+            b.AppendLine(".");
+        }
+
+        if (record.Prop is { } prop)
+        {
+            b.Append("- Nesne durumu: ").Append(AssetLabel(prop.Obj))
+                .Append(" sırayla ").Append(string.Join(" → ", prop.States)).AppendLine(" durumlarına geçer.");
+        }
+
+        if (record.Panels.Count > 1)
+        {
+            b.Append("- Sıralı ").Append(record.Panels.Count).AppendLine(" kare: olaylar soldan sağa sırayla olur (önce, sonra).");
+        }
+
+        if (round.Sentence.Badges.Count > 0)
+        {
+            b.Append("- Cümle biçimi (köşedeki rozetler): ").Append(string.Join(" + ", round.Sentence.Badges.Select(BadgeText)))
+                .AppendLine(". Öğrenci bu biçimde yazmalıdır.");
+        }
+        else
+        {
+            b.AppendLine("- Cümle biçimi: rozet yok; şimdiki zaman, olumlu, düz cümle.");
+        }
+
+        return b.ToString().TrimEnd();
+    }
+
     private string Who(string characterId)
     {
         if (!Characters.TryGetValue(characterId, out var c))
@@ -299,6 +669,8 @@ public sealed class GameLibrary
             ("mary", _) => "kız çocuk",
             ("man", _) => "yetişkin bir adam",
             ("woman", _) => "yetişkin bir kadın",
+            ("doctor", _) => "beyaz önlüklü bir doktor",
+            ("police", _) => "üniformalı bir polis memuru",
             (_, "animal") => "hayvan",
             _ => c.Kind,
         };
@@ -321,6 +693,8 @@ public sealed class GameLibrary
             "mary" => "A girl",
             "man" => "A man",
             "woman" => "A woman",
+            "doctor" => "A doctor",
+            "police" => "A police officer",
             _ => "A " + c.Id,
         });
         return string.Join(", ", names.Distinct().Select(n => $"\"{n}\"")) + " (resimde isim görünmediği için bunların hepsi doğrudur).";
@@ -343,6 +717,8 @@ public sealed class GameLibrary
             "mary" => new[] { "Bir kız", "Kız çocuğu" },
             "man" => new[] { "Bir adam" },
             "woman" => new[] { "Bir kadın" },
+            "doctor" => new[] { "Bir doktor" },
+            "police" => new[] { "Bir polis", "Polis memuru" },
             _ => new[] { "Bir " + c.Tr.ToLower(CultureInfo.GetCultureInfo("tr-TR")) },
         });
         return string.Join(", ", names.Distinct().Select(n => $"\"{n}\""))
@@ -363,6 +739,12 @@ public sealed class GameLibrary
         "drink_bowl" => "kâseden içiyor",
         "fly" => "uçuyor",
         "eat_ground" => "yerdeki yiyeceği yiyor",
+        "walk" => "yürüyor",
+        "talk" => "eliyle işaret ederek konuşuyor",
+        "wave" => "elini kaldırmış, el sallıyor",
+        "call" => "telefonu kulağına tutmuş, telefonla konuşuyor",
+        "think" => "eli çenesinde, düşünüyor",
+        "lie" => "yatakta yatıyor, gözleri kapalı, uyuyor",
         _ => pose,
     };
 

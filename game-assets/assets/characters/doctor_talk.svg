@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="doctor_talk" data-head="128,28" data-hand="176,160">
+<rect x="96" y="184" width="30" height="40" rx="4" fill="#2B2D42"/><rect x="130" y="184" width="30" height="40" rx="4" fill="#2B2D42"/><rect x="90" y="220" width="38" height="10" rx="5" fill="#8D5A3B"/><rect x="128" y="220" width="38" height="10" rx="5" fill="#8D5A3B"/>
+<rect x="76" y="140" width="16" height="50" rx="8" fill="#F2C6A0"/><circle cx="84" cy="194" r="9" fill="#F2C6A0"/><rect x="72" y="128" width="24" height="50" rx="9" fill="#F1FAEE"/>
+<rect x="118" y="118" width="20" height="16" fill="#F2C6A0"/>
+<rect x="87" y="128" width="82" height="84" rx="10" fill="#F1FAEE"/><polygon points="114,130 142,130 128,176" fill="#2A9D8F"/><path d="M112 126 Q112 162 128 164 Q144 162 144 126" stroke="#2B2D42" stroke-width="4" stroke-linecap="round" fill="none"/><circle cx="128" cy="168" r="5" fill="#A8DADC"/>
+<g transform="translate(0 -12)"><circle cx="86" cy="86" r="6" fill="#F2C6A0"/><circle cx="170" cy="86" r="6" fill="#F2C6A0"/><circle cx="128" cy="82" r="42" fill="#F2C6A0"/><path d="M84 84 Q80 40 128 40 Q176 40 172 84 Q162 62 128 60 Q94 62 84 84 Z" fill="#2B2D42"/><g data-part="eyes" data-cx="128" data-cy="75"><circle cx="113" cy="86" r="4" fill="#2B2D42"/><circle cx="143" cy="86" r="4" fill="#2B2D42"/></g></g>
+<g data-frame="1"><polygon points="158,134 172,130 190,158 176,166" fill="#F2C6A0"/><ellipse cx="178" cy="163" rx="16" ry="6" fill="#F2C6A0"/><polygon points="156,130 172,126 184,146 166,152" fill="#F1FAEE"/><g transform="translate(0 -12)"><path d="M118 102 L138 102" stroke="#2B2D42" stroke-width="4" stroke-linecap="round" fill="none"/></g></g>
+<g data-frame="2"><polygon points="158,134 172,130 196,138 188,152" fill="#F2C6A0"/><circle cx="198" cy="144" r="9" fill="#F2C6A0"/><polygon points="156,130 172,126 184,146 166,152" fill="#F1FAEE"/><g transform="translate(0 -12)"><ellipse cx="128" cy="102" rx="8" ry="6" fill="#2B2D42"/></g></g>
+</g>
+</svg>

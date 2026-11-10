@@ -22,6 +22,8 @@ public partial class GamePage : UserControl
     private readonly SvgScene? _renderer;
     private readonly Random _random;
     private readonly DispatcherTimer _thinking;
+    private readonly DispatcherTimer _animation = new() { Interval = TimeSpan.FromMilliseconds(AnimationIntervalMs) };
+    private int _frame;
     private readonly Typewriter _typing = new(TimeSpan.FromMilliseconds(15), charsPerTick: 3);
     private int _thinkingFrame;
     private bool _showingResult;
@@ -47,10 +49,91 @@ public partial class GamePage : UserControl
             return;
         }
 
+        _animation.Tick += (_, _) => AdvanceFrame();
+        Loaded += (_, _) => _animation.Start();
+        Unloaded += (_, _) => _animation.Stop();
+
+        foreach (var (button, level) in LevelButtons())
+        {
+            button.IsEnabled = library.HasLevel(level);
+        }
+
+        if (!library.HasLevel(Level))
+        {
+            _session.SetGameLevel(GameLevel.A1);
+        }
+
         UpdateLanguageButtons();
+        UpdateLevelButtons();
         UpdateScore();
         NextScene();
     }
+
+    /// <summary>Animasyon adımı süresi (kare değişimi ve durum geçişleri).</summary>
+    internal const int AnimationIntervalMs = 300;
+
+    private IEnumerable<(RadioButton Button, GameLevel Level)> LevelButtons() =>
+        [(LevelA1, GameLevel.A1), (LevelA2, GameLevel.A2), (LevelB1, GameLevel.B1)];
+
+    private bool _updatingLevel;
+
+    private void UpdateLevelButtons()
+    {
+        _updatingLevel = true;
+        foreach (var (button, level) in LevelButtons())
+        {
+            button.IsChecked = level == Level;
+        }
+
+        _updatingLevel = false;
+    }
+
+    /// <summary>Oyunun seviyesi (kalıcı).</summary>
+    internal GameLevel Level => _session.Settings.GameLevel;
+
+    /// <summary>Seviyeyi değiştirir (kalıcı), yeni resim gelir.</summary>
+    internal void SetLevel(GameLevel level)
+    {
+        if (_library is null || IsBusy || !_library.HasLevel(level))
+        {
+            UpdateLevelButtons();
+            return;
+        }
+
+        if (level != Level)
+        {
+            _session.SetGameLevel(level);
+            NextScene();
+        }
+
+        UpdateLevelButtons();
+    }
+
+    private void OnLevelChecked(object sender, RoutedEventArgs e)
+    {
+        if (_updatingLevel || _library is null)
+        {
+            return;
+        }
+
+        var level = LevelButtons().FirstOrDefault(x => ReferenceEquals(x.Button, sender)).Level;
+        SetLevel(level);
+    }
+
+    /// <summary>Animasyonu bir adım ilerletir ve sahneyi yeniden çizer (zamanlayıcı ~300 ms'de çağırır).</summary>
+    internal void AdvanceFrame()
+    {
+        if (_renderer is null || Round is null)
+        {
+            return;
+        }
+
+        _frame++;
+        SceneImage.Source = _renderer.Render(Round, _frame);
+    }
+
+    /// <summary>Şimdiki animasyon adımı (0 = statik).</summary>
+    internal int Frame => _frame;
 
     private bool _updatingLanguage;
 
@@ -101,8 +184,11 @@ public partial class GamePage : UserControl
     /// <summary>Sahne kütüphanesi (yoksa null).</summary>
     internal GameLibrary? Library => _library;
 
-    /// <summary>Ekrandaki sahne.</summary>
-    internal GameScene? Scene { get; private set; }
+    /// <summary>Ekrandaki tur (görsel + sorulan cümle).</summary>
+    internal GameRound? Round { get; private set; }
+
+    /// <summary>Ekrandaki A1 (scenes.json) sahnesi; A2/B1 turlarında null.</summary>
+    internal GameScene? Scene => Round?.Legacy;
 
     /// <summary>Seçmeli moddaki soru.</summary>
     internal ChoiceQuestion? Question { get; private set; }
@@ -117,12 +203,12 @@ public partial class GamePage : UserControl
     /// <summary>Pencere her açılışta: yön değişmiş olabilir, yazıları güncelle.</summary>
     public void Refresh()
     {
-        if (_library is null || Scene is null)
+        if (_library is null || Round is null)
         {
             return;
         }
 
-        if (IsChooseMode && Question is not null && Question.Options[Question.CorrectIndex] != Scene.Sentence(Direction))
+        if (IsChooseMode && Question is not null && Question.Options[Question.CorrectIndex] != Round.Text(Direction))
         {
             NextScene();
             return;
@@ -140,15 +226,15 @@ public partial class GamePage : UserControl
 
         _typing.Cancel();
         _showingResult = false;
-        Scene = PickVisibleScene();
-        SceneImage.Source = _renderer!.Render(Scene);
+        Round = PickVisibleRound();
+        ShowPicture();
         InputBox.Text = string.Empty;
         InputBox.IsReadOnly = false;
         SendButton.Content = "Gönder";
         ResultPanel.Visibility = Visibility.Collapsed;
         ResultBody.Children.Clear();
 
-        Question = ChoiceBuilder.Build(_library, Scene, Direction, _random);
+        Question = ChoiceBuilder.Build(_library, Round, Direction, _random);
         BuildOptions();
         UpdateTexts();
         ContentScroll.ScrollToTop();
@@ -159,9 +245,9 @@ public partial class GamePage : UserControl
     internal void ShowSceneForMedia(GameScene scene)
     {
         NextScene();
-        Scene = scene;
-        SceneImage.Source = _renderer!.Render(scene);
-        Question = ChoiceBuilder.Build(_library!, scene, Direction, _random);
+        Round = GameRound.FromScene(scene);
+        ShowPicture();
+        Question = ChoiceBuilder.Build(_library!, Round, Direction, _random);
         BuildOptions();
         UpdateTexts();
     }
@@ -169,16 +255,27 @@ public partial class GamePage : UserControl
     /// <summary>Bu oranın altında nesne arkasına karışıyor sayılır (ör. sarı tişört önünde sarı elma).</summary>
     internal const double MinObjectVisibility = 0.6;
 
-    /// <summary>Nesnesi arkasındaki renge karışmayan bir sahne seçer.</summary>
-    private GameScene PickVisibleScene()
+    /// <summary>Seviyeden tur seçer; A1'de nesnesi arkasındaki renge karışan sahneler atlanır.</summary>
+    private GameRound PickVisibleRound()
     {
-        GameScene scene = _library!.Pick(_random);
-        for (var attempt = 0; attempt < 25 && _renderer!.ObjectVisibility(scene) < MinObjectVisibility; attempt++)
+        var round = _library!.PickRound(Level, _random);
+        for (var attempt = 0; attempt < 25 && round.Legacy is { } scene && _renderer!.ObjectVisibility(scene) < MinObjectVisibility; attempt++)
         {
-            scene = _library.Pick(_random);
+            round = _library.PickRound(Level, _random);
         }
 
-        return scene;
+        return round;
+    }
+
+    /// <summary>Resmi (1. kare) çizer ve çerçeveyi boyutlar: panelli sahne geniş, diğerleri kare.</summary>
+    private void ShowPicture()
+    {
+        _frame = 0;
+        var width = Round!.Legacy is null ? SvgScene.WidthOf(Round.Record) : 256;
+        var panels = width > 256;
+        SceneFrame.Width = panels ? 560 : 340;
+        SceneFrame.Height = panels ? 560 * 256 / width : 340;
+        SceneImage.Source = _renderer!.Render(Round, 0);
     }
 
     internal void FocusInput()
@@ -192,8 +289,13 @@ public partial class GamePage : UserControl
 
     private void UpdateTexts()
     {
-        var subject = _library!.SubjectIn(Scene!, Direction);
+        var subject = _library!.SubjectIn(Round!, Direction);
         HintText.Text = $"İpucu · özne: {subject}";
+        if (Round!.Sentence.Badges.Count > 0)
+        {
+            HintText.Text += " · rozetler: " + string.Join(", ", Round.Sentence.Badges.Select(GameLibrary.BadgeText));
+        }
+
         DescribeCaption.Text = $"RESMİ {TargetUpper} BİR CÜMLEYLE ANLAT";
         Placeholder.Text = Direction == TranslationDirection.TurkishToEnglish
             ? "Resimde ne oluyor? İngilizce yaz…"
@@ -212,7 +314,7 @@ public partial class GamePage : UserControl
     /// <summary>Gönder / sonraki resim (Enter).</summary>
     internal async Task SendAsync()
     {
-        if (_library is null || Scene is null || IsBusy)
+        if (_library is null || Round is null || IsBusy)
         {
             return;
         }
@@ -248,7 +350,7 @@ public partial class GamePage : UserControl
         SubmitOutcome outcome;
         try
         {
-            outcome = await _session.SubmitSceneAsync(_library, Scene, text);
+            outcome = await _session.SubmitSceneAsync(_library, Round, text);
         }
         catch (Exception ex)
         {
@@ -329,7 +431,7 @@ public partial class GamePage : UserControl
             }
         }
 
-        AddField("Örnek cümle", Scene!.Sentence(Direction), Ui.Brush("TextMutedBrush"));
+        AddField("Örnek cümle", Round!.Text(Direction), Ui.Brush("TextMutedBrush"));
         if (words is { Total: > 0 })
         {
             AddField("Sözlük", PracticePage.VocabularyNote(words), Ui.Brush("TextMutedBrush"));
@@ -457,7 +559,7 @@ public partial class GamePage : UserControl
         DescribePanel.Visibility = choose ? Visibility.Collapsed : Visibility.Visible;
         ChoosePanel.Visibility = choose ? Visibility.Visible : Visibility.Collapsed;
         ResultPanel.Visibility = choose || !_showingResult ? Visibility.Collapsed : Visibility.Visible;
-        if (_library is not null && Scene is not null && (_showingResult || NextChoiceButton.Visibility == Visibility.Visible))
+        if (_library is not null && Round is not null && (_showingResult || NextChoiceButton.Visibility == Visibility.Visible))
         {
             NextScene();
         }

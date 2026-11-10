@@ -24,8 +24,8 @@ public class GameLibraryTests
     {
         var library = GameFixture.Library;
 
-        Assert.Equal(54, library.Assets.Count);
-        Assert.Equal(4948, library.Scenes.Count);
+        Assert.Equal(159, library.Assets.Count);
+        Assert.Equal(9622, library.Scenes.Count);
         Assert.All(library.Assets.Values, a => Assert.True(File.Exists(library.AssetPath(a.Id)), a.File));
         Assert.All(library.Scenes, s =>
         {
@@ -76,6 +76,29 @@ public class GameLibraryTests
         Assert.Contains("\"They\"", facts);
         Assert.Equal("Tom ve Mary", library.SubjectIn(scene, TranslationDirection.EnglishToTurkish));
         Assert.Equal("Tom and Mary", library.SubjectIn(scene, TranslationDirection.TurkishToEnglish));
+    }
+
+    [Fact]
+    public void WeightedPickKeepsHoldingFromDominatingTheGame()
+    {
+        var library = GameFixture.Library;
+        bool Holding(GameScene s) => library.Assets[s.Character].Pose == "stand";
+
+        // Tekdüze seçimde "tutma" sahnelerin ~2/3'ü; ağırlıkla ~%40'a iner, diğer pozlar daha sık gelir.
+        Assert.True(library.Scenes.Count(Holding) / (double)library.Scenes.Count > 0.6);
+        var random = new Random(7);
+        var picks = Enumerable.Range(0, 6000).Select(_ => library.Pick(random)).ToList();
+        var share = picks.Count(Holding) / (double)picks.Count;
+        Assert.InRange(share, 0.3, 0.5);
+        Assert.True(picks.Select(p => library.Assets[p.Character].Pose).Distinct().Count() >= 10);
+        Assert.All(library.Scenes, s => Assert.True(s.Weight > 0, s.Id));
+    }
+
+    [Fact]
+    public void HoldingAFishIsNeverGeneratedBecauseItMeansFishingInTurkish()
+    {
+        Assert.DoesNotContain(GameFixture.Library.Scenes, s => s.Tr.Contains("balık tut", StringComparison.Ordinal));
+        Assert.Contains(GameFixture.Library.Scenes, s => s.Tr.Contains("balık yiyor", StringComparison.Ordinal));
     }
 
     [Fact]

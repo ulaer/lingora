@@ -13,6 +13,7 @@ manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
 palette = {v.upper() for v in manifest["palette"].values()}
 FORBIDDEN = ["gradient", "<filter", "opacity", "<text", "<style", "<image", "class=", "href"]
 NS = "{http://www.w3.org/2000/svg}"
+HUMAN_IDS = {"tom", "mary", "man", "woman", "doctor", "police"}
 
 failures = 0
 for asset in manifest["assets"]:
@@ -49,6 +50,22 @@ for asset in manifest["assets"]:
             problems.append("missing data-tint")
         if asset.get("tint_role") == "contents" and "data-tint" not in text:
             problems.append("missing data-tint (contents)")
+        # v2: animasyon kareleri 1..n (n <= 3), ardışık
+        frames = sorted({int(f) for f in re.findall(r'data-frame="(\d+)"', text)})
+        if frames and (frames != list(range(1, len(frames) + 1)) or len(frames) > 3):
+            problems.append(f"frames {frames}")
+        # v2: durumlu nesnelerde her durum grubu var
+        for st in asset.get("states", []):
+            if f'data-state="{st}"' not in text:
+                problems.append(f"missing state '{st}'")
+        # v2: insan pozlarında yüz parçaları (konuşan/arayan pozda ağız karelerde)
+        if asset["category"] == "character" and asset.get("character") in HUMAN_IDS:
+            if 'data-part="eyes"' not in text:
+                problems.append("missing eyes part")
+            if asset["pose"] not in ("talk", "call") and 'data-part="mouth"' not in text:
+                problems.append("missing mouth part")
+            if "data-head=" not in text:
+                problems.append("missing data-head")
     except ET.ParseError as exc:
         problems.append(f"XML error: {exc}")
     status = "OK      " if not problems else "FAIL    "

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="clock">
+<circle cx="128" cy="128" r="60" fill="#2B2D42"/>
+<circle cx="128" cy="128" r="54" fill="#F1FAEE"/>
+<g fill="#2B2D42">
+<rect x="125" y="76" width="6" height="10" rx="2" transform="rotate(0 128 128)"/>
+<rect x="125" y="76" width="6" height="10" rx="2" transform="rotate(30 128 128)"/>
+<rect x="125" y="76" width="6" height="10" rx="2" transform="rotate(60 128 128)"/>
+<rect x="125" y="76" width="6" height="10" rx="2" transform="rotate(90 128 128)"/>
+<rect x="125" y="76" width="6" height="10" rx="2" transform="rotate(120 128 128)"/>
+<rect x="125" y="76" width="6" height="10" rx="2" transform="rotate(150 128 128)"/>
+<rect x="125" y="76" width="6" height="10" rx="2" transform="rotate(180 128 128)"/>
+<rect x="125" y="76" width="6" height="10" rx="2" transform="rotate(210 128 128)"/>
+<rect x="125" y="76" width="6" height="10" rx="2" transform="rotate(240 128 128)"/>
+<rect x="125" y="76" width="6" height="10" rx="2" transform="rotate(270 128 128)"/>
+<rect x="125" y="76" width="6" height="10" rx="2" transform="rotate(300 128 128)"/>
+<rect x="125" y="76" width="6" height="10" rx="2" transform="rotate(330 128 128)"/>
+</g>
+<g data-part="hour_hand">
+<rect x="124" y="96" width="8" height="36" rx="4" fill="#2B2D42"/>
+</g>
+<g data-part="minute_hand">
+<rect x="125" y="78" width="6" height="54" rx="3" fill="#2B2D42"/>
+</g>
+<circle cx="128" cy="128" r="6" fill="#2B2D42"/>
+</g>
+</svg>

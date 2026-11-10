@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="tv">
+<rect x="28" y="56" width="200" height="130" rx="10" fill="#8D5A3B"/>
+<rect x="118" y="186" width="20" height="36" fill="#2B2D42"/>
+<rect x="88" y="222" width="80" height="8" rx="3" fill="#2B2D42"/>
+<g data-state="on">
+<rect x="44" y="72" width="168" height="98" rx="4" fill="#A8DADC"/>
+<circle cx="180" cy="100" r="13" fill="#E9C46A"/>
+<path d="M44 170Q120 110 212 170Z" fill="#2A9D8F"/>
+</g>
+<g data-state="off">
+<rect x="44" y="72" width="168" height="98" rx="4" fill="#2B2D42"/>
+</g>
+</g>
+</svg>

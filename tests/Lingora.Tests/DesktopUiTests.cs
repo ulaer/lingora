@@ -624,10 +624,20 @@ public class DesktopUiTests
         {
             var library = GameFixture.Library;
             var renderer = new SvgScene(library);
-            foreach (var id in library.Assets.Keys)
+            // Sahne asset'leri tek başına dolu bir resimdir; overlay ve yüz parçaları (v2) küçük eklerdir, ayrıca bakılır.
+            var sceneCategories = new HashSet<string> { "character", "object", "background" };
+            foreach (var a in library.Assets.Values.Where(a => sceneCategories.Contains(a.Category)))
             {
-                Assert.True(Opaque(Rasterize(renderer.RenderAsset(id))) > 300, id);
+                Assert.True(Opaque(Rasterize(renderer.RenderAsset(a.Id))) > 300, a.Id);
             }
+
+            foreach (var a in library.Assets.Values.Where(a => !sceneCategories.Contains(a.Category)))
+            {
+                Assert.True(Opaque(Rasterize(renderer.RenderAsset(a.Id))) > 0, a.Id);
+            }
+
+            // fill grup üzerinde (SVG mirası): güneş siyah değil sarı çizilir.
+            Assert.Equal(Color.FromRgb(0xE9, 0xC4, 0x6A), Pixel(Rasterize(renderer.RenderAsset("sun")), 128, 128));
 
             // Yeşil elma: alt-orta noktası (176,160) tutma noktasında, gövdesi ~ (176,145).
             var green = Rasterize(renderer.Render(GameFixture.Scene("tom_stand__apple__green")));

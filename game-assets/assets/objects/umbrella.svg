@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="umbrella">
+<path d="M50 132C50 96 84 80 128 80C172 80 206 96 206 132L192 124L178 132L164 124L150 132L128 124L106 132L92 124L78 132L64 124L50 132Z" fill="#E63946"/>
+<rect x="125" y="80" width="6" height="150" rx="3" fill="#2B2D42"/>
+<circle cx="128" cy="80" r="4" fill="#2B2D42"/>
+</g>
+</svg>
