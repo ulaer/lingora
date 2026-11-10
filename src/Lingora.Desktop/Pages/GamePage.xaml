@@ -30,6 +30,17 @@
                 <TextBlock x:Name="ScoreText" Style="{StaticResource Muted}" FontSize="12" Margin="0,4,0,0" />
             </StackPanel>
             <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Orientation="Horizontal">
+                <!-- Seviye -->
+                <Border Background="{StaticResource GlassBrush}" CornerRadius="8" Padding="3" Margin="0,0,12,0">
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton x:Name="LevelA1" GroupName="GameLevel" Style="{StaticResource SegmentButton}"
+                                     Content="A1" ToolTip="A1 · Şimdiki zaman: kim ne yapıyor" Checked="OnLevelChecked" />
+                        <RadioButton x:Name="LevelA2" GroupName="GameLevel" Style="{StaticResource SegmentButton}"
+                                     Content="A2" ToolTip="A2 · Zaman, olumsuz, soru, duygu, hava" Checked="OnLevelChecked" />
+                        <RadioButton x:Name="LevelB1" GroupName="GameLevel" Style="{StaticResource SegmentButton}"
+                                     Content="B1" ToolTip="B1 · Konuşma, düşünce, durum değişimi, sıralı olay" Checked="OnLevelChecked" />
+                    </StackPanel>
+                </Border>
                 <!-- Hangi dilde anlatılacak -->
                 <Border Background="{StaticResource GlassBrush}" CornerRadius="8" Padding="3" Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal">

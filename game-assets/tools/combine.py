@@ -8,7 +8,11 @@ cümle taşır (takma ad özneler, zaman/olumsuz/soru biçimleri).
   B1  etkileşimler (konuşmak/dinlemek, el sallamak, aramak), düşünce balonu (istemek, birini düşünmek),
       nesne durumu değişimi (ışığı/TV'yi açıp kapatmak, kapı), sıralı iki panel ("önce …, sonra …")
 
-Kullanım: python tools/combine.py   (game-assets klasöründen)
+v4: kişi zamirleri (I/You/We/You + actors[].marker), durum sıfatları, ifade fiilleri, geniş zaman
+(cal_everyday), "can" (badge_can), give/write/cook; her kayıtta `facts`, her cümlede `mentions` + `person`
+(+ gerektiğinde `subject_ok`) — bkz. docs/v4-contract.md.
+
+Kullanım: python tools/combine.py [--strict]   (game-assets klasöründen)
 """
 import json
 import re
@@ -61,7 +65,8 @@ HUMANS = [c for c in ("tom", "mary", "man", "woman", "doctor", "police") if c in
 def places_for(pose, ch):
     allowed = pose.get("places")
     excluded = set(ch.get("place_exclude", []))
-    return [None] + [p for p in places if (allowed is None or p["id"] in allowed) and p["id"] not in excluded]
+    first = [] if pose.get("no_default_place") else [None]
+    return first + [p for p in places if (allowed is None or p["id"] in allowed) and p["id"] not in excluded]
 
 
 def place_phrase(place, pose=None):
@@ -73,7 +78,17 @@ def place_phrase(place, pose=None):
 
 def subj_of(ch, alias=None):
     s = alias or ch
-    return {"en": s["en"], "tr": s["tr"], "plural": False, "tr_plural": False, "id": ch["id"]}
+    out = {"en": s["en"], "tr": s["tr"], "plural": False, "tr_plural": False, "id": ch["id"]}
+    if alias and alias["en"] in ("He", "She"):  # zamir: aynı zamirli her karakter için doğru
+        pron = ch["pronoun_en"]
+        out["ok"] = [c["id"] for c in m["characters"] if c["pronoun_en"] == pron]
+    return out
+
+
+def person_subj(person, ok):
+    pr = G.PERSON_PRONOUN[person]
+    return {"en": pr[0], "tr": pr[1], "plural": G.PERSON_PLURAL[person], "tr_plural": G.PERSON_PLURAL[person],
+            "person": person, "ok": ok}
 
 
 def subjects_for(ch, place_id):
@@ -103,19 +118,74 @@ def actor(asset_id, x=128, s=1.0, hold=None, expr=None):
     return out
 
 
-def sent(form, en_tr, subject, badges=True):
+FACT_KEYS = ("subject", "verb", "object", "variant", "count", "place", "time", "weather", "state", "other")
+
+
+def F(**kw):
+    """Resmin olguları (sözleşme §2). Verilmeyen boyut null (count: 0)."""
+    f = {k: None for k in FACT_KEYS}
+    f["count"] = 0
+    f.update(kw)
+    return f
+
+
+def M(f, fl=(), place=False, time=False):
+    """Cümlenin söylediği olgu boyutları. fl: {"variant","count"}; place/time: cümlede yer/vakit sözü var mı."""
+    out = []
+    for k in ("subject", "verb", "object"):
+        if f[k]:
+            out.append(k)
+    if "variant" in fl and f["variant"]:
+        out.append("variant")
+    if "count" in fl and f["count"]:
+        out.append("count")
+    if place and f["place"]:
+        out.append("place")
+    if time and f["time"]:
+        out.append("time")
+    for k in ("weather", "state", "other"):
+        if f[k]:
+            out.append(k)
+    return out
+
+
+def person_of(s):
+    return s.get("person") or ("3p" if s.get("plural") else "3s")
+
+
+def sent(form, en_tr, subject, badges=True, ments=None, subj=None):
     en, tr = en_tr
     d = {"form": form, "subject": subject, "en": en, "tr": tr}
     b = G.badges_for(form) if badges else []
     if b:
         d["badges"] = b
+    d["mentions"] = list(ments) if ments is not None else []
+    d["person"] = person_of(subj) if subj else "3s"
+    if subj and subj.get("ok"):
+        d["subject_ok"] = list(subj["ok"])
     return d
 
 
-def rec(rid, level, bg, actors, sentences, layout="single", **extra):
-    r = {"id": rid, "level": level, "layout": layout, "bg": bg, "actors": actors, "sentences": sentences}
+def S(form, clause, s, f, fl=(), place=False, time=False):
+    """Olgu kaydından mentions/person/subject_ok türeten cümle kurucu."""
+    return sent(form, clause, s["en"], ments=M(f, fl, place, time), subj=s)
+
+
+def rec(rid, level, bg, actors, sentences, layout="single", facts=None, **extra):
+    r = {"id": rid, "level": level, "layout": layout, "bg": bg, "actors": actors, "sentences": sentences,
+         "facts": facts}
     r.update({k: v for k, v in extra.items() if v is not None})
     return r
+
+
+def with_marker(actors, marker, only_first=False):
+    out = []
+    for i, a in enumerate(actors):
+        a = dict(a)
+        if not only_first or i == 0:
+            a["marker"] = marker
+        out.append(a)
+    return out
 
 
 def fits(pose, obj):
@@ -163,19 +233,34 @@ def object_phrase(pose, obj, en_np, tr_np, n):
 
 
 # ---------------------------------------------------------------- A1
+PERSON_BASE, GROUP_PERSON_BASE = [], []
+HOLD_CORE = {"apple", "book", "ball", "phone", "key", "bag", "umbrella"}
 A1, A1_base = [], []   # A1_base: varsayılan varyant (renk yok, tek adet) — A2/B1 bunu çoğaltır
+FL = {}                # kayıt id -> cümle bayrakları (variant/count) — A2 çoğaltması mentions için kullanır
+MAIN4 = [c for c in ("tom", "mary", "man", "woman") if c in chars]
+PERSON_PLACES = {None}                        # kişi (ben/sen/biz/siz) sahneleri: boyut sınırı
+AOR_PLACES = {None}                           # geniş zaman / yetenek: boyut sınırı
+OKS_HUMAN = list(MAIN4)                       # "I"/"You" cümlesi herhangi bir ana insanın resmine uyar
+GROUP_IDS = [g["id"] for g in m.get("groups", [])]
+HUMAN_GROUPS = [g for g in m.get("groups", []) if all(c in HUMANS for c in g["members"])]
 for ca in char_assets:
     ch, pose = chars[ca["character"]], poses[ca["pose"]]
+    if pose.get("special") == "give":      # çift sahne: aşağıda
+        continue
     verb = verbs[pose["verb"]]
     for place in places_for(pose, ch):
         pid = place["id"] if place else None
         pp = place_phrase(place, pose)
-        items = []
+        items = []   # (obj id, variant, n, hold, en_o, tr_o, facts-variant, cümlede renk/içerik var mı, sayılabilir mi)
         if pose["requires"] == "none":
             hold = None
             if pose.get("attach"):
                 hold = {"obj": pose["attach"], "anchor": anchor_of(ca["id"], pose), "s": pose["scale"]}
-            items.append((None, None, 1, hold, "", ""))
+            fo = pose.get("fixed_object")
+            if fo:
+                items.append((fo["obj"], None, 1, None, fo["en"], fo["tr"], None, False, False))
+            else:
+                items.append((None, None, 1, hold, "", "", None, False, False))
         else:
             for obj in objects:
                 if not fits(pose, obj):
@@ -188,16 +273,78 @@ for ca in char_assets:
                             continue
                         en_o, tr_o = object_phrase(pose, obj, en_np, tr_np, n)
                         hold = {"obj": obj["id"], "tint": tint, "n": n, "anchor": anchor_of(ca["id"], pose), "s": pose["scale"]}
-                        items.append((obj["id"], variant, n, hold, en_o, tr_o))
-        for oid, variant, n, hold, en_o, tr_o in items:
+                        fvar = variant or obj.get("default_tint")
+                        items.append((obj["id"], variant, n, hold, en_o, tr_o, fvar, variant is not None, bool(obj.get("countable"))))
+        for oid, variant, n, hold, en_o, tr_o, fvar, fl_var, countable in items:
             default = (variant is None or (oid and A[oid].get("tint_role") == "contents")) and n == 1
             subs = subjects_for(ch, pid)  # takma adlar tüm varyantlarda (uygulamanın scenes.json'u buna dayanır)
-            sentences = [sent("prog", G.verb_clause("prog", s, verb, en_o, tr_o, pp), s["en"]) for s in subs]
+            f = F(subject=ch["id"], verb=pose["verb"], object=oid, variant=fvar, count=n if (hold and oid) else 0, place=pid)
+            fl = {"variant"} if fl_var else set()
+            if countable and hold:
+                fl.add("count")
+            sentences = [S("prog", G.verb_clause("prog", s, verb, en_o, tr_o, pp), s, f, fl, place=bool(pp)) for s in subs]
             rid = "__".join(x for x in [ca["id"], oid, variant, f"x{n}" if n > 1 else None, pid] if x)
-            r = rec(rid, "A1", pid, [actor(ca["id"], hold=hold)], sentences)
+            r = rec(rid, "A1", pid, [actor(ca["id"], hold=hold)], sentences, facts=f)
+            FL[rid] = fl
             A1.append(r)
             if default:
                 A1_base.append((r, ch, pose, verb, en_o, tr_o, place, hold))
+
+# Veren pozlu çift sahneler: "Tom is giving Mary an apple." / "Tom Mary'ye bir elma veriyor."
+GIVE = poses.get("give")
+if GIVE:
+    gv = verbs[GIVE["verb"]]
+    for a_id, b_id in permutations(MAIN4, 2):
+        a_ch, b_ch = chars[a_id], chars[b_id]
+        a_asset = pose_asset.get((a_id, "give"))
+        b_asset = pose_asset.get((b_id, GIVE["receiver_pose"]))
+        if not a_asset or not b_asset:
+            continue
+        for place in places_for(GIVE, a_ch):
+            pid = place["id"] if place else None
+            if pid in b_ch.get("place_exclude", []):
+                continue
+            pp = place_phrase(place, GIVE)
+            for oid in GIVE["objects"]:
+                obj = A[oid]
+                variant, tint, en_np, tr_np = next(noun_variants(obj))
+                en_o = f"{obj_en_lower(b_ch)} {en_np(1)}"
+                tr_o = f"{b_ch['tr_dat']} {tr_np(1)}"
+                hold = {"obj": oid, "tint": tint, "n": 1, "anchor": anchor_of(a_asset, GIVE), "s": GIVE["scale"]}
+                la, lb = LAY["pair"]["actors"]
+                acts = [actor(a_asset, la["x"], la["s"], hold=hold), actor(b_asset, lb["x"], lb["s"])]
+                f = F(subject=a_id, verb="give", object=oid, variant=obj.get("default_tint"), count=1, place=pid, other=b_id)
+                fl = {"count"}
+                sentences = [S("prog", G.verb_clause("prog", s, gv, en_o, tr_o, pp), s, f, fl, place=bool(pp))
+                             for s in subjects_for(a_ch, pid)]
+                rid = "__".join(x for x in ["give", a_id, b_id, oid, pid] if x)
+                r = rec(rid, "A1", pid, acts, sentences, layout="pair", facts=f)
+                FL[rid] = fl
+                A1.append(r)
+                A1_base.append((r, a_ch, GIVE, gv, en_o, tr_o, place, hold))
+
+# İfade fiilleri (yeni SVG yok; stand + yüz): "Tom is crying." / "Tom ağlıyor."
+EXPR_PLACES = [None, "park", "room", "school"]
+for ev in m.get("expression_verbs", []):
+    verb = verbs[ev["verb"]]
+    fpose = {"id": "expr_" + ev["verb"], "verb": ev["verb"], "requires": "none", "places": EXPR_PLACES}
+    for cid in HUMANS:
+        aid = pose_asset.get((cid, "stand"))
+        if not aid:
+            continue
+        ch = chars[cid]
+        for place in places_for(poses["stand"], ch):
+            pid = place["id"] if place else None
+            if pid not in EXPR_PLACES:
+                continue
+            pp = place_phrase(place)
+            f = F(subject=cid, verb=ev["verb"], place=pid)
+            sentences = [S("prog", G.verb_clause("prog", s, verb, "", "", pp), s, f, place=bool(pp)) for s in subjects_for(ch, pid)]
+            rid = "__".join(x for x in [cid, "stand", ev["id"], pid] if x)
+            r = rec(rid, "A1", pid, [actor(aid, expr=ev["expr"])], sentences, facts=f)
+            FL[rid] = set()
+            A1.append(r)
+            A1_base.append((r, ch, fpose, verb, "", "", place, None))
 
 # Gruplar (nesnesiz pozlar): "Tom and Mary are walking." / "Tom ve Mary yürüyorlar."
 default_layout = m.get("group_layout", {"scale": 0.8, "centers_x": [80, 176]})
@@ -205,7 +352,7 @@ for g in m.get("groups", []):
     members = [chars[c] for c in g["members"]]
     merged = {"place_exclude": sorted({p for c in members for p in c.get("place_exclude", [])})}
     for pose in poses.values():
-        if pose["requires"] != "none" or pose.get("attach") or pose["id"] == "lie":
+        if pose["requires"] != "none" or pose.get("attach") or pose["id"] in ("lie", "cook") or pose.get("fixed_object"):
             continue
         if not all((c["id"], pose["id"]) in pose_asset for c in members):
             continue
@@ -213,26 +360,108 @@ for g in m.get("groups", []):
         lay = pose.get("group_layout", default_layout)
         for place in places_for(pose, merged):
             pid = place["id"] if place else None
+            pp = place_phrase(place, pose)
+            f = F(subject=g["id"], verb=pose["verb"], place=pid)
             sentences = []
             for s in g["subjects"]:
                 subj = {"en": s["en"], "tr": s["tr"], "plural": True, "tr_plural": s["tr_plural"]}
-                sentences.append(sent("prog", G.verb_clause("prog", subj, verbs[pose["verb"]], place=place_phrase(place, pose)), s["en"]))
+                if s["en"] == "They":
+                    subj["ok"] = list(GROUP_IDS)
+                sentences.append(S("prog", G.verb_clause("prog", subj, verbs[pose["verb"]], place=pp), subj, f, place=bool(pp)))
             A1.append(rec("__".join(x for x in [g["id"], pose["id"], pid] if x), "A1", pid,
-                          [actor(cid, x, lay["scale"]) for cid, x in zip(ids, lay["centers_x"])], sentences, layout="pair"))
+                          [actor(cid, x, lay["scale"]) for cid, x in zip(ids, lay["centers_x"])], sentences, layout="pair", facts=f))
+
+# Kişi zamirleri, tek kişi: "I am running." (marker_me) / "You are running." (marker_you)
+for r0, ch, pose, verb, en_o, tr_o, place, hold in list(A1_base):
+    pid = place["id"] if place else None
+    if ch["id"] not in MAIN4 or pid not in PERSON_PLACES:
+        continue
+    if pose["id"] == "stand" and hold["obj"] not in HOLD_CORE:
+        continue
+    for person in ("1s", "2s"):
+        s = person_subj(person, OKS_HUMAN)
+        marker = m["persons"][person]["marker"]
+        f = r0["facts"]
+        pp = place_phrase(place, pose)
+        sentences = [S("prog", G.verb_clause("prog", s, verb, en_o, tr_o, pp), s, f, FL[r0["id"]], place=bool(pp))]
+        rid = f"{r0['id']}__p{person}"
+        r = rec(rid, "A1", r0["bg"], with_marker(r0["actors"], marker, only_first=True), sentences, layout=r0["layout"], facts=f)
+        FL[rid] = FL[r0["id"]]
+        A1.append(r)
+        PERSON_BASE.append((r, person, ch, pose, verb, en_o, tr_o, place))
+
+# Kişi zamirleri, çift: "We are walking." (iki aktörde marker_me) / "You are walking." (marker_you)
+for g in HUMAN_GROUPS:
+    members = [chars[c] for c in g["members"]]
+    merged = {"place_exclude": sorted({p for c in members for p in c.get("place_exclude", [])})}
+    for pose in poses.values():
+        if pose["requires"] != "none" or pose.get("attach") or pose["id"] in ("lie", "cook") or pose.get("fixed_object"):
+            continue
+        if not all((c["id"], pose["id"]) in pose_asset for c in members):
+            continue
+        ids = [pose_asset[(c["id"], pose["id"])] for c in members]
+        lay = pose.get("group_layout", default_layout)
+        for place in places_for(pose, merged):
+            pid = place["id"] if place else None
+            if pid not in PERSON_PLACES:
+                continue
+            pp = place_phrase(place, pose)
+            f = F(subject=g["id"], verb=pose["verb"], place=pid)
+            for person in ("1p", "2p"):
+                s = person_subj(person, [h["id"] for h in HUMAN_GROUPS])
+                acts = with_marker([actor(cid, x, lay["scale"]) for cid, x in zip(ids, lay["centers_x"])], m["persons"][person]["marker"])
+                sentences = [S("prog", G.verb_clause("prog", s, verbs[pose["verb"]], place=pp), s, f, place=bool(pp))]
+                rid = "__".join(x for x in [g["id"], pose["id"], pid] if x) + f"__p{person}"
+                A1.append(rec(rid, "A1", pid, acts, sentences, layout="pair", facts=f))
+                GROUP_PERSON_BASE.append((A1[-1], person, g, pose, verbs[pose["verb"]], place))
 
 # ---------------------------------------------------------------- A2
 A2 = []
 TENSE_FORMS = [f for f in G.FORMS if f != "prog"]
-HOLD_CORE = {"apple", "book", "ball", "phone", "key", "bag", "umbrella"}
+AOR_FORMS = ["aor", "aor_neg", "aor_q"]
+CAN_FORMS = ["can", "can_neg", "can_q"]
+CAN_VERBS = set(m.get("can", {}).get("verbs", []))
+PERSON_A2_PLACES = {None}                          # kişi + tüm zamanlar: boyut sınırı
+GIVE_A2_OBJECTS, GIVE_A2_PLACES = ("apple", "book"), {None, "park", "school"}
+EMO_PERSON_PLACES = [None]
 for r, ch, pose, verb, en_o, tr_o, place, hold in A1_base:
     if ch["id"] not in HUMANS + ["dog", "cat"]:
         continue
     if pose["id"] == "stand" and hold["obj"] not in HOLD_CORE:  # boyut sınırı: tutma pozunda çekirdek nesneler
         continue
     s = subj_of(ch)
+    pid = place["id"] if place else None
+    if pose["id"] == "give" and (hold["obj"] not in GIVE_A2_OBJECTS or pid not in GIVE_A2_PLACES):
+        continue
     pp = place_phrase(place, pose)
-    sentences = [sent(f, G.verb_clause(f, s, verb, en_o, tr_o, pp), s["en"]) for f in TENSE_FORMS]
-    A2.append(rec(r["id"] + "__tense", "A2", r["bg"], r["actors"], sentences))
+    f, fl = r["facts"], FL[r["id"]]
+    sentences = [S(fm, G.verb_clause(fm, s, verb, en_o, tr_o, pp), s, f, fl, place=bool(pp)) for fm in TENSE_FORMS]
+    if pose["id"] != "stand" and pid in AOR_PLACES:   # geniş zaman: "Tom reads a book every day."
+        sentences += [S(fm, G.verb_clause(fm, s, verb, en_o, tr_o, pp), s, f, fl, place=bool(pp)) for fm in AOR_FORMS]
+    if pose["verb"] in CAN_VERBS and pose["requires"] == "none" and pid in AOR_PLACES:   # yetenek: "Tom can swim."
+        sentences += [S(fm, G.verb_clause(fm, s, verb, en_o, tr_o, pp), s, f, fl, place=bool(pp)) for fm in CAN_FORMS]
+    A2.append(rec(r["id"] + "__tense", "A2", r["bg"], r["actors"], sentences, layout=r["layout"], facts=f))
+
+# Kişi + zamanlar: "Am I running?" / "Ben koşuyor muyum?", "You ran yesterday." / "Sen dün koştun."
+PERSON_A2_CHARS = ("tom", "woman")                # her poz için iki karakter yeter (boyut sınırı)
+for r, person, ch, pose, verb, en_o, tr_o, place in PERSON_BASE:
+    pid = place["id"] if place else None
+    if pid not in PERSON_A2_PLACES or pose["id"] == "stand" or ch["id"] not in PERSON_A2_CHARS:
+        continue
+    s = person_subj(person, OKS_HUMAN)
+    pp = place_phrase(place, pose)
+    f, fl = r["facts"], FL[r["id"]]
+    sentences = [S(fm, G.verb_clause(fm, s, verb, en_o, tr_o, pp), s, f, fl, place=bool(pp)) for fm in G.FORMS]
+    A2.append(rec(r["id"] + "__tense", "A2", r["bg"], r["actors"], sentences, layout=r["layout"], facts=f))
+for r, person, g, pose, verb, place in GROUP_PERSON_BASE:
+    pid = place["id"] if place else None
+    if pid not in PERSON_A2_PLACES:
+        continue
+    s = person_subj(person, [h["id"] for h in HUMAN_GROUPS])
+    pp = place_phrase(place, pose)
+    f = r["facts"]
+    sentences = [S(fm, G.verb_clause(fm, s, verb, place=pp), s, f, place=bool(pp)) for fm in G.FORMS]
+    A2.append(rec(r["id"] + "__tense", "A2", r["bg"], r["actors"], sentences, layout=r["layout"], facts=f))
 
 # Günün vakti: "Tom is reading a book at home at night." / "Tom gece evde bir kitap okuyor."
 TOD_POSES = {"read", "eat", "drink", "walk", "lie", "call"}
@@ -245,30 +474,60 @@ for r, ch, pose, verb, en_o, tr_o, place, hold in A1_base:
         if tod["id"] == "morning" and pose["id"] == "lie":
             continue
         s = subj_of(ch)
-        sentences = [sent("prog", G.verb_clause("prog", s, verb, en_o, tr_o, place_phrase(place, pose), (tod["en"], tod["tr"])), s["en"])]
+        f = dict(r["facts"], time=tod["id"])
+        sentences = [S("prog", G.verb_clause("prog", s, verb, en_o, tr_o, place_phrase(place, pose), (tod["en"], tod["tr"])), s, f,
+                       FL[r["id"]], place=True, time=True)]
         A2.append(rec(f"{r['id']}__{tod['id']}", "A2", r["bg"], r["actors"], sentences,
-                      sky=tod["sky"], sky_overlay=tod["overlay"], time=tod["id"]))
+                      sky=tod["sky"], sky_overlay=tod["overlay"], time=tod["id"], facts=f))
 
-# Duygular: "Tom is tired at school." / "Tom okulda yorgun."  (yüz parçası + işaret)
+# Duygular ve durumlar: "Tom is tired at school." / "Tom okulda yorgun."  (yüz parçası + işaret)
 EMO_PLACES = [None, "room", "school", "park", "office", "hospital", "street"]
 EMO_FORMS = ["prog", "prog_neg", "prog_q", "past", "past_neg", "past_q"]
+EMOTIONS = [e for e in m["emotions"] if e.get("kind") != "expression"]
 for cid in HUMANS:
     ch = chars[cid]
     aid = pose_asset.get((cid, "stand"))
     if not aid:
         continue
     pose = poses["stand"]
-    for emo in m["emotions"]:
+    for emo in EMOTIONS:
         for place in places_for(pose, ch):
             pid = place["id"] if place else None
             if pid not in EMO_PLACES:
                 continue
             pp = place_phrase(place)
+            f = F(subject=cid, state=emo["id"], place=pid)
             sentences = []
             for s in subjects_for(ch, pid):
                 forms = EMO_FORMS if s["en"] == ch["en"] else ["prog"]
-                sentences += [sent(f, G.adjective_clause(f, s, emo, pp), s["en"]) for f in forms]
-            A2.append(rec("__".join(x for x in [cid, emo["id"], pid] if x), "A2", pid, [actor(aid, expr=emo["id"])], sentences))
+                sentences += [S(fm, G.adjective_clause(fm, s, emo, pp), s, f, place=bool(pp)) for fm in forms]
+            A2.append(rec("__".join(x for x in [cid, emo["id"], pid] if x), "A2", pid, [actor(aid, expr=emo["id"])], sentences, facts=f))
+            # kişi: "I am tired at school." / "Ben okulda yorgunum." (marker_me), "Are you tired?" (marker_you)
+            if cid in MAIN4 and pid in EMO_PERSON_PLACES and not emo.get("no_person"):
+                for person in ("1s", "2s"):
+                    s = person_subj(person, OKS_HUMAN)
+                    sentences = [S(fm, G.adjective_clause(fm, s, emo, pp), s, f, place=bool(pp)) for fm in EMO_FORMS]
+                    A2.append(rec("__".join(x for x in [cid, emo["id"], pid] if x) + f"__p{person}", "A2", pid,
+                                  with_marker([actor(aid, expr=emo["id"])], m["persons"][person]["marker"]), sentences, facts=f))
+for g in HUMAN_GROUPS:
+    ids = [pose_asset.get((c, "stand")) for c in g["members"]]
+    if not all(ids):
+        continue
+    merged = {"place_exclude": sorted({p for c in g["members"] for p in chars[c].get("place_exclude", [])})}
+    for emo in EMOTIONS:
+        for place in places_for(poses["stand"], merged):
+            pid = place["id"] if place else None
+            if pid not in EMO_PERSON_PLACES or emo.get("no_person"):
+                continue
+            pp = place_phrase(place)
+            f = F(subject=g["id"], state=emo["id"], place=pid)
+            for person in ("1p", "2p"):
+                s = person_subj(person, [h["id"] for h in HUMAN_GROUPS])
+                acts = with_marker([actor(cid, x, default_layout["scale"], expr=emo["id"])
+                                    for cid, x in zip(ids, default_layout["centers_x"])], m["persons"][person]["marker"])
+                sentences = [S(fm, G.adjective_clause(fm, s, emo, pp), s, f, place=bool(pp)) for fm in EMO_FORMS]
+                A2.append(rec("__".join(x for x in [g["id"], "stand", emo["id"], pid] if x) + f"__p{person}", "A2", pid, acts,
+                              sentences, layout="pair", facts=f))
 
 # Hava durumu: "It is raining in the park." / "Parkta yağmur yağıyor."  + "Tom is walking in the rain."
 # v3: yersiz hava kaydı kaldırıldı — resim yine de park gösteriyordu, "It is raining." ile
@@ -278,9 +537,10 @@ for w in m["weather"]:
     for place in OUTDOOR:
         pid = place["id"] if place else None
         pp = place_phrase(place)
-        sentences = [sent(f, G.weather_clause(f, w, pp), "It") for f in G.FORMS]
+        f = F(weather=w["id"], place=pid)
+        sentences = [sent(fm, G.weather_clause(fm, w, pp), "It", ments=M(f, place=True)) for fm in G.FORMS]
         A2.append(rec("__".join(x for x in ["weather", w["id"], pid] if x), "A2", pid or "park", [], sentences,
-                      weather=w["id"], sky=w["sky"]))
+                      weather=w["id"], sky=w["sky"], facts=f))
     if "in" not in w["en"]:
         continue
     for cid in ("tom", "mary", "man", "woman"):
@@ -291,8 +551,9 @@ for w in m["weather"]:
         for bg in ("park", "street"):
             # v3 (AMB-2): yer de cümlede — "Tom is walking in the rain in the park." / "Tom parkta yağmurda yürüyor."
             inn = (f"{w['en']['in']} {PL[bg]['en']}", f"{PL[bg]['tr_loc']} {w['tr']['in']}")
-            sentences = [sent(f, G.verb_clause(f, s, verbs["walk"], place=inn), s["en"]) for f in ("prog", "past", "prog_q")]
-            A2.append(rec(f"{cid}_walk__{w['id']}__{bg}", "A2", bg, [actor(aid)], sentences, weather=w["id"], sky=w["sky"]))
+            f = F(subject=cid, verb="walk", weather=w["id"], place=bg)
+            sentences = [S(fm, G.verb_clause(fm, s, verbs["walk"], place=inn), s, f, place=True) for fm in ("prog", "past", "prog_q")]
+            A2.append(rec(f"{cid}_walk__{w['id']}__{bg}", "A2", bg, [actor(aid)], sentences, weather=w["id"], sky=w["sky"], facts=f))
 
 # ---------------------------------------------------------------- B1
 B1 = []
@@ -327,11 +588,14 @@ for it in m["interactions"]:
             pp = place_phrase(place)
             sa, sb = subj_of(a_ch), subj_of(b_ch)
             case = {"ile": b_ch["tr"] + " ile", "acc": b_ch["tr_acc"], "dat": b_ch["tr_dat"]}[it["tr_case"]]
-            sentences = [sent(f, G.verb_clause(f, sa, v, obj_en_lower(b_ch), case, pp), sa["en"]) for f in B1_FORMS]
+            fct = F(subject=a_id, verb=it["verb"], other=b_id, place=pid)
+            sentences = [S(f, G.verb_clause(f, sa, v, obj_en_lower(b_ch), case, pp), sa, fct, place=bool(pp)) for f in B1_FORMS]
             if it.get("reverse"):
+                # "Mary listens to Tom": konuşan Tom'dur, öznesi farklı bir cümle -> olgu boyutu söylemez (boş mentions:
+                # hiçbir resim için çeldirici olmaz, kendi resmine karşı yanlış sayılmaz).
                 rv = it["reverse"]
                 rcase = {"acc": a_ch["tr_acc"], "dat": a_ch["tr_dat"]}[rv["tr_case"]]
-                sentences += [sent(f, G.verb_clause(f, sb, verbs[rv["verb"]], obj_en_lower(a_ch), rcase, pp), sb["en"])
+                sentences += [sent(f, G.verb_clause(f, sb, verbs[rv["verb"]], obj_en_lower(a_ch), rcase, pp), sb["en"], ments=[], subj=sb)
                               for f in B1_FORMS]
             if it["other_pose"]:
                 # v3: yerleşimin aktör konum/ölçeği kullanılır (balon başa, el sallayan kol karşıdakine binmez)
@@ -348,7 +612,7 @@ for it in m["interactions"]:
                 layout = "bubble"
                 bubble = {"type": it["bubble"], "content": {"char": b_asset}}
             B1.append(rec(f"{it['id']}__{a_id}__{b_id}" + (f"__{pid}" if pid else ""), "B1", pid, acts, sentences,
-                          layout=layout, bubble=bubble))
+                          layout=layout, bubble=bubble, facts=fct))
 
 # İstemek: "Tom wants a car." / "Tom bir araba istiyor."  (düşünce balonunda nesne)
 want = next(i for i in m["interactions"] if i["id"] == "want")
@@ -362,14 +626,15 @@ for cid in HUMANS:
             continue
         en_o = f"{obj['article_en']} {obj['en']}" if obj["countable"] else obj["en"]
         tr_o = f"bir {obj['tr']}" if obj["countable"] else obj["tr"]
-        sentences = [sent(f, G.verb_clause(f, s, verbs["want"], en_o, tr_o), s["en"])
+        fct = F(subject=cid, verb="want", object=obj["id"])
+        sentences = [S(f, G.verb_clause(f, s, verbs["want"], en_o, tr_o), s, fct)
                      for f in ("prog", "prog_neg", "prog_q", "past", "past_neg", "past_q")]
         for al in chars[cid].get("aliases", [])[:1]:
             sa = subj_of(chars[cid], al)
-            sentences.append(sent("prog", G.verb_clause("prog", sa, verbs["want"], en_o, tr_o), sa["en"]))
+            sentences.append(S("prog", G.verb_clause("prog", sa, verbs["want"], en_o, tr_o), sa, fct))
         la = LAY["bubble"]["actors"][0]
         B1.append(rec(f"want__{cid}__{obj['id']}", "B1", None, [actor(aid, la["x"], la["s"])], sentences, layout="bubble",
-                      bubble={"type": "thought", "content": {"obj": obj["id"]}}))
+                      bubble={"type": "thought", "content": {"obj": obj["id"]}}, facts=fct))
 
 # Nesne durumu / sahne nesnesi: "Tom is turning off the light." / "Tom ışığı kapatıyor."
 for pa in m["prop_actions"]:
@@ -387,16 +652,17 @@ for pa in m["prop_actions"]:
                 continue
             pp = place_phrase(PL[pid])
             sentences = []
+            fct = F(subject=cid, verb=pa["verb"], object=pa.get("prop") or pa.get("hold"), place=pid)
             for s in subjects_for(ch, pid):
                 forms = G.FORMS if s["en"] == ch["en"] else ["prog"]
-                sentences += [sent(f, G.verb_clause(f, s, v, obj_en, obj_tr, pp), s["en"]) for f in forms]
+                sentences += [S(f, G.verb_clause(f, s, v, obj_en, obj_tr, pp), s, fct, place=bool(pp)) for f in forms]
             if pa.get("hold"):
                 hold = {"obj": pa["hold"], "anchor": anchor_of(aid, poses[pa["pose"]]), "s": poses[pa["pose"]]["scale"]}
-                B1.append(rec(f"{pa['id']}__{cid}__{pid}", "B1", pid, [actor(aid, hold=hold)], sentences))
+                B1.append(rec(f"{pa['id']}__{cid}__{pid}", "B1", pid, [actor(aid, hold=hold)], sentences, facts=fct))
             else:
                 B1.append(rec(f"{pa['id']}__{cid}__{pid}", "B1", pid, [actor(aid, 92, 0.88)], sentences, layout="prop",
                               prop={"obj": pa["prop"], "states": pa.get("states"),
-                                    "s": A[pa["prop"]].get("prop_scale", LAY["prop"]["prop"]["s"])}))
+                                    "s": A[pa["prop"]].get("prop_scale", LAY["prop"]["prop"]["s"])}, facts=fct))
 
 # Sıralı iki panel: "First, Tom ate an apple at home, then he read a book." / "Tom evde önce bir elma yedi, sonra bir kitap okudu."
 SEQ_POSES = ["eat", "drink", "read", "sit", "walk", "talk", "call", "lie"]  # v3: "think" tek başına doğal değil
@@ -419,19 +685,30 @@ for (cid, pid), items in seq_groups.items():
              f"{G.join(v1['en']['past'], v1['en'].get('prep', ''), e1)}, " \
              f"then {pron} {G.join(v2['en']['past'], v2['en'].get('prep', ''), e2)}."
         tr = f"{ch['tr']} {place['tr_loc']} önce {G.join(t1, v1['tr']['past'])}, sonra {G.join(t2, v2['tr']['past'])}."
-        B1.append(rec(f"seq__{r1['id']}__then__{p2['id']}", "B1", pid, [], [{"form": "past", "subject": ch["en"], "en": en, "tr": tr}],
+        fct = F(subject=cid, verb=f"{p1['verb']}>{p2['verb']}", place=pid)
+        B1.append(rec(f"seq__{r1['id']}__then__{p2['id']}", "B1", pid, [],
+                      [sent("past", (en, tr), ch["en"], ments=M(fct, place=True), subj=subj_of(ch))],
                       layout="panels", panels=[{"layout": "single", "actors": r1["actors"]},
-                                               {"layout": "single", "actors": r2["actors"]}]))
+                                               {"layout": "single", "actors": r2["actors"]}], facts=fct))
 
 # ---------------------------------------------------------------- yaz
 out_dir = ROOT / "scenes"
 out_dir.mkdir(exist_ok=True)
+
+
+def compact(r):
+    """jsonl boyutu için: facts içinde null/0 boyutlar yazılmaz (okuyan eksik anahtarı null/0 sayar)."""
+    r = dict(r)
+    r["facts"] = {k: v for k, v in r["facts"].items() if v not in (None, 0)}
+    return json.dumps(r, ensure_ascii=False, separators=(",", ":"))
+
+
 # v3: aynı resmi veren kayıtlar tek kayıtta birleşir; cümleleri o resmin kabul kümesidir.
 levels, merged_counts = {}, {}
 for _name, _rows in (("A1", A1), ("A2", A2), ("B1", B1)):
     levels[_name], merged_counts[_name] = L.merge_identical(_rows)
 for name, rows in levels.items():
-    (out_dir / f"{name}.jsonl").write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8")
+    (out_dir / f"{name}.jsonl").write_text("\n".join(compact(r) for r in rows) + "\n", encoding="utf-8")
 
 # Uygulama uyumluluğu: Core/Game/GameLibrary scenes.json'u (v1 biçimi) okur. A1 kayıtları cümle başına
 # bir sahneye açılır; kimlikler v1 ile aynı kalır (takma ad/grup öznesi için "__as_<özne>" eki).
@@ -446,6 +723,13 @@ for r in A1:
         canonical = i == 0 and not group
         a0 = r["actors"][0]
         hold = a0.get("hold")
+        if hold and hold.get("anchor") and group:
+            # v4 düzeltmesi: eski biçimde tutma noktası TUVAL koordinatıdır; çift yerleşimde (vermek) aktörün
+            # ölçeği/konumu uygulanmadan yazılırsa nesne alıcının yüzüne biner.
+            ax, ay = hold["anchor"]
+            x, sc = a0["x"], a0["s"]
+            hold = {**hold, "anchor": [round(x - 128 * sc + ax * sc, 1), round(230 - 230 * sc + ay * sc, 1)],
+                    "s": round(hold["s"] * sc, 4)}
         entry = {
             "id": r["id"] if canonical else f"{r['id']}__as_{slug(s['subject'])}",
             "background": r["bg"],
@@ -459,22 +743,47 @@ for r in A1:
             "tr": s["tr"],
         }
         if group:
-            entry["group"] = [{"character": a["char"], "x": a["x"], "scale": a["s"]} for a in r["actors"]]
+            entry["group"] = [{"character": a["char"], "x": a["x"], "scale": a["s"],
+                               **{k: a[k] for k in ("hold", "marker", "expr") if a.get(k)}} for a in r["actors"]]
+        # v4: sözleşme alanları (eski alanlar aynen korunur)
+        if a0.get("marker"):
+            entry["actors"] = r["actors"]
+        entry["facts"] = r["facts"]
+        entry["mentions"] = s["mentions"]
+        entry["person"] = s["person"]
+        if s.get("subject_ok"):
+            entry["subject_ok"] = s["subject_ok"]
+        if s.get("badges"):
+            entry["badges"] = s["badges"]
+        if a0.get("expr"):
+            entry["expr"] = a0["expr"]
+        if a0.get("marker"):
+            entry["marker"] = a0["marker"]
         compat.append(entry)
+ids_seen = [e["id"] for e in compat]
+assert len(ids_seen) == len(set(ids_seen)), "scenes.json kimlik çakışması"
 
 # v3 (C2): ağırlıklı örnekleme — poz ailesi büyüdükçe sahne başı ağırlık azalır;
 # weight = n^e / n  (e=0.62): tutma pozu tekdüze seçimde ~%68, ağırlıklı seçimde ~%39.
 pose_of = {a["id"]: a["pose"] for a in char_assets}
-fam = Counter(pose_of[e["character"]] for e in compat)
+def fam_key(e):  # ifade fiilleri stand pozunu paylaşır; tutma payını bozmasın diye ayrı aile
+    if e.get("expr"):
+        return "expr:" + e["expr"]
+    if e.get("marker") or e.get("group") and any(g.get("marker") for g in e["group"]):
+        return "marker"
+    return pose_of[e["character"]]
+
+
+fam = Counter(fam_key(e) for e in compat)
 exp_ = m.get("sampling", {}).get("exponent", 1.0)
 for e in compat:
-    n = fam[pose_of[e["character"]]]
+    n = fam[fam_key(e)]
     e["weight"] = round(n ** exp_ / n, 6)
 total_w = sum(e["weight"] for e in compat)
 hold_share = sum(e["weight"] for e in compat if pose_of[e["character"]] == "stand") / total_w
 hold_uniform = fam["stand"] / len(compat)
 (ROOT / "scenes.json").write_text(
-    '{"version": 1, "count": %d, "scenes": [\n%s\n]}\n' % (len(compat), ",\n".join(json.dumps(s, ensure_ascii=False) for s in compat)),
+    '{"version": 1, "count": %d, "scenes": [\n%s\n]}\n' % (len(compat), ",\n".join(json.dumps(s, ensure_ascii=False, separators=(",", ":")) for s in compat)),
     encoding="utf-8")
 
 # ---------------------------------------------------------------- coverage.md

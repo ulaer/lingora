@@ -18,10 +18,11 @@ gökyüzü rengi, durum ve animasyon dönüşümleri).
 | `scenes/A1.jsonl` | şimdiki zaman: özne + fiil + nesne + yer, gruplar |
 | `scenes/A2.jsonl` | dün/yarın, olumsuz, soru (rozetli), duygular, günün vakti, hava durumu |
 | `scenes/B1.jsonl` | etkileşim (konuşmak/dinlemek, el sallamak, aramak), düşünce balonu (istemek, birini düşünmek), ışık/TV/kapı durum değişimi, sıralı iki panel |
+| `docs/v4-contract.md` | v4 sözleşmesi: yeni asset kimlikleri, `actors[].marker`, `facts`/`mentions`/`person` |
 | `coverage.md` | Kapsam özeti |
 | `tools/combine.py` | `manifest.json` + SVG işaretleri → `scenes/*.jsonl` + `coverage.md` (kural tabanlı, model kullanmaz) |
-| `tools/grammar.py` | EN/TR çekim: zaman, olumsuz, soru, ünlü uyumu, -ydı/-lar ekleri |
-| `tools/lint.py` | v3 kalite kapısı: belirsizlik, dil, yerleşim; `combine.py --strict` hata varsa durur |
+| `tools/grammar.py` | EN/TR çekim: zaman, olumsuz, soru, ünlü uyumu, -ydı/-lar ekleri; v4: kişi ekleri (koşuyorum…), geniş zaman (`aor*`), yetenek (`can*`) |
+| `tools/lint.py` | kalite kapısı: belirsizlik, dil, yerleşim (v3) + olgu (`facts`/`mentions`/`person`), kişi eki ↔ özne, geniş zaman ve `can` rozetleri (v4); `combine.py --strict` hata varsa durur |
 | `REVIEW-v3.md` | v3'ü belirleyen üç ajanlı test ve çapraz puanlama kaydı |
 | `tools/validate.py` | Tüm SVG'leri stil kilidine göre denetler (kareler, durumlar, yüz parçaları dahil) |
 | `preview.html` | Kompozisyonun referans uygulaması ve önizleme |
@@ -55,6 +56,21 @@ veren kayıtlar birleşir (`merged_ids`); `sentences` o resmin **kabul kümesidi
 `scenes.json` sahnelerindeki `weight`, oyunun ağırlıklı seçimi içindir. `badges`
 cümleye özeldir: oyun hangi cümleyi soruyorsa onun rozetlerini gösterir.
 
+### v4 alanları
+
+- Her kayıtta `facts` (`subject, verb, object, variant, count, place, time, weather, state, other`); `scenes.json` tüm anahtarları
+  yazar, `scenes/*.jsonl` boyut için `null`/`0` boyutları atar (eksik anahtar = null/0).
+- Her cümlede `mentions` (cümlenin söylediği boyutlar), `person` (`1s|2s|1p|2p|3s|3p`) ve zamir/kişi özneleri için `subject_ok`
+  (ör. "He" → tom, man, police). Cümle, kaynağı dışındaki resim için `mentions` boyutlarının hepsi o resmin olgusuyla eşitse doğrudur.
+  Öznesi resmin öznesinden farklı olan cümleler (ör. "Mary listens to Tom" tom'un konuştuğu resimde) boş `mentions` taşır:
+  hiçbir resim için çeldirici olmaz.
+- `actors[].marker`: `marker_me` / `marker_you`. Kişi sahneleri: "I/You" tek aktör + marker, "We/You (çoğul)" pair + iki marker.
+- Formlar: `aor`, `aor_neg`, `aor_q` (`cal_everyday` rozeti, "every day"/"her gün") ve `can`, `can_neg`, `can_q` (`badge_can`).
+- `facts` ve `mentions` türetimi `combine.py` içinde (`F`, `M`, `S`); kişi eki kuralları `grammar.py` (`past_person`, `fut_person`…).
+- Boyut sınırları `combine.py` başında: kişi ve geniş zaman/yetenek sahneleri yalnızca yersiz (`None`) kayıtlar, A2'de kişi + tüm
+  zamanlar yalnızca `tom`/`woman`; `give` A2'de elma/kitap × (yersiz, park, okul). `scenes/*.jsonl` toplamı ≈ 8,8 MB.
+- `bored` ("canı sıkkın") kişi eki alamadığı için kişi cümlelerinden dışlanır (`no_person`).
+
 ## Kompozisyon kuralları
 
 - Aktör: `translate(x - 128*s, 230 - 230*s) scale(s)`; elindeki nesne aktörün içinde
@@ -63,7 +79,7 @@ cümleye özeldir: oyun hangi cümleyi soruyorsa onun rozetlerini gösterir.
 - Duygu: `data-part="mouth"/"eyes"` gizlenir, `overlays/face/` parçası (`data-cx`,`data-cy`) noktasına konur;
   işaret (ter, gözyaşı…) `data-head` yanına (`layouts.mark`).
 - `data-frame` grupları döngüde tek tek gösterilir; `prop.states` sırayla oynatılır (ör. ışık açık → kapalı).
-- Balon, rozet, güneş/ay konumları `manifest.json` → `layouts`.
+- Balon, rozet, güneş/ay konumları `manifest.json` → `layouts`; marker: `layouts.marker` (`dx` yok, merkez `(head.x, head.y + dy)`).
 
 ## Yeni asset eklemek
 

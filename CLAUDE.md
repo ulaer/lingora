@@ -70,6 +70,9 @@ game-assets/                Dil oyunu için flat SVG kütüphanesi: style-lock.m
                             (uygulama okur) + scenes/A1|A2|B1.jsonl (tools/combine.py + grammar.py üretir),
                             tools/validate.py, tools/lint.py (combine kalite kapısı), preview.html. Uygulamaya çıktı klasöründe
                             game-assets\ olarak kopyalanır; Core/Game okur, Desktop/SvgScene çizer, Pages/GamePage oynatır.
+                            Core/Game: GameLibrary (scenes.json + scenes/A1|A2|B1.jsonl, ağırlıklı seçim), GameRecords (v2+ kayıt,
+                            facts/mentions), ChoiceBuilder (çeldirici resim için yanlış olmalı: facts doğruluk kuralı).
+                            SvgScene: yerleşim, ifade, balon, rozet, işaret, gökyüzü/hava, panel; kare + durum animasyonu.
 uygulama/                   Yayınlanmış exe (git dışı)
 ```
 

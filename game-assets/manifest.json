@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "style_lock": "style-lock.md",
   "palette": {
     "ink": "#2B2D42",
@@ -634,6 +634,61 @@
       "requires": "none",
       "places": [
         "bedroom"
+      ]
+    },
+    {
+      "id": "give",
+      "verb": "give",
+      "verb_en": "giving",
+      "verb_tr": "veriyor",
+      "requires": "any",
+      "special": "give",
+      "anchor": [
+        196,
+        150
+      ],
+      "scale": 0.3,
+      "allow_count": false,
+      "receiver_pose": "stand",
+      "objects": [
+        "apple",
+        "book",
+        "ball",
+        "key"
+      ],
+      "places": [
+        "park",
+        "room",
+        "school",
+        "street"
+      ]
+    },
+    {
+      "id": "write",
+      "verb": "write",
+      "verb_en": "writing",
+      "verb_tr": "yazıyor",
+      "requires": "none",
+      "fixed_object": {
+        "obj": "letter",
+        "en": "a letter",
+        "tr": "bir mektup"
+      },
+      "places": [
+        "room",
+        "office",
+        "school"
+      ]
+    },
+    {
+      "id": "cook",
+      "verb": "cook",
+      "verb_en": "cooking",
+      "verb_tr": "yemek pişiriyor",
+      "requires": "none",
+      "no_default_place": true,
+      "places": [
+        "kitchen"
       ]
     }
   ],
@@ -2003,6 +2058,120 @@
       "id": "brows_worried",
       "file": "assets/overlays/face/brows_worried.svg",
       "category": "face"
+    },
+    {
+      "id": "marker_me",
+      "file": "assets/overlays/marker_me.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "marker_you",
+      "file": "assets/overlays/marker_you.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "cal_everyday",
+      "file": "assets/overlays/cal_everyday.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "badge_can",
+      "file": "assets/overlays/badge_can.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "mark_food",
+      "file": "assets/overlays/mark_food.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "mark_thermometer",
+      "file": "assets/overlays/mark_thermometer.svg",
+      "category": "overlay"
+    },
+    {
+      "id": "tom_give",
+      "file": "assets/characters/tom_give.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "give"
+    },
+    {
+      "id": "tom_write",
+      "file": "assets/characters/tom_write.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "write"
+    },
+    {
+      "id": "tom_cook",
+      "file": "assets/characters/tom_cook.svg",
+      "category": "character",
+      "character": "tom",
+      "pose": "cook"
+    },
+    {
+      "id": "mary_give",
+      "file": "assets/characters/mary_give.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "give"
+    },
+    {
+      "id": "mary_write",
+      "file": "assets/characters/mary_write.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "write"
+    },
+    {
+      "id": "mary_cook",
+      "file": "assets/characters/mary_cook.svg",
+      "category": "character",
+      "character": "mary",
+      "pose": "cook"
+    },
+    {
+      "id": "man_give",
+      "file": "assets/characters/man_give.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "give"
+    },
+    {
+      "id": "man_write",
+      "file": "assets/characters/man_write.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "write"
+    },
+    {
+      "id": "man_cook",
+      "file": "assets/characters/man_cook.svg",
+      "category": "character",
+      "character": "man",
+      "pose": "cook"
+    },
+    {
+      "id": "woman_give",
+      "file": "assets/characters/woman_give.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "give"
+    },
+    {
+      "id": "woman_write",
+      "file": "assets/characters/woman_write.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "write"
+    },
+    {
+      "id": "woman_cook",
+      "file": "assets/characters/woman_cook.svg",
+      "category": "character",
+      "character": "woman",
+      "pose": "cook"
     }
   ],
   "groups": [
@@ -2122,7 +2291,9 @@
         "fut": "tutacak",
         "prog_neg": "tutmuyor",
         "past_neg": "tutmadı",
-        "fut_neg": "tutmayacak"
+        "fut_neg": "tutmayacak",
+        "aor": "tutar",
+        "aor_neg": "tutmaz"
       }
     },
     "eat": {
@@ -2137,7 +2308,9 @@
         "fut": "yiyecek",
         "prog_neg": "yemiyor",
         "past_neg": "yemedi",
-        "fut_neg": "yemeyecek"
+        "fut_neg": "yemeyecek",
+        "aor": "yer",
+        "aor_neg": "yemez"
       }
     },
     "drink": {
@@ -2152,7 +2325,9 @@
         "fut": "içecek",
         "prog_neg": "içmiyor",
         "past_neg": "içmedi",
-        "fut_neg": "içmeyecek"
+        "fut_neg": "içmeyecek",
+        "aor": "içer",
+        "aor_neg": "içmez"
       }
     },
     "read": {
@@ -2167,7 +2342,9 @@
         "fut": "okuyacak",
         "prog_neg": "okumuyor",
         "past_neg": "okumadı",
-        "fut_neg": "okumayacak"
+        "fut_neg": "okumayacak",
+        "aor": "okur",
+        "aor_neg": "okumaz"
       }
     },
     "run": {
@@ -2182,7 +2359,11 @@
         "fut": "koşacak",
         "prog_neg": "koşmuyor",
         "past_neg": "koşmadı",
-        "fut_neg": "koşmayacak"
+        "fut_neg": "koşmayacak",
+        "aor": "koşar",
+        "aor_neg": "koşmaz",
+        "can": "koşabilir",
+        "can_neg": "koşamaz"
       }
     },
     "swim": {
@@ -2197,7 +2378,11 @@
         "fut": "yüzecek",
         "prog_neg": "yüzmüyor",
         "past_neg": "yüzmedi",
-        "fut_neg": "yüzmeyecek"
+        "fut_neg": "yüzmeyecek",
+        "aor": "yüzer",
+        "aor_neg": "yüzmez",
+        "can": "yüzebilir",
+        "can_neg": "yüzemez"
       }
     },
     "sit": {
@@ -2212,7 +2397,9 @@
         "fut": "oturacak",
         "prog_neg": "oturmuyor",
         "past_neg": "oturmadı",
-        "fut_neg": "oturmayacak"
+        "fut_neg": "oturmayacak",
+        "aor": "oturur",
+        "aor_neg": "oturmaz"
       }
     },
     "sleep": {
@@ -2227,7 +2414,9 @@
         "fut": "uyuyacak",
         "prog_neg": "uyumuyor",
         "past_neg": "uyumadı",
-        "fut_neg": "uyumayacak"
+        "fut_neg": "uyumayacak",
+        "aor": "uyur",
+        "aor_neg": "uyumaz"
       }
     },
     "play_with": {
@@ -2243,7 +2432,9 @@
         "fut": "oynayacak",
         "prog_neg": "oynamıyor",
         "past_neg": "oynamadı",
-        "fut_neg": "oynamayacak"
+        "fut_neg": "oynamayacak",
+        "aor": "oynar",
+        "aor_neg": "oynamaz"
       }
     },
     "fly": {
@@ -2258,7 +2449,11 @@
         "fut": "uçacak",
         "prog_neg": "uçmuyor",
         "past_neg": "uçmadı",
-        "fut_neg": "uçmayacak"
+        "fut_neg": "uçmayacak",
+        "aor": "uçar",
+        "aor_neg": "uçmaz",
+        "can": "uçabilir",
+        "can_neg": "uçamaz"
       }
     },
     "walk": {
@@ -2273,7 +2468,11 @@
         "fut": "yürüyecek",
         "prog_neg": "yürümüyor",
         "past_neg": "yürümedi",
-        "fut_neg": "yürümeyecek"
+        "fut_neg": "yürümeyecek",
+        "aor": "yürür",
+        "aor_neg": "yürümez",
+        "can": "yürüyebilir",
+        "can_neg": "yürüyemez"
       }
     },
     "talk": {
@@ -2288,7 +2487,9 @@
         "fut": "konuşacak",
         "prog_neg": "konuşmuyor",
         "past_neg": "konuşmadı",
-        "fut_neg": "konuşmayacak"
+        "fut_neg": "konuşmayacak",
+        "aor": "konuşur",
+        "aor_neg": "konuşmaz"
       }
     },
     "talk_phone": {
@@ -2304,7 +2505,9 @@
         "fut": "telefonla konuşacak",
         "prog_neg": "telefonla konuşmuyor",
         "past_neg": "telefonla konuşmadı",
-        "fut_neg": "telefonla konuşmayacak"
+        "fut_neg": "telefonla konuşmayacak",
+        "aor": "telefonla konuşur",
+        "aor_neg": "telefonla konuşmaz"
       }
     },
     "wave": {
@@ -2319,7 +2522,11 @@
         "fut": "el sallayacak",
         "prog_neg": "el sallamıyor",
         "past_neg": "el sallamadı",
-        "fut_neg": "el sallamayacak"
+        "fut_neg": "el sallamayacak",
+        "aor": "el sallar",
+        "aor_neg": "el sallamaz",
+        "can": "el sallayabilir",
+        "can_neg": "el sallayamaz"
       }
     },
     "think": {
@@ -2334,7 +2541,9 @@
         "fut": "düşünecek",
         "prog_neg": "düşünmüyor",
         "past_neg": "düşünmedi",
-        "fut_neg": "düşünmeyecek"
+        "fut_neg": "düşünmeyecek",
+        "aor": "düşünür",
+        "aor_neg": "düşünmez"
       }
     },
     "talk_to": {
@@ -2350,7 +2559,9 @@
         "fut": "konuşacak",
         "prog_neg": "konuşmuyor",
         "past_neg": "konuşmadı",
-        "fut_neg": "konuşmayacak"
+        "fut_neg": "konuşmayacak",
+        "aor": "konuşur",
+        "aor_neg": "konuşmaz"
       }
     },
     "listen_to": {
@@ -2366,7 +2577,9 @@
         "fut": "dinleyecek",
         "prog_neg": "dinlemiyor",
         "past_neg": "dinlemedi",
-        "fut_neg": "dinlemeyecek"
+        "fut_neg": "dinlemeyecek",
+        "aor": "dinler",
+        "aor_neg": "dinlemez"
       }
     },
     "wave_at": {
@@ -2382,7 +2595,9 @@
         "fut": "el sallayacak",
         "prog_neg": "el sallamıyor",
         "past_neg": "el sallamadı",
-        "fut_neg": "el sallamayacak"
+        "fut_neg": "el sallamayacak",
+        "aor": "el sallar",
+        "aor_neg": "el sallamaz"
       }
     },
     "call": {
@@ -2397,7 +2612,9 @@
         "fut": "arayacak",
         "prog_neg": "aramıyor",
         "past_neg": "aramadı",
-        "fut_neg": "aramayacak"
+        "fut_neg": "aramayacak",
+        "aor": "arar",
+        "aor_neg": "aramaz"
       }
     },
     "think_about": {
@@ -2413,7 +2630,9 @@
         "fut": "düşünecek",
         "prog_neg": "düşünmüyor",
         "past_neg": "düşünmedi",
-        "fut_neg": "düşünmeyecek"
+        "fut_neg": "düşünmeyecek",
+        "aor": "düşünür",
+        "aor_neg": "düşünmez"
       }
     },
     "want": {
@@ -2430,7 +2649,9 @@
         "fut": "isteyecek",
         "prog_neg": "istemiyor",
         "past_neg": "istemedi",
-        "fut_neg": "istemeyecek"
+        "fut_neg": "istemeyecek",
+        "aor": "ister",
+        "aor_neg": "istemez"
       }
     },
     "watch": {
@@ -2445,7 +2666,9 @@
         "fut": "izleyecek",
         "prog_neg": "izlemiyor",
         "past_neg": "izlemedi",
-        "fut_neg": "izlemeyecek"
+        "fut_neg": "izlemeyecek",
+        "aor": "izler",
+        "aor_neg": "izlemez"
       }
     },
     "play_instr": {
@@ -2460,7 +2683,9 @@
         "fut": "çalacak",
         "prog_neg": "çalmıyor",
         "past_neg": "çalmadı",
-        "fut_neg": "çalmayacak"
+        "fut_neg": "çalmayacak",
+        "aor": "çalar",
+        "aor_neg": "çalmaz"
       }
     },
     "turn_on": {
@@ -2475,7 +2700,9 @@
         "fut": "açacak",
         "prog_neg": "açmıyor",
         "past_neg": "açmadı",
-        "fut_neg": "açmayacak"
+        "fut_neg": "açmayacak",
+        "aor": "açar",
+        "aor_neg": "açmaz"
       }
     },
     "turn_off": {
@@ -2490,7 +2717,9 @@
         "fut": "kapatacak",
         "prog_neg": "kapatmıyor",
         "past_neg": "kapatmadı",
-        "fut_neg": "kapatmayacak"
+        "fut_neg": "kapatmayacak",
+        "aor": "kapatır",
+        "aor_neg": "kapatmaz"
       }
     },
     "open": {
@@ -2505,7 +2734,9 @@
         "fut": "açacak",
         "prog_neg": "açmıyor",
         "past_neg": "açmadı",
-        "fut_neg": "açmayacak"
+        "fut_neg": "açmayacak",
+        "aor": "açar",
+        "aor_neg": "açmaz"
       }
     },
     "close": {
@@ -2520,7 +2751,9 @@
         "fut": "kapatacak",
         "prog_neg": "kapatmıyor",
         "past_neg": "kapatmadı",
-        "fut_neg": "kapatmayacak"
+        "fut_neg": "kapatmayacak",
+        "aor": "kapatır",
+        "aor_neg": "kapatmaz"
       }
     },
     "wait_for": {
@@ -2536,7 +2769,113 @@
         "fut": "bekleyecek",
         "prog_neg": "beklemiyor",
         "past_neg": "beklemedi",
-        "fut_neg": "beklemeyecek"
+        "fut_neg": "beklemeyecek",
+        "aor": "bekler",
+        "aor_neg": "beklemez"
+      }
+    },
+    "give": {
+      "en": {
+        "ing": "giving",
+        "past": "gave",
+        "base": "give"
+      },
+      "tr": {
+        "prog": "veriyor",
+        "past": "verdi",
+        "fut": "verecek",
+        "prog_neg": "vermiyor",
+        "past_neg": "vermedi",
+        "fut_neg": "vermeyecek",
+        "aor": "verir",
+        "aor_neg": "vermez"
+      }
+    },
+    "write": {
+      "en": {
+        "ing": "writing",
+        "past": "wrote",
+        "base": "write"
+      },
+      "tr": {
+        "prog": "yazıyor",
+        "past": "yazdı",
+        "fut": "yazacak",
+        "prog_neg": "yazmıyor",
+        "past_neg": "yazmadı",
+        "fut_neg": "yazmayacak",
+        "aor": "yazar",
+        "aor_neg": "yazmaz"
+      }
+    },
+    "cook": {
+      "en": {
+        "ing": "cooking",
+        "past": "cooked",
+        "base": "cook"
+      },
+      "tr": {
+        "prog": "yemek pişiriyor",
+        "past": "yemek pişirdi",
+        "fut": "yemek pişirecek",
+        "prog_neg": "yemek pişirmiyor",
+        "past_neg": "yemek pişirmedi",
+        "fut_neg": "yemek pişirmeyecek",
+        "aor": "yemek pişirir",
+        "aor_neg": "yemek pişirmez",
+        "can": "yemek pişirebilir",
+        "can_neg": "yemek pişiremez"
+      }
+    },
+    "cry": {
+      "en": {
+        "ing": "crying",
+        "past": "cried",
+        "base": "cry"
+      },
+      "tr": {
+        "prog": "ağlıyor",
+        "past": "ağladı",
+        "fut": "ağlayacak",
+        "prog_neg": "ağlamıyor",
+        "past_neg": "ağlamadı",
+        "fut_neg": "ağlamayacak",
+        "aor": "ağlar",
+        "aor_neg": "ağlamaz"
+      }
+    },
+    "laugh": {
+      "en": {
+        "ing": "laughing",
+        "past": "laughed",
+        "base": "laugh"
+      },
+      "tr": {
+        "prog": "gülüyor",
+        "past": "güldü",
+        "fut": "gülecek",
+        "prog_neg": "gülmüyor",
+        "past_neg": "gülmedi",
+        "fut_neg": "gülmeyecek",
+        "aor": "güler",
+        "aor_neg": "gülmez"
+      }
+    },
+    "smile": {
+      "en": {
+        "ing": "smiling",
+        "past": "smiled",
+        "base": "smile"
+      },
+      "tr": {
+        "prog": "gülümsüyor",
+        "past": "gülümsedi",
+        "fut": "gülümseyecek",
+        "prog_neg": "gülümsemiyor",
+        "past_neg": "gülümsemedi",
+        "fut_neg": "gülümsemeyecek",
+        "aor": "gülümser",
+        "aor_neg": "gülümsemez"
       }
     }
   },
@@ -2584,7 +2923,9 @@
       "mouth": "mouth_flat",
       "eyes": "eyes_half",
       "brows": null,
-      "mark": null
+      "mark": null,
+      "no_person": true,
+      "note_no_person": "canı sıkkın: kişi eki alamaz (canım sıkkın), kişi cümlelerinden dışlanır"
     },
     {
       "id": "worried",
@@ -2603,6 +2944,63 @@
       "eyes": null,
       "brows": null,
       "mark": "mark_exclaim"
+    },
+    {
+      "id": "hungry",
+      "en": "hungry",
+      "tr": "aç",
+      "mouth": "mouth_flat",
+      "eyes": null,
+      "brows": null,
+      "mark": "mark_food"
+    },
+    {
+      "id": "sick",
+      "en": "sick",
+      "tr": "hasta",
+      "mouth": "mouth_flat",
+      "eyes": "eyes_half",
+      "brows": null,
+      "mark": "mark_thermometer"
+    },
+    {
+      "id": "sleepy",
+      "en": "sleepy",
+      "tr": "uykulu",
+      "mouth": "mouth_o",
+      "eyes": "eyes_half",
+      "brows": null,
+      "mark": "mark_zzz"
+    },
+    {
+      "id": "crying",
+      "kind": "expression",
+      "en": "crying",
+      "tr": "ağlıyor",
+      "mouth": "mouth_sad",
+      "eyes": "eyes_closed",
+      "brows": "brows_worried",
+      "mark": "mark_tears"
+    },
+    {
+      "id": "laughing",
+      "kind": "expression",
+      "en": "laughing",
+      "tr": "gülüyor",
+      "mouth": "mouth_open",
+      "eyes": "eyes_closed",
+      "brows": null,
+      "mark": "mark_sparkle"
+    },
+    {
+      "id": "smiling",
+      "kind": "expression",
+      "en": "smiling",
+      "tr": "gülümsüyor",
+      "mouth": "mouth_smile",
+      "eyes": null,
+      "brows": null,
+      "mark": null
     }
   ],
   "weather": [
@@ -3001,10 +3399,73 @@
           "s": 0.7
         }
       ]
+    },
+    "marker": {
+      "dy": -34,
+      "s": 0.22
     }
   },
   "sampling": {
     "exponent": 0.62,
     "note": "weight = count(pose)^exponent / count(pose); tutma pozunun payını ~%69'dan düşürür"
-  }
+  },
+  "persons": {
+    "1s": {
+      "en": "I",
+      "tr": "Ben",
+      "marker": "marker_me",
+      "plural": false
+    },
+    "2s": {
+      "en": "You",
+      "tr": "Sen",
+      "marker": "marker_you",
+      "plural": false
+    },
+    "1p": {
+      "en": "We",
+      "tr": "Biz",
+      "marker": "marker_me",
+      "plural": true
+    },
+    "2p": {
+      "en": "You",
+      "tr": "Siz",
+      "marker": "marker_you",
+      "plural": true
+    }
+  },
+  "aorist": {
+    "en_time": "every day",
+    "tr_time": "her gün",
+    "badge": "cal_everyday"
+  },
+  "can": {
+    "badge": "badge_can",
+    "verbs": [
+      "swim",
+      "run",
+      "walk",
+      "fly",
+      "wave",
+      "cook"
+    ]
+  },
+  "expression_verbs": [
+    {
+      "id": "crying",
+      "verb": "cry",
+      "expr": "crying"
+    },
+    {
+      "id": "laughing",
+      "verb": "laugh",
+      "expr": "laughing"
+    },
+    {
+      "id": "smiling",
+      "verb": "smile",
+      "expr": "smiling"
+    }
+  ]
 }

@@ -8,12 +8,24 @@ Seviyeler: ERROR (combine --strict ile derlemeyi durdurur) ve WARN (sayılır, r
   LANG dil          — yanlış eşdeğer ("balık tutuyor"), kanıtsal -mIş durum sıfatı, biçim (boşluk,
                       büyük harf, noktalama), sıralı panelde aynı eylem
   LAY  yerleşim     — balonlu sahnede aktör yerleşimi, çift yerleşimde çakışma, rozet yığını, geniş prop
+  FACT v4 olgular   — her kayıtta `facts`; her cümlede `mentions` (boş olmayan boyutlar) ve `person`;
+                      aynı resim birleşirken olgu çelişmesi
+  PERS v4 kişi      — cümlenin kişisi ↔ zamir ↔ Türkçe kişi eki ↔ resimdeki marker (ben/sen/biz/siz)
+  HAB  v4 geniş z.  — aor* biçimi `cal_everyday` taşır ("every day"/"her gün" yalnızca onda)
+  CAN  v4 yetenek   — can* biçimi `badge_can` taşır ("can"/"can't" yalnızca onda)
 """
 import json
+import re
 from collections import defaultdict
 
-PRONOUNS_EN = {"He", "She", "They", "It"}
-PRONOUNS_TR = {"O", "Onlar"}
+PRONOUNS_EN = {"He", "She", "They", "It", "I", "You", "We"}
+PRONOUNS_TR = {"O", "Onlar", "Ben", "Sen", "Biz", "Siz"}
+FACT_KEYS = ("subject", "verb", "object", "variant", "count", "place", "time", "weather", "state", "other")
+PERSONS = {"1s", "2s", "1p", "2p", "3s", "3p"}
+PERSON_PRON = {"1s": ("i", "Ben", "marker_me"), "2s": ("you", "Sen", "marker_you"),
+               "1p": ("we", "Biz", "marker_me"), "2p": ("you", "Siz", "marker_you")}
+TR_2P = re.compile(r"(s[ıiuü]n[ıiuü]z|[dt][ıiuü]n[ıiuü]z)$")
+FACT_CONFLICTS = []   # merge_identical doldurur: aynı resim, farklı olgu
 FALSE_FRIENDS_TR = ["balık tut"]                       # balık tutmak = balık avlamak
 EVIDENTIAL_TR = ["sıkılmış", "şaşırmış"]               # durum sıfatı değil, kanıtsal kip
 TIME_WORDS = {"morning": "in the morning", "evening": "in the evening", "night": "at night"}
@@ -39,11 +51,71 @@ def merge_identical(rows):
             out.append(r)
             continue
         base = by_key[k]
+        if r.get("facts") != base.get("facts"):
+            FACT_CONFLICTS.append(f"{base['id']} <- {r['id']}")
         seen = {(s["form"], s["en"]) for s in base["sentences"]}
         base["sentences"] += [s for s in r["sentences"] if (s["form"], s["en"]) not in seen]
         base.setdefault("merged_ids", []).append(r["id"])
         merged += 1
     return out, merged
+
+
+def tr_person_ok(person, word):
+    w = word.rstrip(".?").lower()
+    if person == "1s":
+        return w.endswith("m")
+    if person == "2s":
+        return w.endswith("n")
+    if person == "2p":
+        return bool(TR_2P.search(w))
+    return w.endswith(("z", "k")) and not TR_2P.search(w)       # 1p
+
+
+def check_v4(name, rows, add):
+    for r in rows:
+        f = r.get("facts")
+        if not isinstance(f, dict) or set(f) != set(FACT_KEYS):
+            add("ERROR", "FACT-1 kayıtta facts yok/eksik", r["id"])
+            f = f or {}
+        marks = {a.get("marker") for a in r["actors"]}
+        for s in r["sentences"]:
+            en, tr, pers = s["en"], s["tr"], s.get("person")
+            ms = s.get("mentions")
+            if not isinstance(ms, list) or pers not in PERSONS:
+                add("ERROR", "FACT-2 cümlede mentions/person yok", f"{r['id']}: {en}")
+                continue
+            for d in ms:
+                if d not in FACT_KEYS or (not f.get(d) and d != "count") or (d == "count" and not f.get("count")):
+                    add("ERROR", "FACT-2 mentions olgusuz boyutu söylüyor", f"{r['id']}: {d} / {en}")
+            if "subject_ok" in s and not (isinstance(s["subject_ok"], list) and s["subject_ok"]):
+                add("ERROR", "FACT-2 subject_ok boş", f"{r['id']}: {en}")
+            # --- PERS
+            toks = {w.strip(".,?").lower() for w in en.split()}
+            if pers in PERSON_PRON:
+                p_en, p_tr, marker = PERSON_PRON[pers]
+                en_ok = bool({"i", "i'm"} & toks) if pers == "1s" else p_en in toks
+                if not en_ok or tr.split()[0] != p_tr:
+                    add("ERROR", "PERS-1 zamir kişiyle uyuşmuyor", f"{r['id']}: {en} / {tr}")
+                words = tr.rstrip(".?").split()
+                if len(words) > 1 and words[-1] in ("mı", "mi", "mu", "mü"):   # "koştum mu": kişi parçacıktan önce
+                    words = words[:-1]
+                if not tr_person_ok(pers, words[-1]):
+                    add("ERROR", "PERS-2 kişi eki özneyle uyuşmuyor", f"{r['id']}: {tr}")
+                if marks - {None} != {marker} or r["actors"][0].get("marker") != marker:
+                    add("ERROR", "PERS-3 resimde marker uyuşmuyor", f"{r['id']}: {pers} {sorted(map(str, marks))}")
+            else:
+                if tr.split()[0] in ("Ben", "Sen", "Biz", "Siz") or toks & {"i", "we", "i'm", "you"} or marks - {None}:
+                    add("ERROR", "PERS-4 üçüncü kişi cümlesinde kişi zamiri/marker", f"{r['id']}: {en}")
+            # --- HAB / CAN
+            form, bd = s["form"], s.get("badges", [])
+            hab = form.startswith("aor")
+            if hab != ("cal_everyday" in bd) or hab != ("every day" in en and "her gün" in tr):
+                add("ERROR", "HAB-1 geniş zaman rozeti/ifadesi", f"{r['id']}: {en} / {tr}")
+            can = form.startswith("can")
+            if can != ("badge_can" in bd):
+                add("ERROR", "CAN-1 yetenek rozeti", f"{r['id']}: {en} / {tr}")
+            if can != bool(re.search(r"\bcan(?:'t)?\b", en.lower())):
+                add("ERROR", "CAN-2 'can' yalnızca yetenek biçiminde", f"{r['id']}: {en}")
 
 
 def run(levels, manifest):
@@ -53,7 +125,10 @@ def run(levels, manifest):
         issues[(sev, code)].append(example)
 
     lay = manifest["layouts"]
+    for c in FACT_CONFLICTS:
+        add("ERROR", "FACT-3 aynı resim, farklı olgu", c)
     for name, rows in levels.items():
+        check_v4(name, rows, add)
         # --- AMB-1: birleştirmeden sonra aynı resim iki kayıtta kalmamalı
         keys = defaultdict(list)
         for r in rows:

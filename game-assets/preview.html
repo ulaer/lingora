@@ -72,6 +72,10 @@ async function buildActor(a) {
       root.appendChild(place(await load(BY[emo.mark].file), hx + L.dx - 128 * L.s, hy + L.dy - 128 * L.s, L.s));
     }
   }
+  if (a.marker && BY[a.marker]) {  // v4: ben/sen işareti başın üstünde
+    const [hx, hy] = pt(ch.getAttribute("data-head")) || [128, 40], L = LAY.marker || { dy: -34, s: 0.22 };
+    root.appendChild(place(await load(BY[a.marker].file), hx - 128 * L.s, hy + L.dy - 128 * L.s, L.s));
+  }
   return place(root, a.x - 128 * a.s, 230 - 230 * a.s, a.s);
 }
 

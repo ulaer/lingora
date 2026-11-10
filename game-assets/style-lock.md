@@ -104,3 +104,15 @@ Uygulama ve `tools/` bu işaretleri SVG'den okur; koordinatlar her zaman 256×25
 - Hava overlay'i aktörlerin arkasında çizilir.
 - `fill`/`stroke` grup üzerinde olabilir; çiziciler SVG mirasına uyar.
 - Her `combine.py` çalışması `tools/lint.py` kapısından geçer; kurallar dosyanın başında.
+
+---
+
+# v4 eklentileri
+
+Ayrıntı: `docs/v4-contract.md`. Stil kuralları (palet, tek kök `<g id>`, yasaklar, `data-part`/`data-head`/`data-frame`) aynen geçerli.
+
+- Yeni pozlar (insanlar: tom, mary, man, woman): `give` (1 kare, `data-hand` ≈ 196,150; alıcı sağda `stand`), `write` (1 kare, masa asset'in içinde, `data-hand` kalem ucu ≈ 150,170), `cook` (2 kare, ocak + tencere + buhar asset'in içinde).
+- Yeni overlay'ler (128,128 merkezli, ≈ 120 px): `marker_me` (sarı ok + yıldız), `marker_you` (mavi ok + el), `cal_everyday`, `badge_can` (yeşil daire + onay), `mark_food`, `mark_thermometer`.
+- Kişi işareti: `actors[].marker`, `data-head` noktasının üstüne `layouts.marker` (`dy` -34, `s` 0.22) ile çizilir; "We/You (çoğul)" sahnelerinde iki aktörde birden.
+- Yeni durumlar (`emotions`): hungry, sick, sleepy. İfade fiilleri (crying, laughing, smiling) `kind: expression` — `stand` pozu + yüz parçası, yeni SVG yok.
+
