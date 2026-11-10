@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Lingora.Core;
+using Lingora.Core.Game;
 using Lingora.Core.Gemini;
 using Lingora.Core.Journal;
 using Lingora.Core.Models;
@@ -138,6 +139,7 @@ public class DesktopUiTests
         var opened = new List<string>();
         var window = new MainWindow(s.Session, s.Gemini);
         window.Practice.AnimateResults = false;
+        window.GameLoadInBackground = false;
         window.ShowDialogHandler = dialog =>
         {
             opened.Add(dialog.Title);
@@ -668,6 +670,17 @@ public class DesktopUiTests
             Assert.True(renderer.ObjectVisibility(redOnBlue) > 0.9);
             Assert.Equal(1, renderer.ObjectVisibility(GameFixture.Scene("tom_run")));
 
+            // v6 this/that: "show" nesnesi çizilir — yakında büyük (merkez), uzakta küçük (sağ üst), "these" iki kopya.
+            Lingora.Core.Game.GameRound Show(string id) =>
+                library.Records(Lingora.Core.Game.GameLevel.A1).Where(r => r.Id == id)
+                    .Select(r => new Lingora.Core.Game.GameRound(r, r.Sentences[0])).First();
+            var red = Color.FromRgb(0xE6, 0x39, 0x46);
+            Assert.Equal(red, Pixel(Rasterize(renderer.Render(Show("show__this__apple"))), 128, 190));
+            Assert.Equal(red, Pixel(Rasterize(renderer.Render(Show("show__that__apple"))), 196, 138));
+            var these = Rasterize(renderer.Render(Show("show__this__apple__x2")));
+            Assert.NotEqual(red, Pixel(these, 128, 190));
+            Assert.True(Opaque(these, 0, 128) > 300 && Opaque(these, 128, 256) > 300);
+
             // Kayıt turları (v5): sarı elma, kadının sarı üstünde kaybolur; kırmızı elma mavi üstünde görünür.
             Lingora.Core.Game.GameRound RoundOf(string tint, string character) =>
                 library.Records(Lingora.Core.Game.GameLevel.A1)
@@ -692,6 +705,40 @@ public class DesktopUiTests
                     game.NextScene();
                 }
             }
+        });
+    }
+
+    [Fact]
+    public void GamePictureHasAccessibleNameWithoutGivingAwayTheSentenceAndTimerRunsOnlyForAnimatedScenes()
+    {
+        using var s = Create();
+        WpfHost.Run(() =>
+        {
+            var (window, _) = CreateWindow(s);
+            window.GameRandom = new Random(5);
+            window.OpenGame();
+            var game = window.Game!;
+            var renderer = new SvgScene(game.Library!);
+            var sawStatic = false;
+            foreach (var level in new[] { GameLevel.A1, GameLevel.A2, GameLevel.B1 })
+            {
+                game.SetLevel(level);
+                for (var i = 0; i < 25; i++)
+                {
+                    var name = System.Windows.Automation.AutomationProperties.GetName(game.SceneImage);
+                    Assert.StartsWith("Resim", name);
+                    Assert.DoesNotContain(game.Round!.Sentence.En, name);
+                    Assert.DoesNotContain(game.Round.Sentence.Tr, name);
+
+                    var animated = renderer.IsAnimated(game.Round);
+                    Assert.Equal(animated && SystemParameters.ClientAreaAnimation, game.AnimationRunning);
+                    sawStatic |= !animated;
+                    game.NextScene();
+                }
+            }
+
+            Assert.True(sawStatic);
+            Assert.NotEmpty(game.LevelProgressText.Text.Length == 0 ? "-" : game.LevelProgressText.Text);
         });
     }
 
@@ -751,7 +798,7 @@ public class DesktopUiTests
             Assert.NotNull(window.Game!.Round);
             Assert.NotNull(window.Game.SceneImage.Source);
             Assert.True(window.Game.LegendVisible);
-            Assert.Contains("dün", window.Game.LegendText.Text);
+            Assert.Equal(GameLibrary.BadgeLegend.Count, window.Game.LegendPanel.Children.Count);
             window.Game.SetLegendVisible(false);
             Assert.False(window.Game.LegendVisible);
         });

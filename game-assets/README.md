@@ -85,6 +85,16 @@ cümleye özeldir: oyun hangi cümleyi soruyorsa onun rozetlerini gösterir.
 - Dil: "ile" nesnesi `tr_ins` ("Tom adamla konuşuyor."), 1. kişi (1s/1p) soru biçimleri üretilmez, "aç" 1p geçmişi ("açtık") yok.
 - `preview.html`: işaret yerleşimi (üst kenar < 4 ise başın yanı), `badge_not` varsa inkâr edilen şeyin üstüne çarpı, rozet/işaret açıklama satırı.
 
+### v6 (bkz. `docs/v6-contract.md`)
+
+- Rozet/işaret overlay'lerine arka disk: `python tools/add_rims.py` (tekrar çalıştırılabilir; şekiller değişmez).
+- Geniş zaman yalnızca alışkanlık fiillerinde (`manifest.aorist.verbs`); kişi zamirli Türkçe cümlede `tr_alt` (zamirsiz biçim).
+- Yeni biçimler: `this`/`that` (A1, kayıtta `show` + `layouts.show_near|show_far`, `facts.distance`), `poss` (A2, `facts.owner`:
+  `1s|2s|karakter`, `tr_poss`/`tr_gen`), nesne zamirleri (A2, `facts.receiver_person`, alıcıda marker), `imp`/`imp_neg` (A2,
+  marker_you + `mark_exclaim` [+ `badge_not`]), `wh_what|wh_where|wh_who` (B1, `badge_question`, `answer` {en,tr}; `mentions`
+  sorulan boyutu içermez). Kendi-cümlesi kapısı bunları da sınar (wh cevabı resmin olgusu, emir kişisi 2s/marker_you).
+- `this/that` kayıtları `scenes.json`'a girmez (resim `actors` yerine `show` ile).
+
 ## Kompozisyon kuralları
 
 - Aktör: `translate(x - 128*s, 230 - 230*s) scale(s)`; elindeki nesne aktörün içinde

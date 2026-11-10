@@ -72,6 +72,7 @@ game-assets/                Dil oyunu için flat SVG kütüphanesi: style-lock.m
                             game-assets\ olarak kopyalanır; Core/Game okur, Desktop/SvgScene çizer, Pages/GamePage oynatır.
                             Core/Game: GameLibrary (scenes.json + scenes/A1|A2|B1.jsonl, ağırlıklı seçim), GameRecords (v2+ kayıt,
                             facts/mentions), ChoiceBuilder (çeldirici resim için yanlış olmalı: facts doğruluk kuralı).
+                            GameProgress: cevap kaydı (game-log.jsonl), kaçırılanı yeniden sorma, seviye önerisi.
                             SvgScene: yerleşim, ifade, balon, rozet, işaret, gökyüzü/hava, panel; kare + durum animasyonu.
 uygulama/                   Yayınlanmış exe (git dışı)
 ```

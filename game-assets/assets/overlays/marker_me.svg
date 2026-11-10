@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
 <g id="marker_me">
+<circle cx="128" cy="128" r="74" fill="#F1FAEE" stroke="#2B2D42" stroke-width="6"/>
 <polygon points="128,24 134,38 150,38 137,47 142,62 128,53 114,62 119,47 106,38 122,38" fill="#F4A261"/>
 <rect x="112" y="72" width="32" height="64" rx="4" fill="#E9C46A"/>
 <polygon points="84,128 172,128 128,196" fill="#E9C46A"/>

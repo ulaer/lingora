@@ -101,6 +101,14 @@ async function buildPanel(r, sentence) {
     parts.push(bg);
   }
   if (r.sky_overlay) { const L = LAY.sky_overlay; parts.push(place(await load(BY[r.sky_overlay].file), L.x, L.y, L.s)); }
+  if (r.show) {  // v6 this/that: show_near (yakın, büyük) / show_far (uzakta, küçük); nesne tek başına
+    const L = LAY[r.layout].obj, n = r.show.n || 1;
+    for (let i = 0; i < n; i++) {
+      const o = await load(BY[r.show.obj].file);
+      if (r.show.tint) o.querySelectorAll('[data-tint="primary"]').forEach(e => e.setAttribute("fill", r.show.tint));
+      parts.push(place(o, L.x - 128 * L.s + (i - (n - 1) / 2) * 256 * L.s * 0.7, L.y - 230 * L.s, L.s));
+    }
+  }
   if (r.prop) {
     const L = LAY.prop.prop, ps = r.prop.s || L.s, p = await load(BY[r.prop.obj].file);
     if (r.prop.states) p.dataset.states = r.prop.states.join(",");
@@ -164,7 +172,8 @@ setInterval(() => {
   const out = document.getElementById("out");
   // v5 §1: rozet / işaret açıklaması (Türkçe etiketler)
   const LEGEND = [["cal_yesterday", "dün"], ["cal_tomorrow", "yarın"], ["badge_not", "değil"], ["badge_question", "soru"],
-                  ["cal_everyday", "her gün"], ["badge_can", "-ebilir"], ["marker_me", "ben"], ["marker_you", "sen"]];
+                  ["cal_everyday", "her gün"], ["badge_can", "-ebilir"], ["marker_me", "ben"], ["marker_you", "sen"],
+                  ["mark_exclaim", "emir"]];
   for (const [id, label] of LEGEND) {
     if (BY[id]) document.getElementById("legend").appendChild(tile([svg([await load(BY[id].file)])], esc(label)));
   }
@@ -193,7 +202,8 @@ setInterval(() => {
       const svgs = r.layout === "panels"
         ? await Promise.all(r.panels.map(p => buildPanel({ ...p, bg: r.bg }, null)))
         : [await buildPanel(r, s)];
-      grid.appendChild(tile(svgs, `<b>${esc(s.en)}</b><br>${esc(s.tr)}`, r.layout === "panels"));
+      const ans = s.answer ? `<br><i>→ ${esc(s.answer.en)} / ${esc(s.answer.tr)}</i>` : "";   // v6 wh cevabı
+      grid.appendChild(tile(svgs, `<b>${esc(s.en)}</b><br>${esc(s.tr)}${ans}`, r.layout === "panels"));
     }
   }
   document.body.dataset.ready = "1";

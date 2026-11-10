@@ -35,7 +35,14 @@ public sealed record GameActor(string Char, double X, double Scale, string? Expr
 public sealed record GameBubble(string Type, string? ContentChar, string? ContentObj);
 
 /// <summary>Durumlu sahne nesnesi (lamba, TV, kapı); States sırayla oynatılır.</summary>
-public sealed record GameProp(string Obj, IReadOnlyList<string> States, double? Scale);
+public sealed record GameProp(string Obj, IReadOnlyList<string> States, double? Scale)
+{
+    /// <summary>v6 "show" (this/that): nesnenin rengi (data-tint="primary").</summary>
+    public string? Tint { get; init; }
+
+    /// <summary>v6 "show": adet (these/those için 2-3).</summary>
+    public int Count { get; init; } = 1;
+}
 
 /// <summary>Bir görsel katmanın ortak alanları (kayıt ya da panel).</summary>
 public interface IGameVisual
@@ -130,6 +137,12 @@ public sealed class GameFacts
     }
 }
 
+/// <summary>wh-sorusunun cevabı ("An apple." / "Bir elma.").</summary>
+public sealed record GameAnswer(string En, string Tr)
+{
+    public string Text(TranslationDirection direction) => direction == TranslationDirection.TurkishToEnglish ? En : Tr;
+}
+
 /// <summary>Bir kayıttaki cümle (kabul kümesinin üyesi).</summary>
 public sealed record GameSentence(
     string Form,
@@ -143,6 +156,12 @@ public sealed record GameSentence(
 {
     /// <summary>"other": cümlenin öznesi resmin facts.other'ıdır, nesnesi facts.subject ("Mary is listening to Tom").</summary>
     public string? Role { get; init; }
+
+    /// <summary>wh-sorusunda cevap (soru cümlenin kendisidir); diğerlerinde null.</summary>
+    public GameAnswer? Answer { get; init; }
+
+    /// <summary>Zamirsiz Türkçe kabul biçimleri ("Ben koşuyorum." → "Koşuyorum.").</summary>
+    public IReadOnlyList<string> TrAlt { get; init; } = [];
 
     public string Text(TranslationDirection direction) =>
         direction == TranslationDirection.TurkishToEnglish ? En : Tr;
@@ -190,6 +209,10 @@ public sealed record GameRecord(
                     Str(s, "person"))
                 {
                     Role = Str(s, "role"),
+                    TrAlt = Strings(s, "tr_alt"),
+                    Answer = s.TryGetProperty("answer", out var ans) && ans.ValueKind == JsonValueKind.Object
+                        ? new GameAnswer(Str(ans, "en") ?? string.Empty, Str(ans, "tr") ?? string.Empty)
+                        : null,
                 });
             }
         }
@@ -284,6 +307,16 @@ public sealed record GameRecord(
     {
         if (!e.TryGetProperty("prop", out var p) || p.ValueKind != JsonValueKind.Object)
         {
+            // v6 this/that kayıtları nesneyi "show" alanında taşır: {obj, tint, n}.
+            if (e.TryGetProperty("show", out var show) && show.ValueKind == JsonValueKind.Object)
+            {
+                return new GameProp(Str(show, "obj") ?? string.Empty, Array.Empty<string>(), null)
+                {
+                    Tint = Str(show, "tint"),
+                    Count = show.TryGetProperty("n", out var n) && n.ValueKind == JsonValueKind.Number ? n.GetInt32() : 1,
+                };
+            }
+
             return null;
         }
 

@@ -99,6 +99,7 @@ public sealed class PracticeSession
             Warnings.Add($"Sözlük dosyası bozuktu; boş sözlükle başlandı. Yedek: {vocabularyBackup}");
         }
 
+        GameLog = new GameProgress(paths, _time);
         Journal = new JournalStore(paths.JournalDirectory, paths.LessonsDirectory, _time.LocalTimeZone);
         Lessons = new LessonStore(paths.LessonsDirectory);
         AudioLessons = new AudioLessonStore(paths.LessonsDirectory);
@@ -111,6 +112,9 @@ public sealed class PracticeSession
 
     /// <summary>Günlük: her günün hataları, ipuçları ve istenen açıklamaları.</summary>
     public JournalStore Journal { get; }
+
+    /// <summary>Oyun cevap günlüğü, yeniden sorma kuyruğu ve seviye ilerlemesi.</summary>
+    public GameProgress GameLog { get; }
 
     /// <summary>AI ile bir kez üretilip saklanan günlük ders notları.</summary>
     public LessonStore Lessons { get; }
@@ -603,8 +607,21 @@ public sealed class PracticeSession
     public PracticeItem SceneItem(GameLibrary library, GameRound round)
     {
         var direction = Settings.GameDirection;
+        var facts = library.DescribeFacts(round, direction);
+        if (round.Sentence.Answer is { } answer)
+        {
+            // wh-sorusu: kaynak = soru, referans = kısa cevap.
+            return new PracticeItem(direction, "Resim sorusu: " + round.Text(direction), [answer.Text(direction)], -1, facts);
+        }
+
         var sourceSentence = round.Text(direction == TranslationDirection.TurkishToEnglish ? TranslationDirection.EnglishToTurkish : TranslationDirection.TurkishToEnglish);
-        return new PracticeItem(direction, "Resim: " + sourceSentence, [round.Text(direction)], -1, library.DescribeFacts(round, direction));
+        var references = new List<string> { round.Text(direction) };
+        if (direction == TranslationDirection.EnglishToTurkish)
+        {
+            references.AddRange(round.Sentence.TrAlt);
+        }
+
+        return new PracticeItem(direction, "Resim: " + sourceSentence, references, -1, facts);
     }
 
     /// <summary>Oyunda resmin anlatılacağı dil (TurkishToEnglish = İngilizce yaz). Kalıcıdır.</summary>

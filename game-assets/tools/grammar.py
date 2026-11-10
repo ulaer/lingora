@@ -268,9 +268,71 @@ def weather_clause(form, w, place=None):
     return sentence(en, q), sentence(tr, q)
 
 
+def upper_tr(text):
+    """Türkçe baş harf büyütme (i -> İ, ı -> I)."""
+    if not text:
+        return text
+    return {"i": "İ", "ı": "I"}.get(text[0], text[0].upper()) + text[1:]
+
+
+def answer(en, tr):
+    """wh-sorusunun cevabı: 'An apple.' / 'Bir elma.'"""
+    return {"en": en[0].upper() + en[1:] + ".", "tr": upper_tr(tr) + "."}
+
+
+def demo_clause(kind, plural, np_en, np_tr):
+    """this/that/these/those: 'This is a ball.' / 'Bu bir top.', 'Those are apples.' / 'Şunlar elma.'"""
+    near = kind == "this"
+    if plural:
+        en = ("These" if near else "Those") + " are " + np_en
+        tr = ("Bunlar" if near else "Şunlar") + " " + np_tr
+    else:
+        en = ("This" if near else "That") + " is " + np_en
+        tr = ("Bu" if near else "Şu") + " " + np_tr
+    return en + ".", tr + "."
+
+
+def poss_clause(en_owner, tr_owner, obj_en, obj_tr_poss):
+    """'This is my book.' / 'Bu benim kitabım.'  /  'This is Tom's ball.' / 'Bu Tom'un topu.'"""
+    return f"This is {en_owner} {obj_en}.", f"Bu {tr_owner} {obj_tr_poss}."
+
+
+def imperative_clause(form, verb, obj_en="", obj_tr="", place=None):
+    """'Read a book!' / 'Bir kitap oku!'  olumsuz: 'Don't run!' / 'Koşma!'  (2. tekil)"""
+    p_en, p_tr = place if place else ("", "")
+    neg = form.endswith("_neg")
+    base = verb["en"]["base"]
+    en = join("Don't " + base if neg else base[0].upper() + base[1:], verb["en"].get("prep", ""), obj_en, p_en)
+    tr = join(p_tr, obj_tr, verb["tr"]["imp_neg" if neg else "imp"])
+    return en[0].upper() + en[1:] + "!", upper_tr(tr) + "!"
+
+
+def wh_clause(kind, subj, verb, obj_en="", obj_tr="", place=None):
+    """wh-soruları (prog): what -> 'What is Tom eating?' / 'Tom ne yiyor?',
+    where -> 'Where is Mary reading a book?' / 'Mary nerede bir kitap okuyor?',
+    who -> 'Who is swimming?' / 'Kim yüzüyor?'.  place: yalnızca kind != where için cümleye girer."""
+    p_en, p_tr = place if (place and kind != "where") else ("", "")
+    ing, v_tr = verb["en"]["ing"], verb["tr"]["prog"]
+    if kind == "what":
+        en = join("What is", lower_subject(subj),
+                  ing, p_en)
+        tr = join(subj["tr"], p_tr, "ne", v_tr)
+    elif kind == "where":
+        en = join("Where is", lower_subject(subj), ing, obj_en)
+        tr = join(subj["tr"], "nerede", obj_tr, v_tr)
+    else:
+        en = join("Who is", ing, obj_en, p_en)
+        tr = join("Kim", p_tr, obj_tr, v_tr)
+    return sentence(en, True), sentence(tr, True)
+
+
 def badges_for(form):
     out = []
     base = form.split("_")[0]
+    if base == "imp":
+        out.append("mark_exclaim")
+    if base == "wh":
+        out.append("badge_question")
     if base == "past":
         out.append("cal_yesterday")
     if base == "fut":

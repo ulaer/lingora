@@ -124,3 +124,10 @@ Ayrıntı: `docs/v4-contract.md`. Stil kuralları (palet, tek kök `<g id>`, yas
 - Ben/sen işareti: başın üstü; tuvaldeki üst kenarı < 4 ise `data-head` + (52, 24).
 - `badge_not` sorulan cümlede varsa inkâr edilen şeyin üstüne ölçek 0.12 çarpı olarak da çizilir (tutma noktası ya da `data-head` + (0, 70)).
 
+---
+
+# v6 eklentileri
+
+- `badge_*`, `cal_*`, `marker_*` overlay'lerinin ilk çocuğu arka disktir (`r=74`, kâğıt dolgu, mürekkep kenar 6); şekiller değişmez.
+- `show_near`: nesne x=128, taban y=230, s=0.6; `show_far`: x=196, taban y=150, s=0.22 (yeni SVG yok).
+

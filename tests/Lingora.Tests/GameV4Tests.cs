@@ -100,7 +100,34 @@ public class GameLevelCoreTests
             var question = ChoiceBuilder.Build(library, round, TranslationDirection.TurkishToEnglish, random);
             Assert.Equal(4, question.Options.Count);
             Assert.Equal(4, question.Options.Distinct(StringComparer.OrdinalIgnoreCase).Count());
-            Assert.Equal(round.Sentence.En, question.Correct);
+            Assert.Equal(round.Sentence.Answer?.En ?? round.Sentence.En, question.Correct);
+        }
+    }
+
+    [Fact]
+    public void WhAnswerDistractorsAreWrongValuesEvenWhenTheirQuestionIsTheSame()
+    {
+        var library = GameFixture.Library;
+        var random = new Random(4);
+        var whRounds = library.Records(GameLevel.B1)
+            .SelectMany(r => r.Sentences.Where(s => s.Answer is not null).Select(s => new GameRound(r, s)))
+            .ToList();
+        Assert.NotEmpty(whRounds);
+        foreach (var round in whRounds.OrderBy(_ => random.Next()).Take(60))
+        {
+            var question = ChoiceBuilder.Build(library, round, TranslationDirection.TurkishToEnglish, random);
+            Assert.Equal(4, question.Options.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+            Assert.Equal(round.Sentence.Answer!.En, question.Correct);
+            foreach (var (text, source) in question.Options.Zip(question.OptionSources!))
+            {
+                if (source is null)
+                {
+                    continue;
+                }
+
+                var other = library.Records(GameLevel.B1).Single(r => r.Id == source);
+                Assert.False(ChoiceBuilder.AnswerIsTrueFor(round.Record, other, round.Sentence.Form, library.PlaceParents), $"{round.Record.Id}: {text}");
+            }
         }
     }
 
@@ -354,6 +381,154 @@ public class GameV5TruthRuleTests
         var round = library.PickRound(GameLevel.A1, new Random(4));
         Assert.Null(round.Legacy);
         Assert.Contains(round.Sentence, round.Record.Sentences);
+    }
+}
+
+
+public class GameV6Tests
+{
+    private static GameRound RoundOf(string id, GameLevel level = GameLevel.A2) =>
+        new(new GameRecord(id, level, "single", null, null, null, null, null, [], null, null, [], null, []),
+            new GameSentence("prog", "Tom", "x", "y", [], [], [], null));
+
+    private static GameProgress Create(TempDir dir) =>
+        new(new AppPaths(dir.Path), new FixedTimeProvider(FixedTimeProvider.Local(2026, 11, 8, 10)));
+
+    [Fact]
+    public void EveryAnswerWritesOneLogLine()
+    {
+        using var dir = new TempDir();
+        var progress = Create(dir);
+
+        progress.Record(RoundOf("tom_run"), "choose", false, "mary_run", new Random(1));
+        progress.Record(RoundOf("tom_run"), "describe", true, null, new Random(1));
+
+        var lines = File.ReadAllLines(new AppPaths(dir.Path).GameLogFile);
+        Assert.Equal(2, lines.Length);
+        Assert.Contains("\"recordId\":\"tom_run\"", lines[0]);
+        Assert.Contains("\"mode\":\"choose\"", lines[0]);
+        Assert.Contains("\"distractorId\":\"mary_run\"", lines[0]);
+        Assert.Equal(2, Create(dir).Log().Count);
+    }
+
+    [Fact]
+    public void MissedPictureReturnsAfterThreeToFiveRoundsAndLeavesAfterTwoCorrect()
+    {
+        using var dir = new TempDir();
+        for (var seed = 0; seed < 10; seed++)
+        {
+            var progress = Create(dir);
+            progress.State.Items.Clear();
+            var random = new Random(seed);
+            var round = RoundOf("tom_run");
+            progress.Record(round, "choose", false, null, random);
+
+            var waited = 0;
+            while (progress.DueRecordId(GameLevel.A2) is null)
+            {
+                progress.Advance();
+                waited++;
+            }
+
+            Assert.InRange(waited, 3, 5);
+            progress.Record(round, "choose", true, null, random);
+            Assert.Single(progress.State.Items); // bir doğru yetmez, tekrar gelir
+            Assert.Null(progress.DueRecordId(GameLevel.A2));
+
+            while (progress.DueRecordId(GameLevel.A2) is null)
+            {
+                progress.Advance();
+            }
+
+            progress.Record(round, "choose", true, null, random);
+            Assert.Empty(progress.State.Items);
+        }
+    }
+
+    [Fact]
+    public void ReviewQueueSurvivesRestart()
+    {
+        using var dir = new TempDir();
+        Create(dir).Record(RoundOf("tom_run"), "choose", false, null, new Random(1));
+
+        var reopened = Create(dir);
+
+        Assert.Equal("tom_run", Assert.Single(reopened.State.Items).Id);
+    }
+
+    [Fact]
+    public void NextLevelIsSuggestedWhenEightyPercentOfLastTwentyAreCorrect()
+    {
+        using var dir = new TempDir();
+        var progress = Create(dir);
+        var random = new Random(1);
+        for (var i = 0; i < 20; i++)
+        {
+            progress.Record(RoundOf("r" + i, GameLevel.A1), "choose", i >= 4, null, random); // 16/20
+        }
+
+        Assert.Equal(GameLevel.A2, progress.SuggestedLevel(GameLevel.A1));
+        Assert.Contains("A2 seviyesini deneyebilirsin", progress.Summary(GameLevel.A1));
+        Assert.Equal((16, 20), progress.Accuracy(GameLevel.A1));
+        Assert.Null(progress.SuggestedLevel(GameLevel.A2));
+
+        for (var i = 0; i < 5; i++)
+        {
+            progress.Record(RoundOf("x" + i, GameLevel.A1), "choose", false, null, random); // son 20: 15 doğru
+        }
+
+        Assert.Null(progress.SuggestedLevel(GameLevel.A1));
+    }
+
+    [Fact]
+    public void WhChooseRoundOffersAnswersWithOneCorrect()
+    {
+        object Wh(string subject, string q, string qTr, string a, string aTr) =>
+            MiniGameDir.Sentence(subject, q, qTr, ["subject", "verb"], null, "wh_what") is var s
+                ? new { form = "wh_what", subject, en = q, tr = qTr, badges = new[] { "badge_question" }, mentions = new[] { "subject", "verb" }, subject_ok = new[] { subject.ToLowerInvariant() }, answer = new { en = a, tr = aTr } }
+                : s;
+        var records = new[]
+        {
+            MiniGameDir.Record("tom_eat", "tom_eat", null, MiniGameDir.Facts("tom", "eat", null), Wh("Tom", "What is Tom eating?", "Tom ne yiyor?", "An apple.", "Bir elma.")),
+            MiniGameDir.Record("mary_eat", "mary_eat", null, MiniGameDir.Facts("mary", "eat", null), Wh("Mary", "What is Mary eating?", "Mary ne yiyor?", "A banana.", "Bir muz.")),
+            MiniGameDir.Record("man_eat", "man_eat", null, MiniGameDir.Facts("man", "eat", null), Wh("Man", "What is the man eating?", "Adam ne yiyor?", "Bread.", "Ekmek.")),
+            MiniGameDir.Record("woman_eat", "woman_eat", null, MiniGameDir.Facts("woman", "eat", null), Wh("Woman", "What is the woman eating?", "Kadın ne yiyor?", "Soup.", "Çorba.")),
+        };
+        using var mini = new MiniGameDir("B1", records.Select(r => r));
+        var library = mini.Load();
+        var first = library.Records(GameLevel.B1)[0];
+        var round = new GameRound(first, first.Sentences[0]);
+
+        var q = ChoiceBuilder.Build(library, round, TranslationDirection.TurkishToEnglish, new Random(2));
+
+        Assert.Equal("What is Tom eating?", q.Prompt);
+        Assert.Equal("An apple.", q.Correct);
+        Assert.Equal(4, q.Options.Count);
+        Assert.Single(q.Options, o => o == "An apple.");
+        Assert.DoesNotContain(q.Options, o => o.Contains('?'));
+        Assert.Contains("Bread.", q.Options);
+        Assert.Equal(q.Options.Count, q.OptionSources!.Count);
+        Assert.Null(q.OptionSources[q.CorrectIndex]);
+    }
+
+    [Fact]
+    public void DescribeItemUsesAnswerForWhAndAddsPronounlessTurkishForms()
+    {
+        using var dir = new TempDir();
+        var session = new PracticeSession(new AppPaths(dir.Path), new FakeEvaluator(), new FixedTimeProvider(FixedTimeProvider.Local(2026, 11, 8, 10)), new ApiKeyStore(_ => null));
+        var library = GameFixture.Library;
+        var record = library.Records(GameLevel.A1)[0];
+        var wh = new GameSentence("wh_what", "Tom", "What is Tom eating?", "Tom ne yiyor?", ["badge_question"], [], [], null) { Answer = new GameAnswer("An apple.", "Bir elma.") };
+        var item = session.SceneItem(library, new GameRound(record, wh));
+        Assert.Equal("An apple.", Assert.Single(item.References));
+        Assert.Contains("What is Tom eating?", item.Source);
+        Assert.Contains("doğru cevap: An apple.", item.ImageFacts);
+
+        session.SetGameDirection(TranslationDirection.EnglishToTurkish);
+        var pronoun = new GameSentence("prog", "I", "I am running.", "Ben koşuyorum.", [], [], [], "1s") { TrAlt = ["Koşuyorum."] };
+        var turkish = session.SceneItem(library, new GameRound(record, pronoun));
+        Assert.Equal(["Ben koşuyorum.", "Koşuyorum."], turkish.References);
+        Assert.Contains("Koşuyorum.", turkish.ImageFacts);
     }
 }
 

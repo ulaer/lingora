@@ -50,7 +50,7 @@ public partial class GamePage : UserControl
         }
 
         _animation.Tick += (_, _) => AdvanceFrame();
-        Loaded += (_, _) => _animation.Start();
+        Loaded += (_, _) => UpdateAnimation();
         Unloaded += (_, _) => _animation.Stop();
 
         foreach (var (button, level) in LevelButtons())
@@ -71,12 +71,27 @@ public partial class GamePage : UserControl
     }
 
     /// <summary>Rozet/işaret açıklaması görünür mü (düğmeyle açılıp kapanır).</summary>
-    internal bool LegendVisible => LegendText.Visibility == Visibility.Visible;
+    internal bool LegendVisible => LegendPanel.Visibility == Visibility.Visible;
 
+    /// <summary>Açıklama satırları: küçük simge + Türkçe etiket (simge asset'in kendisi).</summary>
     internal void SetLegendVisible(bool visible)
     {
-        LegendText.Text = string.Join(" · ", GameLibrary.BadgeLegend.Select(b => $"{b.Label}: {b.Meaning}"));
-        LegendText.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        if (LegendPanel.Children.Count == 0 && _renderer is not null)
+        {
+            foreach (var (id, label, meaning) in GameLibrary.BadgeLegend)
+            {
+                var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 12, 4), ToolTip = meaning };
+                if (_library!.Assets.ContainsKey(id))
+                {
+                    item.Children.Add(new Image { Source = _renderer.RenderAsset(id), Width = 20, Height = 20, Margin = new Thickness(0, 0, 4, 0) });
+                }
+
+                item.Children.Add(new TextBlock { Text = label, FontSize = 12, Foreground = Ui.Brush("TextMutedBrush"), VerticalAlignment = VerticalAlignment.Center });
+                LegendPanel.Children.Add(item);
+            }
+        }
+
+        LegendPanel.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         LegendToggle.Content = visible ? "Rozet açıklaması ▴" : "Rozet açıklaması ▾";
     }
 
@@ -131,6 +146,21 @@ public partial class GamePage : UserControl
 
         var level = LevelButtons().FirstOrDefault(x => ReferenceEquals(x.Button, sender)).Level;
         SetLevel(level);
+    }
+
+    /// <summary>Zamanlayıcı çalışıyor mu (yalnızca kare/durum içeren sahnede ve sistem animasyonu açıksa).</summary>
+    internal bool AnimationRunning => _animation.IsEnabled;
+
+    private void UpdateAnimation()
+    {
+        if (_renderer is not null && Round is not null && SystemParameters.ClientAreaAnimation && _renderer.IsAnimated(Round))
+        {
+            _animation.Start();
+        }
+        else
+        {
+            _animation.Stop();
+        }
     }
 
     /// <summary>Animasyonu bir adım ilerletir ve sahneyi yeniden çizer (zamanlayıcı ~300 ms'de çağırır).</summary>
@@ -221,7 +251,7 @@ public partial class GamePage : UserControl
             return;
         }
 
-        if (IsChooseMode && Question is not null && Question.Options[Question.CorrectIndex] != Round.Text(Direction))
+        if (IsChooseMode && Question is not null && Question.Direction != Direction)
         {
             NextScene();
             return;
@@ -271,10 +301,14 @@ public partial class GamePage : UserControl
     /// <summary>Seviyeden tur seçer; A1'de nesnesi arkasındaki renge karışan sahneler atlanır.</summary>
     private GameRound PickVisibleRound()
     {
-        var round = _library!.PickRound(Level, _random);
+        _session.GameLog.Advance();
+        var due = _session.GameLog.DueRecordId(Level) is { } id ? _library!.FindRecord(Level, id) : null;
+        var round = due is null
+            ? _library!.PickRound(Level, _random)
+            : new GameRound(due, due.Sentences[_random.Next(due.Sentences.Count)]);
         for (var attempt = 0; attempt < 25 && _renderer!.ObjectVisibility(round) < MinObjectVisibility; attempt++)
         {
-            round = _library.PickRound(Level, _random);
+            round = _library!.PickRound(Level, _random);
         }
 
         return round;
@@ -289,6 +323,8 @@ public partial class GamePage : UserControl
         SceneFrame.Width = panels ? 560 : 340;
         SceneFrame.Height = panels ? 560 * 256 / width : 340;
         SceneImage.Source = _renderer!.Render(Round, 0);
+        System.Windows.Automation.AutomationProperties.SetName(SceneImage, _library!.AltText(Round));
+        UpdateAnimation();
     }
 
     internal void FocusInput()
@@ -309,11 +345,23 @@ public partial class GamePage : UserControl
             HintText.Text += " · rozetler: " + string.Join(", ", Round.Sentence.Badges.Select(GameLibrary.BadgeText));
         }
 
-        DescribeCaption.Text = $"RESMİ {TargetUpper} BİR CÜMLEYLE ANLAT";
-        Placeholder.Text = Direction == TranslationDirection.TurkishToEnglish
-            ? "Resimde ne oluyor? İngilizce yaz…"
-            : "Resimde ne oluyor? Türkçe yaz…";
-        ChooseCaption.Text = $"RESMİ ANLATAN DOĞRU {TargetUpper} CÜMLE HANGİSİ?";
+        if (Round.Sentence.Answer is not null)
+        {
+            // wh-sorusu: soru hedef dilde gösterilir, öğrenci kısa cevap verir / cevabı seçer.
+            DescribeCaption.Text = $"SORUYU {TargetUpper} CEVAPLA: {Round.Text(Direction)}";
+            Placeholder.Text = $"Resme bakarak cevapla ({Direction.TargetLanguage()})…";
+            ChooseCaption.Text = $"{Round.Text(Direction)}  (DOĞRU CEVAP HANGİSİ?)";
+        }
+        else
+        {
+            DescribeCaption.Text = $"RESMİ {TargetUpper} BİR CÜMLEYLE ANLAT";
+            Placeholder.Text = Direction == TranslationDirection.TurkishToEnglish
+                ? "Resimde ne oluyor? İngilizce yaz…"
+                : "Resimde ne oluyor? Türkçe yaz…";
+            ChooseCaption.Text = $"RESMİ ANLATAN DOĞRU {TargetUpper} CÜMLE HANGİSİ?";
+        }
+
+        LevelProgressText.Text = _session.GameLog.Summary(Level);
         Placeholder.Visibility = InputBox.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -385,6 +433,7 @@ public partial class GamePage : UserControl
                 _correct++;
             }
 
+            _session.GameLog.Record(Round, "describe", evaluation.IsCorrect == true, null, _random);
             UpdateScore();
             ShowEvaluation(text, evaluation, outcome.Words);
             _showingResult = true;
@@ -444,7 +493,7 @@ public partial class GamePage : UserControl
             }
         }
 
-        AddField("Örnek cümle", Round!.Text(Direction), Ui.Brush("TextMutedBrush"));
+        AddField(Round!.Sentence.Answer is null ? "Örnek cümle" : "Örnek cevap", Round.Sentence.Answer?.Text(Direction) ?? Round.Text(Direction), Ui.Brush("TextMutedBrush"));
         if (words is { Total: > 0 })
         {
             AddField("Sözlük", PracticePage.VocabularyNote(words), Ui.Brush("TextMutedBrush"));
@@ -521,6 +570,7 @@ public partial class GamePage : UserControl
 
         var correct = index == Question.CorrectIndex;
         _session.RecordChoice(Question, index);
+        _session.GameLog.Record(Round!, "choose", correct, correct ? null : Question.OptionSources?[index], _random);
         _played++;
         if (correct)
         {

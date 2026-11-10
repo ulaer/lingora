@@ -48,7 +48,9 @@ public sealed record GameLayouts(
     GamePlacement Prop,
     GamePlacement Bubble,
     GamePlacement PairBubble,
-    GamePlacement BubbleContent)
+    GamePlacement BubbleContent,
+    GamePlacement ShowNear,
+    GamePlacement ShowFar)
 {
     public static GameLayouts Default { get; } = new(
         new GamePlacement(36, 6, 0.32),
@@ -58,7 +60,9 @@ public sealed record GameLayouts(
         new GamePlacement(196, 0, 0.55),
         new GamePlacement(136, 0, 0.46),
         new GamePlacement(30, 0, 0.4),
-        new GamePlacement(194, 58, 0.2));
+        new GamePlacement(194, 58, 0.2),
+        new GamePlacement(128, 230, 0.6),
+        new GamePlacement(196, 150, 0.22));
 
     /// <summary>İşaret (duygu) yerleşimi: Dx/Dy = baş noktasına göre kayma.</summary>
     public static GameLayouts Parse(JsonElement root)
@@ -93,7 +97,9 @@ public sealed record GameLayouts(
             P(Sub("prop", "prop"), d.Prop),
             P(Sub("bubble", "bubble"), d.Bubble),
             P(Sub("pair_bubble", "bubble"), d.PairBubble),
-            P(Sub("bubble", "content"), d.BubbleContent));
+            P(Sub("bubble", "content"), d.BubbleContent),
+            P(Sub("show_near", "obj") ?? Get(l, "show_near"), d.ShowNear),
+            P(Sub("show_far", "obj") ?? Get(l, "show_far"), d.ShowFar));
     }
 }
 
@@ -179,6 +185,64 @@ public sealed class GameLibrary
 
     private readonly Dictionary<GameLevel, Lazy<IReadOnlyList<GameRecord>>> _records = new();
     private readonly Dictionary<GameLevel, double[]> _recordCumulative = new();
+
+    /// <summary>Tüm seviyelerin kayıtlarını okur (arka plan iş parçacığında çağrılır; UI donmaz).</summary>
+    public void Preload()
+    {
+        foreach (var level in Enum.GetValues<GameLevel>())
+        {
+            _ = Records(level).Count;
+        }
+    }
+
+    /// <summary>Kimliğe göre kayıt (kaçırılan resmi yeniden sormak için).</summary>
+    public GameRecord? FindRecord(GameLevel level, string id) => Records(level).FirstOrDefault(r => r.Id == id);
+
+    /// <summary>
+    /// Ekran okuyucu için resmin Türkçe tarifi (olgulardan; cevabı cümle olarak vermez, wh-sorularında hiçbir şey ele vermez).
+    /// </summary>
+    public string AltText(GameRound round)
+    {
+        if (round.Sentence.Answer is not null)
+        {
+            return "Resim: bir sahne. Soruyu resme bakarak cevapla.";
+        }
+
+        var f = ChoiceBuilder.EffectiveFacts(round.Record);
+        var parts = new List<string>();
+        var who = f.Subject;
+        if (who is not null && Assets.TryGetValue(who, out var wa) && wa.Character is { } ch)
+        {
+            who = ch;
+        }
+
+        if (who is not null)
+        {
+            parts.Add(Characters.TryGetValue(who, out var c) ? c.Tr : who);
+        }
+
+        var firstChar = round.Record.Actors.FirstOrDefault()?.Char;
+        if (f.Verb is { } verb && Verbs.TryGetValue(verb, out var vl))
+        {
+            parts.Add(vl.Tr);
+        }
+        else if (firstChar is not null && Assets.TryGetValue(firstChar, out var pa) && pa.Pose is { } pose && Poses.TryGetValue(pose, out var pv))
+        {
+            parts.Add(pv.VerbTr);
+        }
+
+        if (f.Object is { } obj && Assets.TryGetValue(obj, out var oa))
+        {
+            parts.Add(oa.Tr);
+        }
+
+        if ((f.Place ?? round.Record.Bg) is { } place && Assets.TryGetValue(place, out var pl))
+        {
+            parts.Add(pl.Tr);
+        }
+
+        return "Resim: " + string.Join(", ", parts);
+    }
 
     /// <summary>scenes/A1|A2|B1.jsonl kayıtları (ilk erişimde okunur; dosya yoksa boş).</summary>
     public IReadOnlyList<GameRecord> Records(GameLevel level) => _records[level].Value;
@@ -665,6 +729,17 @@ public sealed class GameLibrary
         if (record.Panels.Count > 1)
         {
             b.Append("- Sıralı ").Append(record.Panels.Count).AppendLine(" kare: olaylar soldan sağa sırayla olur (önce, sonra).");
+        }
+
+        if (round.Sentence.Answer is { } answer)
+        {
+            b.Append("- Soru: ").Append(round.Text(direction)).Append(" Öğrenci bu soruyu resme bakarak KISA CEVAPLA yanıtlar; doğru cevap: ")
+                .Append(answer.Text(direction)).AppendLine(" (resimdeki olgularla uyuşan her kısa cevap doğrudur).");
+        }
+
+        if (direction == TranslationDirection.EnglishToTurkish && round.Sentence.TrAlt.Count > 0)
+        {
+            b.Append("- Zamirsiz Türkçe biçim de doğrudur: ").Append(string.Join(" / ", round.Sentence.TrAlt)).AppendLine();
         }
 
         if (round.Sentence.Badges.Count > 0)

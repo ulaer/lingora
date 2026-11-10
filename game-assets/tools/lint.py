@@ -14,6 +14,8 @@ Seviyeler: ERROR (combine --strict ile derlemeyi durdurur) ve WARN (sayılır, r
   HAB  v4 geniş z.  — aor* biçimi `cal_everyday` taşır ("every day"/"her gün" yalnızca onda)
   CAN  v4 yetenek   — can* biçimi `badge_can` taşır ("can"/"can't" yalnızca onda)
   v5 OWN  kendi-cümlesi kapısı — her cümle, kendi resmi için doğruluk kuralıyla (`sentence_true`) doğru olmalı
+  v6 WH / IMP / POSS / TR-ALT — wh cevabı resimle uyumlu, sorulan boyut mentions'ta yok; emir = marker_you + mark_exclaim;
+                    iyelik sahibi ↔ marker; tr_alt = zamirsiz biçim
   v5 LAY-5 pair_give — verilen nesne alıcının gövdesine girmez (tuval x < alıcı.x − 30)
 """
 import json
@@ -22,7 +24,9 @@ from collections import defaultdict
 
 PRONOUNS_EN = {"He", "She", "They", "It", "I", "You", "We"}
 PRONOUNS_TR = {"O", "Onlar", "Ben", "Sen", "Biz", "Siz"}
-FACT_KEYS = ("subject", "verb", "object", "variant", "count", "place", "time", "weather", "state", "other", "person", "holds")
+FACT_KEYS = ("subject", "verb", "object", "variant", "count", "place", "time", "weather", "state", "other", "person", "holds",
+             "distance", "owner", "receiver_person")
+OWNER_MARKER = {"1s": "marker_me", "2s": "marker_you"}
 PERSONS = {"1s", "2s", "1p", "2p", "3s", "3p"}
 PERSON_PRON = {"1s": ("i", "Ben", "marker_me"), "2s": ("you", "Sen", "marker_you"),
                "1p": ("we", "Biz", "marker_me"), "2p": ("you", "Siz", "marker_you")}
@@ -33,7 +37,7 @@ EVIDENTIAL_TR = ["sıkılmış", "şaşırmış"]               # durum sıfatı
 TIME_WORDS = {"morning": "in the morning", "evening": "in the evening", "night": "at night"}
 WEATHER_WORDS = {"rain": "rain", "snow": "snow", "sunny": "sun", "cloudy": "cloud", "windy": "wind"}
 
-VISUAL_KEYS = ("layout", "bg", "sky", "sky_overlay", "weather", "actors", "bubble", "prop", "panels")
+VISUAL_KEYS = ("layout", "bg", "sky", "sky_overlay", "weather", "actors", "bubble", "prop", "panels", "show")
 
 
 def visual_key(r):
@@ -136,6 +140,19 @@ def own_sentence_gate(r, s, ctx):
             bad.append(f"vakit iddiası {tid}")
     if s["person"] in PERSON_PRON and f.get("person") != s["person"]:
         bad.append(f"kişi iddiası {s['person']} != {f.get('person')}")
+    fm = s["form"]
+    if fm.startswith("wh_"):      # v6: sorulan boyut mentions'ta yok, cevap resmin olgusu
+        ans = (s.get("answer") or {}).get("en", "").rstrip(".").lower()
+        if fm == "wh_what" and not (f.get("object") and any(n in ans for n in ctx["objects"].get(f["object"], ["?"]))):
+            bad.append("wh_what cevabı nesne değil")
+        if fm == "wh_where" and not any(ph.replace("at ", "").replace("in ", "").replace("on ", "") in ans
+                                        for ph in ctx["places"].get(f.get("place"), {"\0"})):
+            bad.append("wh_where cevabı yer değil")
+        if fm == "wh_who" and f.get("subject") not in ctx["labels"].get(s["answer"]["en"].rstrip("."), []):
+            bad.append("wh_who cevabı özne değil")
+        asked = {"wh_what": "object", "wh_where": "place", "wh_who": "subject"}[fm]
+        if asked in s["mentions"]:
+            bad.append(f"sorulan boyut ({asked}) mentions'ta")
     return bad
 
 
@@ -153,8 +170,11 @@ def make_ctx(manifest):
     places = {}
     for a in manifest["assets"]:
         if a["category"] == "background":
-            places[a["id"]] = {a["en"].lower()}
-    return {"labels": dict(labels), "places": places, "place_parents": manifest.get("place_parents", {})}
+            places[a["id"]] = {a["en"].lower()} | {o["en"].lower() for o in a.get("pose_overrides", {}).values() if "en" in o}
+    objects = {a["id"]: [a["en"].lower()] + [c["en"].lower() for c in a.get("contents", [])]
+               for a in manifest["assets"] if a["category"] == "object"}
+    return {"labels": dict(labels), "places": places, "objects": objects,
+            "place_parents": manifest.get("place_parents", {}), "aor_verbs": set(manifest.get("aorist", {}).get("verbs", []))}
 
 
 def tr_person_ok(person, word):
@@ -171,6 +191,9 @@ def tr_person_ok(person, word):
 def check_v4(name, rows, add, ctx):
     lay_give = ctx["layouts"].get("pair_give")
     for r in rows:
+        if r["layout"] in ("show_near", "show_far"):
+            if r["layout"] not in ctx["layouts"] or not (r.get("show") or {}).get("obj") or r["actors"]:
+                add("ERROR", "LAY-6 show kaydı: layouts/show/actors", r["id"])
         if r["layout"] == "pair_give" and lay_give:
             giver, recv = r["actors"][0], r["actors"][1]
             h = giver.get("hold")
@@ -205,7 +228,17 @@ def check_v4(name, rows, add, ctx):
                 add("ERROR", "LANG-5 'açtık' / büyük harfli 'ile' nesnesi", f"{r['id']}: {tr}")
             # --- PERS
             toks = {w.strip(".,?").lower() for w in en.split()}
-            if pers in PERSON_PRON:
+            form, bd = s["form"], s.get("badges", [])
+            m0 = r["actors"][0].get("marker") if r["actors"] else None
+            if form in ("imp", "imp_neg"):      # v6 emir: marker_you + mark_exclaim, 2. tekil
+                if pers != "2s" or m0 != "marker_you" or "mark_exclaim" not in bd or not en.endswith("!"):
+                    add("ERROR", "IMP-1 emir: marker_you + mark_exclaim + 2s", f"{r['id']}: {en}")
+                if (form == "imp_neg") != ("badge_not" in bd):
+                    add("ERROR", "IMP-2 emir olumsuzu badge_not", f"{r['id']}: {en}")
+            elif form == "poss":                # v6 iyelik: sahip marker'ı
+                if m0 != OWNER_MARKER.get(f.get("owner")):
+                    add("ERROR", "POSS-1 iyelik sahibi ↔ marker", f"{r['id']}: owner={f.get('owner')} marker={m0}")
+            elif pers in PERSON_PRON:
                 p_en, p_tr, marker = PERSON_PRON[pers]
                 en_ok = bool({"i", "i'm"} & toks) if pers == "1s" else p_en in toks
                 if not en_ok or tr.split()[0] != p_tr:
@@ -218,11 +251,24 @@ def check_v4(name, rows, add, ctx):
                 if marks - {None} != {marker} or r["actors"][0].get("marker") != marker:
                     add("ERROR", "PERS-3 resimde marker uyuşmuyor", f"{r['id']}: {pers} {sorted(map(str, marks))}")
             else:
-                if tr.split()[0] in ("Ben", "Sen", "Biz", "Siz") or toks & {"i", "we", "i'm", "you"} or marks - {None}:
+                if tr.split()[0] in ("Ben", "Sen", "Biz", "Siz") or (toks & {"i", "we", "i'm", "you"} and not f.get("receiver_person")) or m0:
                     add("ERROR", "PERS-4 üçüncü kişi cümlesinde kişi zamiri/marker", f"{r['id']}: {en}")
+            if f.get("receiver_person"):        # v6 nesne zamiri: alıcıda marker
+                if len(r["actors"]) < 2 or r["actors"][1].get("marker") != OWNER_MARKER[f["receiver_person"]]:
+                    add("ERROR", "PERS-6 alıcı marker'ı receiver_person ile uyuşmuyor", r["id"])
+            # --- tr_alt
+            if "tr_alt" in s and (pers not in PERSON_PRON or len(s["tr_alt"]) != 1 or
+                                  s["tr_alt"][0][1:] != tr.split(" ", 1)[1][1:]):
+                add("ERROR", "LANG-6 tr_alt zamirsiz biçim değil", f"{r['id']}: {tr} / {s['tr_alt']}")
+            if pers in PERSON_PRON and form not in ("imp", "imp_neg", "poss") and "tr_alt" not in s:
+                add("ERROR", "LANG-6 kişi cümlesinde tr_alt yok", f"{r['id']}: {tr}")
+            # --- WH
+            if form.startswith("wh_") and ("answer" not in s or "badge_question" not in bd):
+                add("ERROR", "WH-1 wh cümlesinde answer/badge_question yok", f"{r['id']}: {en}")
             # --- HAB / CAN
-            form, bd = s["form"], s.get("badges", [])
             hab = form.startswith("aor")
+            if hab and f.get("verb") not in ctx["aor_verbs"]:
+                add("ERROR", "HAB-2 geniş zaman alışkanlık fiili değil", f"{r['id']}: {en}")
             if hab != ("cal_everyday" in bd) or hab != ("every day" in en and "her gün" in tr):
                 add("ERROR", "HAB-1 geniş zaman rozeti/ifadesi", f"{r['id']}: {en} / {tr}")
             can = form.startswith("can")
@@ -269,7 +315,7 @@ def run(levels, manifest):
                     if ev in low:
                         add("ERROR", "LANG-2 kanıtsal -mIş", f"{r['id']}: {tr}")
                 for text in (en, tr):
-                    if "  " in text or not text[:1].isupper() or text[-1] not in ".?":
+                    if "  " in text or not text[:1].isupper() or text[-1] not in ".?!":
                         add("ERROR", "LANG-3 biçim", f"{r['id']}: {text}")
             # --- LANG-4: sıralı panelde aynı eylem iki kez
             if r["layout"] == "panels":
@@ -302,7 +348,7 @@ def run(levels, manifest):
             for r in rows:
                 k = visual_key(r)
                 for s in r["sentences"]:
-                    if s["form"].startswith("prog") and not s.get("badges"):
+                    if s["form"].startswith("prog") and not s.get("badges") and not r["facts"].get("receiver_person"):
                         first = s[lang].split()[0]
                         if first not in allow:
                             text_keys[s[lang]].add(k)

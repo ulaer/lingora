@@ -10,6 +10,12 @@ public sealed record ChoiceQuestion(GameRound Round, IReadOnlyList<string> Optio
 
     public string Correct => Options[CorrectIndex];
 
+    /// <summary>Her seçeneğin kaynak kaydı (doğru seçenek için null); günlükte seçilen çeldirici için.</summary>
+    public IReadOnlyList<string?>? OptionSources { get; init; }
+
+    /// <summary>wh-sorusunda ekranda gösterilen soru (hedef dilde); diğerlerinde null.</summary>
+    public string? Prompt => Round.Sentence.Answer is null ? null : Round.Text(Direction);
+
     /// <summary>Resmin öbür dildeki cümlesi (günlükte kaynak olarak).</summary>
     public string SourceSentence => Round.Text(Direction == TranslationDirection.TurkishToEnglish ? TranslationDirection.EnglishToTurkish : TranslationDirection.TurkishToEnglish);
 }
@@ -28,10 +34,13 @@ public static class ChoiceBuilder
             return Build(library, legacy, direction, random, optionCount);
         }
 
-        var correct = round.Text(direction);
+        // wh-sorusu: seçenekler cevaplardır; çeldirici = aynı soru tipinin başka resimlerdeki (bu resim için yanlış) cevapları.
+        var answerMode = round.Sentence.Answer is not null;
+        string TextOf(GameSentence x) => answerMode ? x.Answer!.Text(direction) : x.Text(direction);
+        var correct = TextOf(round.Sentence);
         var picture = round.Record;
         var form = round.Sentence;
-        var ranked = new List<(string Text, int Distance, double Tie)>();
+        var ranked = new List<(string Text, string Source, int Distance, double Tie)>();
         foreach (var record in library.Records(picture.Level))
         {
             if (ReferenceEquals(record, picture))
@@ -43,26 +52,35 @@ public static class ChoiceBuilder
             foreach (var sentence in record.Sentences)
             {
                 // Aynı biçim ve rozetler: soru biçimini rozet verir, ayırt eden yalnızca resim olmalı.
-                if (sentence.Form != form.Form || !sentence.Badges.SequenceEqual(form.Badges))
+                if (sentence.Form != form.Form || !sentence.Badges.SequenceEqual(form.Badges) || (answerMode && sentence.Answer is null))
                 {
                     continue;
                 }
 
-                if (IsTrueFor(picture, sentence, record, library.PlaceParents))
+                if (answerMode)
+                {
+                    // Cevap çeldiricisi: sorulan boyutun değeri bu resimdekinden farklı olmalı ("Who is swimming?" için
+                    // başka bir yüzme resminin sorusu da doğrudur ama cevabı — Mary — Tom'un resmi için yanlıştır).
+                    if (AnswerIsTrueFor(picture, record, form.Form, library.PlaceParents))
+                    {
+                        continue;
+                    }
+                }
+                else if (IsTrueFor(picture, sentence, record, library.PlaceParents))
                 {
                     continue;
                 }
 
-                ranked.Add((sentence.Text(direction), distance, random.NextDouble()));
+                ranked.Add((TextOf(sentence), record.Id, distance, random.NextDouble()));
             }
         }
 
-        var options = new List<string> { correct };
-        foreach (var (text, _, _) in ranked.OrderBy(x => x.Distance).ThenBy(x => x.Tie))
+        var options = new List<(string Text, string? Source)> { (correct, null) };
+        foreach (var (text, source, _, _) in ranked.OrderBy(x => x.Distance).ThenBy(x => x.Tie))
         {
-            if (!options.Contains(text, StringComparer.OrdinalIgnoreCase))
+            if (!options.Any(o => string.Equals(o.Text, text, StringComparison.OrdinalIgnoreCase)))
             {
-                options.Add(text);
+                options.Add((text, source));
             }
 
             if (options.Count == optionCount)
@@ -72,7 +90,35 @@ public static class ChoiceBuilder
         }
 
         var shuffled = options.OrderBy(_ => random.Next()).ToList();
-        return new ChoiceQuestion(round, shuffled, shuffled.IndexOf(correct), direction);
+        return new ChoiceQuestion(round, shuffled.Select(o => o.Text).ToList(), shuffled.FindIndex(o => o.Source is null), direction)
+        {
+            OptionSources = shuffled.Select(o => o.Source).ToList(),
+        };
+    }
+
+    /// <summary>wh-cevabı resim için doğru mu: sorulan boyutun (who → özne, what → nesne+varyant, where → yer) değeri aynı mı.</summary>
+    internal static bool AnswerIsTrueFor(GameRecord picture, GameRecord source, string form, IReadOnlyDictionary<string, string>? parents)
+    {
+        var p = EffectiveFacts(picture);
+        var s = EffectiveFacts(source);
+        var dimension = form switch { "wh_who" => "subject", "wh_what" => "object", "wh_where" => "place", _ => null };
+        if (dimension is null)
+        {
+            return true; // bilinmeyen soru tipi: güvenli taraf, çeldirici yapma
+        }
+
+        // Değer bilinmiyorsa olgu karşılaştırılamaz; ayrım cevap metniyle yapılır (aynı metin zaten elenir).
+        if (p.Get(dimension) is not { } pv || s.Get(dimension) is not { } sv)
+        {
+            return false;
+        }
+
+        return dimension switch
+        {
+            "object" => pv == sv && (s.Get("variant") is null || p.Get("variant") == s.Get("variant")),
+            "place" => PlaceMatches(pv, sv, parents),
+            _ => pv == sv,
+        };
     }
 
     /// <summary>Kaydın olguları: facts yoksa görselden türetilir (özne, fiil/poz, nesne, adet, yer, ...).</summary>

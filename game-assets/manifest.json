@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "style_lock": "style-lock.md",
   "palette": {
     "ink": "#2B2D42",
@@ -77,7 +77,9 @@
       "tr_acc": "Tom'u",
       "tr_dat": "Tom'a",
       "proper": true,
-      "tr_ins": "Tom'la"
+      "tr_ins": "Tom'la",
+      "en_gen": "Tom's",
+      "tr_gen": "Tom'un"
     },
     {
       "id": "mary",
@@ -101,7 +103,9 @@
       "tr_acc": "Mary'yi",
       "tr_dat": "Mary'ye",
       "proper": true,
-      "tr_ins": "Mary'yle"
+      "tr_ins": "Mary'yle",
+      "en_gen": "Mary's",
+      "tr_gen": "Mary'nin"
     },
     {
       "id": "dog",
@@ -176,7 +180,9 @@
       "tr_acc": "adamı",
       "tr_dat": "adama",
       "proper": false,
-      "tr_ins": "adamla"
+      "tr_ins": "adamla",
+      "en_gen": "the man's",
+      "tr_gen": "adamın"
     },
     {
       "id": "woman",
@@ -209,7 +215,9 @@
       "tr_acc": "kadını",
       "tr_dat": "kadına",
       "proper": false,
-      "tr_ins": "kadınla"
+      "tr_ins": "kadınla",
+      "en_gen": "the woman's",
+      "tr_gen": "kadının"
     },
     {
       "id": "horse",
@@ -1285,7 +1293,12 @@
         "red",
         "green",
         "yellow"
-      ]
+      ],
+      "tr_poss": {
+        "1s": "elmam",
+        "2s": "elman",
+        "3s": "elması"
+      }
     },
     {
       "id": "bread",
@@ -1403,7 +1416,12 @@
         "blue",
         "green",
         "yellow"
-      ]
+      ],
+      "tr_poss": {
+        "1s": "kitabım",
+        "2s": "kitabın",
+        "3s": "kitabı"
+      }
     },
     {
       "id": "letter",
@@ -1417,7 +1435,12 @@
       "en_plural": "letters",
       "tr": "mektup",
       "article_en": "a",
-      "tints": []
+      "tints": [],
+      "tr_poss": {
+        "1s": "mektubum",
+        "2s": "mektubun",
+        "3s": "mektubu"
+      }
     },
     {
       "id": "ball",
@@ -1439,7 +1462,12 @@
         "green",
         "orange"
       ],
-      "tr_with": "topla"
+      "tr_with": "topla",
+      "tr_poss": {
+        "1s": "topum",
+        "2s": "topun",
+        "3s": "topu"
+      }
     },
     {
       "id": "bowl",
@@ -1497,7 +1525,12 @@
       "tr": "telefon",
       "article_en": "a",
       "tints": [],
-      "role": "handheld"
+      "role": "handheld",
+      "tr_poss": {
+        "1s": "telefonum",
+        "2s": "telefonun",
+        "3s": "telefonu"
+      }
     },
     {
       "id": "key",
@@ -1512,7 +1545,12 @@
       "tr": "anahtar",
       "article_en": "a",
       "tints": [],
-      "role": "handheld"
+      "role": "handheld",
+      "tr_poss": {
+        "1s": "anahtarım",
+        "2s": "anahtarın",
+        "3s": "anahtarı"
+      }
     },
     {
       "id": "money",
@@ -1540,7 +1578,12 @@
       "tr": "kalem",
       "article_en": "a",
       "tints": [],
-      "role": "handheld"
+      "role": "handheld",
+      "tr_poss": {
+        "1s": "kalemim",
+        "2s": "kalemin",
+        "3s": "kalemi"
+      }
     },
     {
       "id": "bag",
@@ -1555,7 +1598,12 @@
       "tr": "çanta",
       "article_en": "a",
       "tints": [],
-      "role": "handheld"
+      "role": "handheld",
+      "tr_poss": {
+        "1s": "çantam",
+        "2s": "çantan",
+        "3s": "çantası"
+      }
     },
     {
       "id": "umbrella",
@@ -1570,7 +1618,12 @@
       "tr": "şemsiye",
       "article_en": "an",
       "tints": [],
-      "role": "handheld"
+      "role": "handheld",
+      "tr_poss": {
+        "1s": "şemsiyem",
+        "2s": "şemsiyen",
+        "3s": "şemsiyesi"
+      }
     },
     {
       "id": "ring",
@@ -1585,7 +1638,12 @@
       "tr": "yüzük",
       "article_en": "a",
       "tints": [],
-      "role": "handheld"
+      "role": "handheld",
+      "tr_poss": {
+        "1s": "yüzüğüm",
+        "2s": "yüzüğün",
+        "3s": "yüzüğü"
+      }
     },
     {
       "id": "medicine",
@@ -1616,7 +1674,12 @@
       "tr": "dizüstü bilgisayar",
       "article_en": "a",
       "tints": [],
-      "role": "handheld"
+      "role": "handheld",
+      "tr_poss": {
+        "1s": "dizüstü bilgisayarım",
+        "2s": "dizüstü bilgisayarın",
+        "3s": "dizüstü bilgisayarı"
+      }
     },
     {
       "id": "guitar",
@@ -1633,7 +1696,12 @@
       "article_en": "a",
       "tints": [],
       "role": "handheld",
-      "en_def": "the guitar"
+      "en_def": "the guitar",
+      "tr_poss": {
+        "1s": "gitarım",
+        "2s": "gitarın",
+        "3s": "gitarı"
+      }
     },
     {
       "id": "tv",
@@ -1716,7 +1784,12 @@
       "article_en": "a",
       "tints": [],
       "role": "prop",
-      "holdable": false
+      "holdable": false,
+      "tr_poss": {
+        "1s": "arabam",
+        "2s": "araban",
+        "3s": "arabası"
+      }
     },
     {
       "id": "train",
@@ -1752,7 +1825,12 @@
       "article_en": "a",
       "tints": [],
       "role": "prop",
-      "holdable": false
+      "holdable": false,
+      "tr_poss": {
+        "1s": "bisikletim",
+        "2s": "bisikletin",
+        "3s": "bisikleti"
+      }
     },
     {
       "id": "piano",
@@ -2323,7 +2401,9 @@
         "past_neg": "yemedi",
         "fut_neg": "yemeyecek",
         "aor": "yer",
-        "aor_neg": "yemez"
+        "aor_neg": "yemez",
+        "imp": "ye",
+        "imp_neg": "yeme"
       }
     },
     "drink": {
@@ -2340,7 +2420,9 @@
         "past_neg": "içmedi",
         "fut_neg": "içmeyecek",
         "aor": "içer",
-        "aor_neg": "içmez"
+        "aor_neg": "içmez",
+        "imp": "iç",
+        "imp_neg": "içme"
       }
     },
     "read": {
@@ -2357,7 +2439,9 @@
         "past_neg": "okumadı",
         "fut_neg": "okumayacak",
         "aor": "okur",
-        "aor_neg": "okumaz"
+        "aor_neg": "okumaz",
+        "imp": "oku",
+        "imp_neg": "okuma"
       }
     },
     "run": {
@@ -2376,7 +2460,9 @@
         "aor": "koşar",
         "aor_neg": "koşmaz",
         "can": "koşabilir",
-        "can_neg": "koşamaz"
+        "can_neg": "koşamaz",
+        "imp": "koş",
+        "imp_neg": "koşma"
       }
     },
     "swim": {
@@ -2395,7 +2481,9 @@
         "aor": "yüzer",
         "aor_neg": "yüzmez",
         "can": "yüzebilir",
-        "can_neg": "yüzemez"
+        "can_neg": "yüzemez",
+        "imp": "yüz",
+        "imp_neg": "yüzme"
       }
     },
     "sit": {
@@ -2412,7 +2500,9 @@
         "past_neg": "oturmadı",
         "fut_neg": "oturmayacak",
         "aor": "oturur",
-        "aor_neg": "oturmaz"
+        "aor_neg": "oturmaz",
+        "imp": "otur",
+        "imp_neg": "oturma"
       }
     },
     "sleep": {
@@ -2429,7 +2519,9 @@
         "past_neg": "uyumadı",
         "fut_neg": "uyumayacak",
         "aor": "uyur",
-        "aor_neg": "uyumaz"
+        "aor_neg": "uyumaz",
+        "imp": "uyu",
+        "imp_neg": "uyuma"
       }
     },
     "play_with": {
@@ -2466,7 +2558,9 @@
         "aor": "uçar",
         "aor_neg": "uçmaz",
         "can": "uçabilir",
-        "can_neg": "uçamaz"
+        "can_neg": "uçamaz",
+        "imp": "uç",
+        "imp_neg": "uçma"
       }
     },
     "walk": {
@@ -2485,7 +2579,9 @@
         "aor": "yürür",
         "aor_neg": "yürümez",
         "can": "yürüyebilir",
-        "can_neg": "yürüyemez"
+        "can_neg": "yürüyemez",
+        "imp": "yürü",
+        "imp_neg": "yürüme"
       }
     },
     "talk": {
@@ -2539,7 +2635,9 @@
         "aor": "el sallar",
         "aor_neg": "el sallamaz",
         "can": "el sallayabilir",
-        "can_neg": "el sallayamaz"
+        "can_neg": "el sallayamaz",
+        "imp": "el salla",
+        "imp_neg": "el sallama"
       }
     },
     "think": {
@@ -2801,7 +2899,9 @@
         "past_neg": "vermedi",
         "fut_neg": "vermeyecek",
         "aor": "verir",
-        "aor_neg": "vermez"
+        "aor_neg": "vermez",
+        "imp": "ver",
+        "imp_neg": "verme"
       }
     },
     "write": {
@@ -2818,7 +2918,9 @@
         "past_neg": "yazmadı",
         "fut_neg": "yazmayacak",
         "aor": "yazar",
-        "aor_neg": "yazmaz"
+        "aor_neg": "yazmaz",
+        "imp": "yaz",
+        "imp_neg": "yazma"
       }
     },
     "cook": {
@@ -2837,7 +2939,9 @@
         "aor": "yemek pişirir",
         "aor_neg": "yemek pişirmez",
         "can": "yemek pişirebilir",
-        "can_neg": "yemek pişiremez"
+        "can_neg": "yemek pişiremez",
+        "imp": "yemek pişir",
+        "imp_neg": "yemek pişirme"
       }
     },
     "cry": {
@@ -3428,6 +3532,20 @@
           "s": 0.7
         }
       ]
+    },
+    "show_near": {
+      "obj": {
+        "x": 128,
+        "y": 230,
+        "s": 0.6
+      }
+    },
+    "show_far": {
+      "obj": {
+        "x": 196,
+        "y": 150,
+        "s": 0.22
+      }
     }
   },
   "sampling": {
@@ -3439,13 +3557,23 @@
       "en": "I",
       "tr": "Ben",
       "marker": "marker_me",
-      "plural": false
+      "plural": false,
+      "en_obj": "me",
+      "en_poss": "my",
+      "tr_dat": "bana",
+      "tr_ins": "benimle",
+      "tr_gen": "benim"
     },
     "2s": {
       "en": "You",
       "tr": "Sen",
       "marker": "marker_you",
-      "plural": false
+      "plural": false,
+      "en_obj": "you",
+      "en_poss": "your",
+      "tr_dat": "sana",
+      "tr_ins": "seninle",
+      "tr_gen": "senin"
     },
     "1p": {
       "en": "We",
@@ -3463,7 +3591,22 @@
   "aorist": {
     "en_time": "every day",
     "tr_time": "her gün",
-    "badge": "cal_everyday"
+    "badge": "cal_everyday",
+    "verbs": [
+      "eat",
+      "drink",
+      "read",
+      "run",
+      "swim",
+      "walk",
+      "sleep",
+      "cook",
+      "write",
+      "play_with",
+      "play_instr",
+      "watch",
+      "give"
+    ]
   },
   "can": {
     "badge": "badge_can",
@@ -3505,5 +3648,77 @@
     "drink",
     "stand",
     "call"
-  ]
+  ],
+  "show_objects": [
+    "apple",
+    "ball",
+    "book",
+    "car",
+    "key",
+    "phone",
+    "bag",
+    "umbrella",
+    "bicycle",
+    "laptop",
+    "guitar",
+    "pen",
+    "ring",
+    "fish",
+    "letter"
+  ],
+  "poss_objects": [
+    "book",
+    "ball",
+    "apple",
+    "phone",
+    "key",
+    "bag",
+    "umbrella"
+  ],
+  "imp_verbs": [
+    "eat",
+    "drink",
+    "read",
+    "run",
+    "swim",
+    "sit",
+    "sleep",
+    "walk",
+    "fly",
+    "wave",
+    "write",
+    "cook",
+    "give"
+  ],
+  "wh": {
+    "what_poses": [
+      "eat",
+      "drink",
+      "read",
+      "stand"
+    ],
+    "where_verbs": [
+      "eat",
+      "drink",
+      "read",
+      "run",
+      "walk",
+      "swim",
+      "sit",
+      "sleep",
+      "write"
+    ],
+    "who_verbs": [
+      "eat",
+      "drink",
+      "read",
+      "run",
+      "walk",
+      "swim",
+      "sit",
+      "sleep",
+      "write"
+    ],
+    "mark_exclaim": "mark_exclaim"
+  }
 }

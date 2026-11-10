@@ -218,6 +218,51 @@ internal sealed class SvgScene
         return new DrawingImage(group);
     }
 
+    /// <summary>Sahnede kare (data-frame) ya da durum geçişi var mı? Yoksa zamanlayıcıya gerek yoktur.</summary>
+    public bool IsAnimated(GameRound round)
+    {
+        var ids = new List<string?>();
+        if (round.Legacy is { } scene)
+        {
+            ids.Add(scene.Background);
+            ids.Add(scene.Object);
+            ids.AddRange(scene.Group is { Count: > 0 } g ? g.Select(m => m.Character) : [scene.Character]);
+        }
+        else
+        {
+            var record = round.Record;
+            foreach (var v in new IGameVisual[] { record }.Concat(record.Panels))
+            {
+                ids.Add(v.Bg ?? record.Bg);
+                ids.Add(v.SkyOverlay);
+                ids.Add(v.Prop?.Obj);
+                ids.Add(v.Bubble is null ? null : v.Bubble.Type + "_bubble");
+                if (v.Weather is { } w && _library.Weathers.TryGetValue(w, out var weather))
+                {
+                    ids.Add(weather.Overlay);
+                }
+
+                foreach (var a in v.Actors)
+                {
+                    ids.Add(a.Char);
+                    ids.Add(a.Hold?.Obj);
+                    ids.Add(a.Marker);
+                    if (a.Expr is not null && _library.Emotions.TryGetValue(a.Expr, out var e))
+                    {
+                        ids.Add(e.Mark);
+                    }
+                }
+            }
+
+            if (record.Prop is { States.Count: > 1 } && HasAsset(record.Prop.Obj) && Load(record.Prop.Obj).Shapes.Any(s => s.States.Length > 0))
+            {
+                return true;
+            }
+        }
+
+        return ids.Where(HasAsset).Distinct().Any(id => Load(id!).Shapes.Any(s => s.Frames.Length > 0));
+    }
+
     /// <summary>Panel kareleri arası boşluk (birim).</summary>
     internal const double PanelGap = 8;
 
@@ -306,8 +351,22 @@ internal sealed class SvgScene
 
         if (!holdsOnly && v.Prop is { } prop && HasAsset(prop.Obj))
         {
-            var ps = prop.Scale ?? L.Prop.S;
-            g.Children.Add(Asset(prop.Obj, Place(L.Prop.X - (128 * ps), 230 - (230 * ps), ps), new Style(null, null, frame, prop.States)));
+            if (v.Layout is "show_near" or "show_far")
+            {
+                // this/that: nesne tek başına; y alt kenardır (preview.html ile aynı), kopyalar 0.7 aralıkla.
+                var box = v.Layout == "show_near" ? L.ShowNear : L.ShowFar;
+                var ss = prop.Scale ?? box.S;
+                for (var i = 0; i < prop.Count; i++)
+                {
+                    var x = box.X - (128 * ss) + ((i - ((prop.Count - 1) / 2.0)) * 256 * ss * 0.7);
+                    g.Children.Add(Asset(prop.Obj, Place(x, box.Y - (230 * ss), ss), new Style(prop.Tint, null, frame)));
+                }
+            }
+            else
+            {
+                var ps = prop.Scale ?? L.Prop.S;
+                g.Children.Add(Asset(prop.Obj, Place(L.Prop.X - (128 * ps), 230 - (230 * ps), ps), new Style(null, null, frame, prop.States)));
+            }
         }
 
         // Hava aktörlerin arkasında (yağmur/kar yüzü örtmesin).
