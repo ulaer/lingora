@@ -48,3 +48,86 @@ Nesne sahnede karakterin üstüne `translate(ax - 128*s, ay - 230*s) scale(s)` i
 | read  | (128, 160)      | 0.40    | iki el göğüs önünde, nesne açık tutulur |
 
 Karakter pozu içinde nesne ÇİZİLMEZ; yalnızca boş eller.
+
+---
+
+# v2 eklentileri
+
+v1 kuralları aynen geçerli (palet, yasaklar, viewBox, tek kök `<g id>`). v2 aşağıdaki işaretlemeleri ekler.
+Uygulama ve `tools/` bu işaretleri SVG'den okur; koordinatlar her zaman 256×256 tuval koordinatıdır.
+
+## Kök grup nitelikleri (insan ve meslek karakterleri)
+- `data-head="x,y"`: başın en üst orta noktası (duygu işaretleri ve balonlar buna göre konur).
+- `data-hand="x,y"`: pozda nesne tutan elin avuç noktası (varsa). Manifestteki poz anchor'ını ezer.
+
+## Yüz parçaları (tüm insan pozları)
+- Ağız şekilleri `<g data-part="mouth" data-cx="X" data-cy="Y">` içinde, gözler `<g data-part="eyes" data-cx="X" data-cy="Y">` içinde
+  (cx,cy = ağzın merkezi / iki gözün ortası). Uygulama ifade değiştirirken bu grubu gizler ve
+  `overlays/face/` içindeki parçayı (cx,cy) noktasına koyar.
+- İstisna: ağzı animasyonla oynayan pozlarda (talk, call) ağız kareler içindedir, `data-part="mouth"` yoktur.
+- Uyuyan pozda gözler kapalı çizilir; `data-part="eyes"` yine olur.
+
+## Animasyon kareleri (en fazla 3)
+- Kök `<g>` içinde ortak şekiller + `<g data-frame="1">`, `<g data-frame="2">` (, `3`) çocuk grupları.
+- Uygulama aynı anda tek kare gösterir (≈ 3-4 kare/sn döngü). Kareler 1'den başlar, ardışıktır.
+- Kare grupları yalnızca değişen parçaları taşır (bacak, kol, ağız, yağmur damlaları…).
+
+## Durumlar (nesneler)
+- Ayrık durumlar `<g data-state="on">` / `<g data-state="off">` (veya `open`/`closed`) çocuk gruplarıdır.
+  Sahne hangi durumu göstereceğini seçer; durum değişimi (açık→kapalı) iki karelik geçiş olarak oynatılabilir.
+
+## Gökyüzü / gece
+- Arka planlarda gökyüzü ve pencere camı şekilleri `data-tint="sky"` taşır. Gece: `#2B2D42`, akşam: `#F4A261`,
+  gündüz: varsayılan `#A8DADC`. Güneş/ay ayrı overlay'dir.
+
+## Kategoriler
+- `assets/overlays/`: balonlar, rozetler, hava, duygu işaretleri, saat. Hava overlay'leri tüm tuvali kaplar
+  (zemin yok, saydam); rozet/işaretler (128,128) merkezli, en geniş ölçü ≈ 120 px.
+- `assets/overlays/face/`: yüz parçaları, (128,128) merkezli, tom_stand'deki ağız/göz boyutunda.
+- Büyük sahne nesneleri (prop: TV, kapı, lamba, piyano, araba, tren…) `assets/objects/` içinde, x=128 merkezli,
+  alt kenar y=230, en geniş ölçü ≈ 200 px; sahnede `prop` yuvasına küçültülerek konur.
+
+## Sahne yerleşimleri (manifest `layouts`)
+- `single`: karakter olduğu gibi. `bubble`: karakter 0.78 ölçekle sola kayar, balon sağ üstte.
+- `pair`: iki karakter 0.8 ölçekle x=80 / x=176. `prop`: karakter 0.9 ölçekle x≈96, prop sağda.
+- Yan görünüşlü hayvanlarda karşıya bakma gerekirse uygulama yatay aynalar (`scale(-1,1)`); yeni asset gerekmez.
+
+---
+
+# v3 eklentileri
+
+- Rozetler sol üstte **dikey** yığılır (`layouts.badge`: x=4, y=4, s=0.2, dy=54); yatay yığın başa biner.
+- Balonlu ve çift sahnelerde aktör konum/ölçeği her zaman `layouts.<yerleşim>.actors`'tan gelir.
+- Gece gökyüzü `#457B9D` (mürekkep `#2B2D42` saç ve pantolonla karışıyordu).
+- Elde birden çok nesne: kopyalar arası 0.3 × nesne genişliği (avuçta toplu).
+- 200 px'ten geniş sahne nesnesi kendi `prop_scale` değerini taşır (tren 0.45).
+- Hava overlay'i aktörlerin arkasında çizilir.
+- `fill`/`stroke` grup üzerinde olabilir; çiziciler SVG mirasına uyar.
+- Her `combine.py` çalışması `tools/lint.py` kapısından geçer; kurallar dosyanın başında.
+
+---
+
+# v4 eklentileri
+
+Ayrıntı: `docs/v4-contract.md`. Stil kuralları (palet, tek kök `<g id>`, yasaklar, `data-part`/`data-head`/`data-frame`) aynen geçerli.
+
+- Yeni pozlar (insanlar: tom, mary, man, woman): `give` (1 kare, `data-hand` ≈ 196,150; alıcı sağda `stand`), `write` (1 kare, masa asset'in içinde, `data-hand` kalem ucu ≈ 150,170), `cook` (2 kare, ocak + tencere + buhar asset'in içinde).
+- Yeni overlay'ler (128,128 merkezli, ≈ 120 px): `marker_me` (sarı ok + yıldız), `marker_you` (mavi ok + el), `cal_everyday`, `badge_can` (yeşil daire + onay), `mark_food`, `mark_thermometer`.
+- Kişi işareti: `actors[].marker`, `data-head` noktasının üstüne `layouts.marker` (`dy` -34, `s` 0.22) ile çizilir; "We/You (çoğul)" sahnelerinde iki aktörde birden.
+- Yeni durumlar (`emotions`): hungry, sick, sleepy. İfade fiilleri (crying, laughing, smiling) `kind: expression` — `stand` pozu + yüz parçası, yeni SVG yok.
+
+---
+
+# v5 eklentileri
+
+- `pair_give`: veren x=64, alan x=192, ikisi s=0.7 (nesne alıcının gövdesine girmez).
+- Ben/sen işareti: başın üstü; tuvaldeki üst kenarı < 4 ise `data-head` + (52, 24).
+- `badge_not` sorulan cümlede varsa inkâr edilen şeyin üstüne ölçek 0.12 çarpı olarak da çizilir (tutma noktası ya da `data-head` + (0, 70)).
+
+---
+
+# v6 eklentileri
+
+- `badge_*`, `cal_*`, `marker_*` overlay'lerinin ilk çocuğu arka disktir (`r=74`, kâğıt dolgu, mürekkep kenar 6); şekiller değişmez.
+- `show_near`: nesne x=128, taban y=230, s=0.6; `show_far`: x=196, taban y=150, s=0.22 (yeni SVG yok).
+

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="door">
+<rect x="40" y="30" width="176" height="200" rx="4" fill="#8D5A3B"/>
+<g data-state="closed">
+<rect x="56" y="46" width="144" height="184" fill="#8D5A3B"/>
+<rect x="74" y="66" width="108" height="70" rx="2" fill="none" stroke="#2B2D42" stroke-width="4"/>
+<rect x="74" y="150" width="108" height="66" rx="2" fill="none" stroke="#2B2D42" stroke-width="4"/>
+<circle cx="166" cy="143" r="7" fill="#E9C46A"/>
+</g>
+<g data-state="open">
+<rect x="56" y="46" width="144" height="184" fill="#2B2D42"/>
+<rect x="56" y="46" width="22" height="184" fill="#8D5A3B"/>
+</g>
+</g>
+</svg>

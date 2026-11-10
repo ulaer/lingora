@@ -70,24 +70,36 @@ public partial class MainWindow : Window
     /// <summary>Oyunda sahne seçimi için rastgele üreteç (testlerde sabit tohum).</summary>
     internal Random? GameRandom { get; set; }
 
+    /// <summary>Oyun verisi UI'yı bloklamadan arka planda yüklenir (testlerde kapalı: eşzamanlı).</summary>
+    internal bool GameLoadInBackground { get; set; } = true;
+
+    private GameLibrary? _loadedLibrary;
+
+    private GameLibrary? LoadGameLibrary()
+    {
+        var directory = GameAssetsDirectory ?? GameLibrary.FindDirectory();
+        if (directory is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var library = GameLibrary.Load(directory);
+            library.Preload();
+            return library;
+        }
+        catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or KeyNotFoundException)
+        {
+            return null;
+        }
+    }
+
     internal void OpenGame()
     {
         if (Game is null)
         {
-            GameLibrary? library = null;
-            var directory = GameAssetsDirectory ?? GameLibrary.FindDirectory();
-            if (directory is not null)
-            {
-                try
-                {
-                    library = GameLibrary.Load(directory);
-                }
-                catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or KeyNotFoundException)
-                {
-                    library = null;
-                }
-            }
-
+            var library = _loadedLibrary ?? LoadGameLibrary();
             Game = new GamePage(_session, library, GameRandom);
             Game.Evaluated += (_, _) => UpdateToday();
         }
@@ -96,7 +108,28 @@ public partial class MainWindow : Window
         ShowPage("Oyun", Game, 1080, 780);
     }
 
-    private void OnGameClick(object sender, RoutedEventArgs e) => OpenGame();
+    private async void OnGameClick(object sender, RoutedEventArgs e)
+    {
+        if (Game is null && GameLoadInBackground)
+        {
+            var tip = GameButton.ToolTip;
+            GameButton.IsEnabled = false;
+            GameButton.ToolTip = "Yükleniyor…";
+            System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+            try
+            {
+                _loadedLibrary = await Task.Run(LoadGameLibrary);
+            }
+            finally
+            {
+                System.Windows.Input.Mouse.OverrideCursor = null;
+                GameButton.ToolTip = tip;
+                GameButton.IsEnabled = true;
+            }
+        }
+
+        OpenGame();
+    }
 
     /// <summary>Ek pencereyi gösterir. Testler bunu değiştirip pencereyi ekranda açmadan inceler.</summary>
     internal Func<PageWindow, bool?> ShowDialogHandler { get; set; } = window => window.ShowDialog();

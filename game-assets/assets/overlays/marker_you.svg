@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="marker_you">
+<circle cx="128" cy="128" r="74" fill="#F1FAEE" stroke="#2B2D42" stroke-width="6"/>
+<rect x="108" y="62" width="40" height="30" rx="8" fill="#F2C6A0"/>
+<rect x="108" y="42" width="8" height="30" rx="4" fill="#F2C6A0"/>
+<rect x="119" y="42" width="8" height="30" rx="4" fill="#F2C6A0"/>
+<rect x="130" y="42" width="8" height="30" rx="4" fill="#F2C6A0"/>
+<rect x="140" y="42" width="8" height="30" rx="4" fill="#F2C6A0"/>
+<ellipse cx="104" cy="80" rx="6" ry="11" fill="#F2C6A0"/>
+<rect x="112" y="96" width="32" height="42" rx="4" fill="#457B9D"/>
+<polygon points="84,132 172,132 128,198" fill="#457B9D"/>
+</g>
+</svg>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="mark_music" fill="#2B2D42">
+<g data-frame="1" transform="translate(-12 -8)">
+<ellipse cx="100" cy="170" rx="13" ry="10"/>
+<rect x="110" y="110" width="5" height="62"/>
+<path d="M115 110C130 118 138 128 136 142C130 132 124 126 115 122Z"/>
+<ellipse cx="152" cy="156" rx="13" ry="10"/>
+<rect x="162" y="96" width="5" height="62"/>
+<path d="M167 96C182 104 190 114 188 128C182 118 176 112 167 108Z"/>
+</g>
+<g data-frame="2" transform="translate(-6 -4) rotate(-10 128 128)">
+<ellipse cx="100" cy="170" rx="13" ry="10"/>
+<rect x="110" y="110" width="5" height="62"/>
+<path d="M115 110C130 118 138 128 136 142C130 132 124 126 115 122Z"/>
+<ellipse cx="152" cy="156" rx="13" ry="10"/>
+<rect x="162" y="96" width="5" height="62"/>
+<path d="M167 96C182 104 190 114 188 128C182 118 176 112 167 108Z"/>
+</g>
+</g>
+</svg>

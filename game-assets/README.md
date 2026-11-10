@@ -1,40 +1,112 @@
 # game-assets
 
 Dil öğrenme oyunu için flat/geometrik SVG kütüphanesi. Amaç: az sayıda modüler asset ile
-en çok cümleyi kapsamak. Her cümleye ayrı resim çizilmez; karakter-poz, nesne ve arka plan
-uygulama içinde birleştirilir (renk, adet, konum, grup dönüşümleri).
+en çok cümleyi kapsamak. Her cümleye ayrı resim çizilmez; karakter-poz, nesne, arka plan ve
+overlay'ler uygulama içinde birleştirilir (renk, adet, konum, grup, yüz ifadesi, balon, rozet,
+gökyüzü rengi, durum ve animasyon dönüşümleri).
 
 | Dosya | Ne |
 |---|---|
-| `style-lock.md` | Stil şartnamesi: palet, viewBox, taban çizgisi, tint ve anchor sözleşmesi |
-| `assets/` | `characters/` (özne × poz), `objects/`, `backgrounds/` |
-| `manifest.json` | Asset → kelime/anlam, pozların fiili ve yer kuralları, takma adlar, gruplar |
-| `scenes.json` | Üretilen sahneler: yalnızca asset id'leri + dönüşüm + kanonik EN/TR cümle (sahne başına bir satır) |
+| `style-lock.md` | Stil şartnamesi (v1 + v2): palet, viewBox, taban çizgisi, tint, anchor, yüz parçaları, kareler, durumlar |
+| `assets/characters/` | özne × poz (insanlar, meslekler, hayvanlar); bazı pozlar 2 kareli animasyon |
+| `assets/objects/` | elde tutulan nesneler + sahne nesneleri (TV, lamba, kapı, araba, tren, piyano…; bazıları durumlu) |
+| `assets/backgrounds/` | mekânlar; gökyüzü/pencere `data-tint="sky"` ile gece/akşam olur |
+| `assets/overlays/` | konuşma/düşünce balonu, dün/yarın/olumsuz/soru rozetleri, güneş/ay/saat, hava (yağmur, kar…), duygu işaretleri |
+| `assets/overlays/face/` | yüz parçaları (ağız/göz/kaş) — duygu ifadeleri için değiştirilir |
+| `manifest.json` | asset → kelime/anlam; fiil çekimleri (EN/TR), yer kuralları, takma adlar, gruplar, duygular, hava, etkileşimler, yerleşimler |
+| `scenes.json` | Uygulamanın okuduğu biçim (Core/Game/GameLibrary): A1 kayıtları cümle başına bir sahne, v1 kimlikleriyle |
+| `scenes/A1.jsonl` | şimdiki zaman: özne + fiil + nesne + yer, gruplar |
+| `scenes/A2.jsonl` | dün/yarın, olumsuz, soru (rozetli), duygular, günün vakti, hava durumu |
+| `scenes/B1.jsonl` | etkileşim (konuşmak/dinlemek, el sallamak, aramak), düşünce balonu (istemek, birini düşünmek), ışık/TV/kapı durum değişimi, sıralı iki panel |
+| `docs/v4-contract.md` | v4 sözleşmesi: yeni asset kimlikleri, `actors[].marker`, `facts`/`mentions`/`person` |
 | `coverage.md` | Kapsam özeti |
-| `tools/combine.py` | `manifest.json` → `scenes.json` + `coverage.md` (kural tabanlı, model kullanmaz) |
-| `tools/validate.py` | Tüm SVG'leri stil kilidine göre denetler |
+| `tools/combine.py` | `manifest.json` + SVG işaretleri → `scenes/*.jsonl` + `coverage.md` (kural tabanlı, model kullanmaz) |
+| `tools/grammar.py` | EN/TR çekim: zaman, olumsuz, soru, ünlü uyumu, -ydı/-lar ekleri; v4: kişi ekleri (koşuyorum…), geniş zaman (`aor*`), yetenek (`can*`) |
+| `tools/lint.py` | kalite kapısı: belirsizlik, dil, yerleşim (v3) + olgu (`facts`/`mentions`/`person`), kişi eki ↔ özne, geniş zaman ve `can` rozetleri (v4); `combine.py --strict` hata varsa durur |
+| `REVIEW-v3.md` | v3'ü belirleyen üç ajanlı test ve çapraz puanlama kaydı |
+| `tools/validate.py` | Tüm SVG'leri stil kilidine göre denetler (kareler, durumlar, yüz parçaları dahil) |
 | `preview.html` | Kompozisyonun referans uygulaması ve önizleme |
 
 ## Komutlar (bu klasörden)
 
 ```powershell
 python tools/validate.py      # stil denetimi
-python tools/combine.py       # sahneleri ve coverage.md'yi yeniden üret
-python -m http.server 8765    # sonra: http://localhost:8765/preview.html?mode=scenes&n=12
+python tools/combine.py       # sahneleri, coverage.md'yi üret + kalite kapısı (--strict: hata varsa dur)
+python -m http.server 8765    # sonra: http://localhost:8765/preview.html?level=B1&n=12
 ```
 
-Önizleme parametreleri: `?mode=assets[&cat=character|object|background]`,
-`?mode=scenes&n=12`, `?mode=scenes&ids=tom_swim__pool,kids__run__park__as_tom_and_mary`.
+Önizleme parametreleri: `?mode=assets[&cat=character|object|background|overlay|face]`,
+`?level=A1|A2|B1&n=12`, `&ids=id1,id2`, `&filter=metin`, `&form=past_q` ya da `&sent=2` (hangi cümle).
 
-## Kompozisyon kuralı
+## Sahne kaydı (her satır bir görsel)
 
-Nesne, pozun `anchor` noktasına alt-orta noktasıyla oturur:
-`translate(ax - 128*s, ay - 230*s) scale(s)`. `data-tint="primary"` taşıyan şekillerin
-`fill` değeri sahnenin `transform.tint` değeriyle değiştirilir. Grup sahnelerinde her karakter
-`translate(x - 128*scale, 230 - 230*scale) scale(scale)` ile yan yana konur.
+```json
+{"id": "...", "level": "A2", "layout": "single|pair|bubble|pair_bubble|prop|panels",
+ "bg": "park", "sky": "#2B2D42", "sky_overlay": "moon", "weather": "rain", "time": "night",
+ "actors": [{"char": "tom_read", "x": 128, "s": 1, "expr": "tired",
+             "hold": {"obj": "book", "tint": "#457B9D", "n": 1, "anchor": [128, 160], "s": 0.4}}],
+ "bubble": {"type": "thought", "content": {"obj": "car"}},
+ "prop": {"obj": "lamp", "states": ["on", "off"]},
+ "panels": [{"layout": "single", "actors": [...]}, ...],
+ "sentences": [{"form": "past_q", "subject": "Tom", "en": "...", "tr": "...", "badges": ["cal_yesterday", "badge_question"]}]}
+```
+
+Aynı görsel birden çok cümle taşır (takma ad özneler, zaman/olumsuz/soru biçimleri). v3: aynı resmi
+veren kayıtlar birleşir (`merged_ids`); `sentences` o resmin **kabul kümesidir** — hepsi doğrudur.
+`scenes.json` sahnelerindeki `weight`, oyunun ağırlıklı seçimi içindir. `badges`
+cümleye özeldir: oyun hangi cümleyi soruyorsa onun rozetlerini gösterir.
+
+### v4 alanları
+
+- Her kayıtta `facts` (`subject, verb, object, variant, count, place, time, weather, state, other`); `scenes.json` tüm anahtarları
+  yazar, `scenes/*.jsonl` boyut için `null`/`0` boyutları atar (eksik anahtar = null/0).
+- Her cümlede `mentions` (cümlenin söylediği boyutlar), `person` (`1s|2s|1p|2p|3s|3p`) ve zamir/kişi özneleri için `subject_ok`
+  (ör. "He" → tom, man, police). Cümle, kaynağı dışındaki resim için `mentions` boyutlarının hepsi o resmin olgusuyla eşitse doğrudur.
+  Öznesi resmin öznesinden farklı olan cümleler (ör. "Mary listens to Tom" tom'un konuştuğu resimde) boş `mentions` taşır:
+  hiçbir resim için çeldirici olmaz.
+- `actors[].marker`: `marker_me` / `marker_you`. Kişi sahneleri: "I/You" tek aktör + marker, "We/You (çoğul)" pair + iki marker.
+- Formlar: `aor`, `aor_neg`, `aor_q` (`cal_everyday` rozeti, "every day"/"her gün") ve `can`, `can_neg`, `can_q` (`badge_can`).
+- `facts` ve `mentions` türetimi `combine.py` içinde (`F`, `M`, `S`); kişi eki kuralları `grammar.py` (`past_person`, `fut_person`…).
+- Boyut sınırları `combine.py` başında: kişi ve geniş zaman/yetenek sahneleri yalnızca yersiz (`None`) kayıtlar, A2'de kişi + tüm
+  zamanlar yalnızca `tom`/`woman`; `give` A2'de elma/kitap × (yersiz, park, okul). `scenes/*.jsonl` toplamı ≈ 8,8 MB.
+- `bored` ("canı sıkkın") kişi eki alamadığı için kişi cümlelerinden dışlanır (`no_person`).
+
+### v5 (bkz. `docs/v5-contract.md`)
+
+- **Doğruluk kuralı** tek yerde: `tools/lint.py` → `sentence_true()` (docstring'deki tablo C# `ChoiceBuilder` ile aynı yazılır).
+  Olumsuzlukta ters çevirme yok: `badge_not` resimdeki önermenin inkârıdır, doğruluk olumlu çekirdeğe bakar; çeldirici
+  sorulan cümleyle aynı `form` + `badges` taşır.
+- **Kendi-cümlesi kapısı** (`OWN-1`, ERROR): her cümle kendi resmi için doğru olmalı (kural + metinden çıkan özne/yer/vakit/kişi
+  iddiaları). v4 çıktısında 464 cümle (hepsi B1 "Mary listens to Tom" ters yön cümleleri) yakalanıyordu; artık üretilmiyor.
+- `facts.person` (resmin kişisi: marker + grup) ve `facts.holds` (öznenin elindeki nesneler: give/eat/read/drink/stand/call);
+  I/You/We/He/She/They cümleleri `mentions`'a `person` ekler. `manifest.place_parents`: mutfak/yatak odası/banyo ⊂ "at home".
+- `pair_give` yerleşimi (veren x 64, alan x 192, ölçek 0,7); lint LAY-5: verilen nesnenin tuval x'i < alan.x − 30.
+  `scenes.json` vermek girişlerinde `transform.anchor/scale` TUVAL koordinatıdır.
+- Dil: "ile" nesnesi `tr_ins` ("Tom adamla konuşuyor."), 1. kişi (1s/1p) soru biçimleri üretilmez, "aç" 1p geçmişi ("açtık") yok.
+- `preview.html`: işaret yerleşimi (üst kenar < 4 ise başın yanı), `badge_not` varsa inkâr edilen şeyin üstüne çarpı, rozet/işaret açıklama satırı.
+
+### v6 (bkz. `docs/v6-contract.md`)
+
+- Rozet/işaret overlay'lerine arka disk: `python tools/add_rims.py` (tekrar çalıştırılabilir; şekiller değişmez).
+- Geniş zaman yalnızca alışkanlık fiillerinde (`manifest.aorist.verbs`); kişi zamirli Türkçe cümlede `tr_alt` (zamirsiz biçim).
+- Yeni biçimler: `this`/`that` (A1, kayıtta `show` + `layouts.show_near|show_far`, `facts.distance`), `poss` (A2, `facts.owner`:
+  `1s|2s|karakter`, `tr_poss`/`tr_gen`), nesne zamirleri (A2, `facts.receiver_person`, alıcıda marker), `imp`/`imp_neg` (A2,
+  marker_you + `mark_exclaim` [+ `badge_not`]), `wh_what|wh_where|wh_who` (B1, `badge_question`, `answer` {en,tr}; `mentions`
+  sorulan boyutu içermez). Kendi-cümlesi kapısı bunları da sınar (wh cevabı resmin olgusu, emir kişisi 2s/marker_you).
+- `this/that` kayıtları `scenes.json`'a girmez (resim `actors` yerine `show` ile).
+
+## Kompozisyon kuralları
+
+- Aktör: `translate(x - 128*s, 230 - 230*s) scale(s)`; elindeki nesne aktörün içinde
+  `translate(ax - 128*hs, ay - 230*hs) scale(hs)` (anchor SVG'deki `data-hand`'den gelir).
+- `data-tint="primary"` şekiller `hold.tint` ile, `data-tint="sky"` şekiller sahnenin `sky` rengiyle boyanır.
+- Duygu: `data-part="mouth"/"eyes"` gizlenir, `overlays/face/` parçası (`data-cx`,`data-cy`) noktasına konur;
+  işaret (ter, gözyaşı…) `data-head` yanına (`layouts.mark`).
+- `data-frame` grupları döngüde tek tek gösterilir; `prop.states` sırayla oynatılır (ör. ışık açık → kapalı).
+- Balon, rozet, güneş/ay konumları `manifest.json` → `layouts`; marker: `layouts.marker` (`dx` yok, merkez `(head.x, head.y + dy)`).
 
 ## Yeni asset eklemek
 
-1. `manifest.json`'a satırı ekle (yeni poz ise `poses`, yeni özne ise `characters`).
+1. `manifest.json`'a satırı ekle (yeni poz ise `poses` + `verbs`, yeni özne ise `characters`).
 2. SVG'yi `style-lock.md`'ye uyarak çiz; mevcut bir asset'i referans al.
 3. `python tools/validate.py` ve `python tools/combine.py` çalıştır, `preview.html` ile gözle kontrol et.

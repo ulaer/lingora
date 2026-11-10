@@ -99,6 +99,7 @@ public sealed class PracticeSession
             Warnings.Add($"Sözlük dosyası bozuktu; boş sözlükle başlandı. Yedek: {vocabularyBackup}");
         }
 
+        GameLog = new GameProgress(paths, _time);
         Journal = new JournalStore(paths.JournalDirectory, paths.LessonsDirectory, _time.LocalTimeZone);
         Lessons = new LessonStore(paths.LessonsDirectory);
         AudioLessons = new AudioLessonStore(paths.LessonsDirectory);
@@ -111,6 +112,9 @@ public sealed class PracticeSession
 
     /// <summary>Günlük: her günün hataları, ipuçları ve istenen açıklamaları.</summary>
     public JournalStore Journal { get; }
+
+    /// <summary>Oyun cevap günlüğü, yeniden sorma kuyruğu ve seviye ilerlemesi.</summary>
+    public GameProgress GameLog { get; }
 
     /// <summary>AI ile bir kez üretilip saklanan günlük ders notları.</summary>
     public LessonStore Lessons { get; }
@@ -578,6 +582,48 @@ public sealed class PracticeSession
         return await EvaluateAndRecordAsync(SceneItem(library, scene), text, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>Oyun – resmi anlat (A1/A2/B1 turu): sorulan cümlenin rozetleri ve olgularıyla değerlendirilir.</summary>
+    public async Task<SubmitOutcome> SubmitSceneAsync(GameLibrary library, GameRound round, string userSentence, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(library);
+        ArgumentNullException.ThrowIfNull(round);
+        var text = (userSentence ?? string.Empty).Trim();
+        if (text.Length == 0)
+        {
+            return new SubmitOutcome(false, "Lütfen önce resmi anlatan cümleni yaz.");
+        }
+
+        return await EvaluateAndRecordAsync(SceneItem(library, round), text, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Oyunun seviyesi (A1, A2, B1). Kalıcıdır.</summary>
+    public void SetGameLevel(GameLevel level)
+    {
+        Settings.GameLevel = level;
+        SaveSettings();
+    }
+
+    /// <summary>Tur için değerlendirme öğesi: kaynak resim etiketi, referans sorulan cümle, olgular rozetlerle.</summary>
+    public PracticeItem SceneItem(GameLibrary library, GameRound round)
+    {
+        var direction = Settings.GameDirection;
+        var facts = library.DescribeFacts(round, direction);
+        if (round.Sentence.Answer is { } answer)
+        {
+            // wh-sorusu: kaynak = soru, referans = kısa cevap.
+            return new PracticeItem(direction, "Resim sorusu: " + round.Text(direction), [answer.Text(direction)], -1, facts);
+        }
+
+        var sourceSentence = round.Text(direction == TranslationDirection.TurkishToEnglish ? TranslationDirection.EnglishToTurkish : TranslationDirection.TurkishToEnglish);
+        var references = new List<string> { round.Text(direction) };
+        if (direction == TranslationDirection.EnglishToTurkish)
+        {
+            references.AddRange(round.Sentence.TrAlt);
+        }
+
+        return new PracticeItem(direction, "Resim: " + sourceSentence, references, -1, facts);
+    }
+
     /// <summary>Oyunda resmin anlatılacağı dil (TurkishToEnglish = İngilizce yaz). Kalıcıdır.</summary>
     public void SetGameDirection(TranslationDirection direction)
     {
@@ -604,7 +650,7 @@ public sealed class PracticeSession
         var chosen = chosenIndex >= 0 && chosenIndex < question.Options.Count ? question.Options[chosenIndex] : string.Empty;
         var now = _time.GetLocalNow();
         var direction = question.Direction;
-        var source = "Resim (seçmeli): " + (direction == TranslationDirection.TurkishToEnglish ? question.Scene.Tr : question.Scene.En);
+        var source = "Resim (seçmeli): " + question.SourceSentence;
 
         var record = new AttemptRecord
         {

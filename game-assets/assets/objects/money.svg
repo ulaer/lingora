@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="money">
+<rect x="78" y="104" width="124" height="100" rx="6" fill="#2A9D8F"/>
+<rect x="54" y="130" width="124" height="100" rx="6" fill="#2A9D8F"/>
+<rect x="62" y="138" width="108" height="84" rx="4" fill="none" stroke="#F1FAEE" stroke-width="4"/>
+<ellipse cx="116" cy="180" rx="34" ry="24" fill="#F1FAEE"/>
+</g>
+</svg>

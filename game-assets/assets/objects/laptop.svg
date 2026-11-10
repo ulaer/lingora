@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<g id="laptop">
+<rect x="64" y="72" width="128" height="124" rx="8" fill="#457B9D"/>
+<rect x="74" y="82" width="108" height="104" rx="3" fill="#A8DADC"/>
+<path d="M60 196H196L202 220Q204 230 194 230H62Q52 230 54 220Z" fill="#2B2D42"/>
+<rect x="116" y="200" width="24" height="6" rx="3" fill="#457B9D"/>
+</g>
+</svg>

@@ -24,6 +24,12 @@ public sealed class AppPaths
 
     public string AttemptsFile => Path.Combine(DataDirectory, "attempts.jsonl");
 
+    /// <summary>Oyun cevap günlüğü (her cevap bir satır).</summary>
+    public string GameLogFile => Path.Combine(DataDirectory, "game-log.jsonl");
+
+    /// <summary>Oyunda yeniden sorulacak (kaçırılan) resimler.</summary>
+    public string GameReviewFile => Path.Combine(DataDirectory, "game-review.json");
+
     public string VocabularyFile => Path.Combine(DataDirectory, "vocabulary.json");
 
     /// <summary>Günlük: her gün için hatalar, ipuçları ve açıklamalar (journal/yyyy-MM-dd.json).</summary>
